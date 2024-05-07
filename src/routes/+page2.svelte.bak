@@ -1,0 +1,142 @@
+<script lang="ts">
+    import { tweened } from "svelte/motion";
+    import { fade } from "svelte/transition";
+    import { confetti } from "@neoconfetti/svelte";
+    import { onMount } from "svelte";
+    import { FFmpeg } from "@ffmpeg/ffmpeg";
+  
+    type State = "loading" | "loaded" | "convert.start" | "convert.error" | "convert.done";
+  
+    let state: State = "loading";
+    let error = "";
+    let ffmpeg: FFmpeg;
+    let progress = tweened(0);
+  
+    async function readFile(file: File): Promise<Uint8Array> {
+      return new Promise((resolve) => {
+        const fileReader = new FileReader();
+        fileReader.onload = (e) => {
+          const { result } = fileReader;
+          if (result instanceof ArrayBuffer) {
+            resolve(new Uint8Array(result));
+          }
+        };
+  
+        fileReader.onerror = (e) => {
+          error = "Error reading file";
+          state = "convert.error";
+          console.error(e);
+        };
+  
+        fileReader.readAsArrayBuffer(file);
+      });
+    }
+  
+    async function convertVideo(file: File) {
+      state = "convert.start";
+      const videData = await readFile(file);
+      await ffmpeg.writeFile("input.webm", videData);
+      await ffmpeg.exec(["-i", "input.webm", "output.mp4"]);
+      const data = await ffmpeg.readFile("output.mp4");
+      state = "convert.done";
+      return data as Uint8Array;
+    }
+  
+    async function handleDrop(event: DragEvent) {
+      if (!event.dataTransfer) return;
+      const files = event.dataTransfer.files;
+      if (files.length > 1) {
+        error = "Upload one file!";
+        state = "convert.error";
+        return;
+      }
+      const [file] = files;
+      const { type } = file;
+      if (type !== "video/webm") {
+        error = "File must be webm";
+        state = "convert.error";
+        return;
+      }
+  
+      state = "convert.start";
+      const data = await convertVideo(file);
+      downloadVideo(data);
+    }
+  
+    function downloadVideo(data: Uint8Array) {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([data.buffer], { type: "video/mp4" }));
+      a.download = "output.mp4";
+      setTimeout(() => {
+        a.click();
+        state = "convert.done";
+      }, 1000);
+    }
+  
+    async function loadFfmpeg() {
+      const baseUrl = "https://unpkg.com/@ffmpeg/core@0.12.4/dist/esm";
+      ffmpeg = new FFmpeg();
+      await ffmpeg.load({
+        coreURL: `${baseUrl}/ffmpeg-core.js`,
+        wasmURL: `${baseUrl}/ffmpeg-core.wasm`,
+      });
+      ffmpeg.on("progress", ({ progress }) => {
+        $progress = progress * 100;
+      });
+      state = "loaded";
+    }
+  
+    onMount(() => {
+      loadFfmpeg();
+    });
+  
+    $: console.log({ state });
+</script>
+  
+<button on:click={() => inputFile.click()}>Choose File</button>
+<input type="file" accept="video/webm" hidden bind:this={inputFile} on:change={handleDrop} />
+
+<!-- svelte-ignore a11y-no-static-element-interactions -->  
+<div 
+    on:drop|preventDefault={handleDrop} 
+    on:dragover|preventDefault={() => (state === "loaded" ? (state = "hover") : {})} 
+    on:dragleave|preventDefault={() => (state === "hover" ? (state = "loaded") : {})} 
+    data-state={state} 
+    class="drop"
+    >
+    {#if state === "loading"}
+        <p in:fade>Loading...</p>
+        {#if state === "loaded" || state === "hover"}
+        <p in:fade class="file-dropper">
+        Drop a video file here or click "Choose File"
+        </p>
+    {:else if state === "covert.start"}
+        <div class="progress" style:--progress={$progress}>
+        {$progress.toFixed(0)}
+        </div>
+    {:else if state === "convert.done"}
+        <div use:confetti></div>
+        <p in:fade>Done!! </p>
+    {:else if state === "convert.error"}
+        <p in:fade style="color:red">Error: {error}</p>
+    {/if}
+
+</div>
+<style>
+.file-dropper {
+    width: 100%;
+    height: 200px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 16px;
+    border: 2px dashed var(--txt-clr);
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.drop[data-state="hover"] {
+    outline: 5px solid green;
+    transform: scale(1.05); /* Zoom in by 5% on hover */
+}
+</style>  
