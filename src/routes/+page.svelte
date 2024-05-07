@@ -1,16 +1,17 @@
 <script lang="ts">
 	import { tweened } from "svelte/motion";
 	import { fade } from "svelte/transition";
-  import { confetti } from "@neoconfetti/svelte";
+  // import { confetti } from "@neoconfetti/svelte";
   import { onMount } from "svelte";
   import { FFmpeg } from "@ffmpeg/ffmpeg";
   import { fetchFile, toBlobURL } from '@ffmpeg/util';
 
   // import Image from './Image.svelte';
   import Video from './Video.svelte';
+  import ProgressBar from "./ProgressBar.svelte";
 
 
-  type State = "loading" | "loaded" | "convert.ready" |"covert.start" | "convert.error" | "convert.done";
+  type State = "loading" | "loaded" | "convert.ready" | "covert.start" | "convert.error" | "convert.done";
 
   let files;
   let videoData;
@@ -204,9 +205,12 @@
 <div class="box" id="preview">
   <h3 in:fade>Podgląd</h3>
   {#if state === "covert.start"}
-  <div class="progress" style:--progress={$progress}>
-    {$progress.toFixed(0)}
-  </div>
+  <!-- Add proggress bar -->
+  <!-- <ProgressBar progress={progress}></ProgressBar> -->
+  <!-- <div class="progress" style:--progress={$progress}> -->
+    <!-- {$progress.toFixed(0)} -->
+  <!-- </div> -->
+  <h2>{$progress.toFixed(0)} %</h2>
 {:else if state === "convert.done"}
   <!-- <div use:confetti></div> -->
   <!-- <p in:fade>Done!! 🎉</p> -->
