@@ -218,6 +218,24 @@
   })
   $: console.log({ state })
 </script>
+<DashedBox>
+  <h3 in:fade>Przykładowy efekt obróbki</h3>
+  <Button color="secondary" on:click={() => (isOpen = !isOpen)}>
+    Zobacz
+  </Button>
+  <Fade {isOpen}>
+  <!-- <p>Lol</p> -->
+  <Container>
+    <Row>
+      <Col>
+        <div id="video-container">
+          <video src={DATA.EXAMPLE_URL} controls></video>
+        </div>
+      </Col>
+    </Row>
+  </Container>  
+  </Fade>
+</DashedBox>
 
   <DashedBox>
     <!-- <Row> -->
@@ -303,31 +321,6 @@
     </Col>
   </Row>
 </Container>
-
-<DashedBox>
-  <!-- <Row> -->
-    <!-- <Col> -->
-      <h3 in:fade>Przykładowy efekt końcowy</h3>
-      <Button color="secondary" on:click={() => (isOpen = !isOpen)}>
-        Zobacz
-      </Button>
-      <Fade {isOpen}>
-      <!-- <p>Lol</p> -->
-      <Container>
-        <Row>
-          <Col>
-            <div id="video-container">
-              <video src={DATA.EXAMPLE_URL} controls></video>
-            </div>
-          </Col>
-        </Row>
-      </Container>  
-      </Fade>
-      
-    <!-- </Col> -->
-  <!-- </Row> -->
-</DashedBox>
-
 
 <style>
 
