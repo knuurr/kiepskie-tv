@@ -12,13 +12,14 @@
   import DashedBox from "./DashedBox.svelte";
   import * as DATA from './Constans.svelte'; // Import all from data.js
 
-  import { Container, Input, Button, Col, Row } from '@sveltestrap/sveltestrap';
+  import { Fade, Container, Input, Button, Col, Row } from '@sveltestrap/sveltestrap';
   
 
 
   type State = "loading" | "loaded" | "convert.ready" | "convert.start" | "convert.error" | "convert.done";
   type typeTransformState = "1/2" | "2/2" | "0/2" 
 
+  let isOpen = false
   let files;
   let videoData;
 
@@ -272,7 +273,7 @@
   <Row>
     <Col>
       <DashedBox>
-        <h3 in:fade>Podgląd</h3>
+        <h3 in:fade>Twoje wideo</h3>
         {#if state === "convert.start"}
           {#if transformState == "1/2"}
           <p>1/2 Nakładanie na "Okił"-a...</p>
@@ -302,6 +303,30 @@
     </Col>
   </Row>
 </Container>
+
+<DashedBox>
+  <!-- <Row> -->
+    <!-- <Col> -->
+      <h3 in:fade>Przykładowy efekt końcowy</h3>
+      <Button color="secondary" on:click={() => (isOpen = !isOpen)}>
+        Zobacz
+      </Button>
+      <Fade {isOpen}>
+      <!-- <p>Lol</p> -->
+      <Container>
+        <Row>
+          <Col>
+            <div id="video-container">
+              <video src={DATA.EXAMPLE_URL} controls></video>
+            </div>
+          </Col>
+        </Row>
+      </Container>  
+      </Fade>
+      
+    <!-- </Col> -->
+  <!-- </Row> -->
+</DashedBox>
 
 
 <style>

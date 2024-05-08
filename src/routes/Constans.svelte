@@ -10,4 +10,6 @@
     // URLs
     export const GH_PROFILE_URL = 'https://github.com/knuurr'
     export const GH_PROJECT_URL = 'https://github.com/knuurr/kiepscy-tv'
+    // export const EXAMPLE_URL = 'https://github.com/knuurr/kiepscy-tv/raw/main/example.mp4'
+    export const EXAMPLE_URL = '/example.webm'
 </script>

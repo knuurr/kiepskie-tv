@@ -2,7 +2,7 @@
 
 	export let title
 	export let desc
-	export let disclaimer = "Procesowanie jest 100% offline - aplikacja jedynie pobiera zależności + assety"
+	export let disclaimer = "Twoje wideo nigdzie nie jest wysłane - obróbka jest 100% offline"
 </script>
   
 <style>
