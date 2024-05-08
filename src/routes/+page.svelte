@@ -234,7 +234,7 @@
           <!-- This is some placeholder block-level help text for the above input. It's a bit lighter and easily wraps to a new line. -->
         <!-- </FormText> -->
         <p in:fade>
-          max. wielkośc 2GB. Testowane wyłącznie na plikach .mp4, .webm o długości poniżej 60 sekund. 1 plik naraz.
+          max. wielkość 2GB. Testowane wyłącznie na plikach .mp4, .webm o długości poniżej 60 sekund. 1 plik naraz.
           </p>
       {#if !files}
       <Button outline block disabled color="secondary">Okiłizuj</Button>

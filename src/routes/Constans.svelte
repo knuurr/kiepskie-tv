@@ -8,6 +8,6 @@
     export const PATH_TEMPLATE_VIDEO = '/video.mp4'
     export const PATH_GREENSCREEN_PNG = '/greenscreen.png'
     // URLs
-    export const GH_PROJECT_URL = 'https://github.com/knuurr'
-    export const GH_PROFILE_URL = 'https://github.com/knuurr/kiepscy-tv'
+    export const GH_PROFILE_URL = 'https://github.com/knuurr'
+    export const GH_PROJECT_URL = 'https://github.com/knuurr/kiepscy-tv'
 </script>

@@ -2,6 +2,7 @@
 
 	export let title
 	export let desc
+	export let disclaimer = "Procesowanie jest 100% offline - aplikacja jedynie pobiera zależności + assety"
 </script>
   
 <style>
@@ -24,6 +25,7 @@
 	<header>
 	  <h1>{title}</h1>
 	  <p>{desc}</p>
+	  <p>{disclaimer}</p>
 	</header>
   </div>
   
