@@ -1,6 +1,6 @@
 # Kiepskie TV
 
-Test yourself: [Vercel link]([url](https://kiepscy-tv.vercel.app/))
+Test yourself: [Vercel link](https://kiepscy-tv.vercel.app/)
 
 Inspired by Polish popular sitcom "Świat Według Kiepskich", you can put any your own video into legendary "Okił" finctional brand television, and watch Arnold Boczek react to it.
 
