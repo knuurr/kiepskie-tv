@@ -1,6 +1,8 @@
 <script lang="ts">
-    export let githubUrl = "https://github.com"; // Replace with your GitHub URL
-    export let projectUrl = "https://github.com/your-username/your-project"; // Replace with your project's GitHub URL
+    // export let githubUrl = "https://github.com/knuurr"; // Replace with your GitHub URL
+    // export let projectUrl = "https://github.com/knuurr/kiepscy-tv";
+    import { GH_PROJECT_URL, GH_PROFILE_URL } from './Constans.svelte'; // Import all from data.js
+
   </script>
   
   <style>
@@ -22,15 +24,21 @@
     p {
         color: gray;
     }
+
+    * {
+      margin-top: 1rem;
+      margin-bottom: 1rem;
+    }
   </style>
   
   <footer>
     <p style="color: white;">© Jakub Mikos 2024 </p>
-    <a href="{githubUrl}">Mój Github (knuurr)</a>
-    <a href="{projectUrl}">GitHub Projektu</a>
+    <a href="{GH_PROFILE_URL}">Mój Github (knuurr)</a>
+    <a href="{GH_PROJECT_URL}">GitHub Projektu</a>
+    <!-- <a href="{liUrl}">LinkedIn</a> -->
     <br/>
     <p >Nazwa "Okił" nawiązuje do fikcyjnej marki telewizora w serialu "Świat Weług Kiepskich". Zbieżność nazwisk przypadkowa.</p>
-    <p >Projekt nie jest w żadnen sposób powiązany z serialem "Świat Według Kiepskich" autorstwa ATM Polska.</p>
+    <p >Projekt nie jest w żadnen sposób powiązany z serialem "Świat Według Kiepskich" autorstwa ATM GRUPA SPÓŁKA AKCYJNA.</p>
     
 
   </footer>

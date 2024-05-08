@@ -1,23 +1,32 @@
 <script lang="ts">
 	import { tweened } from "svelte/motion";
 	import { fade } from "svelte/transition";
-  // import { confetti } from "@neoconfetti/svelte";
   import { onMount } from "svelte";
   import { FFmpeg } from "@ffmpeg/ffmpeg";
-  import { fetchFile, toBlobURL } from '@ffmpeg/util';
+  // import { fetchFile, toBlobURL } from '@ffmpeg/util';
+  // import { toBlobURL } from '@ffmpeg/util';
 
   // import Image from './Image.svelte';
-  import Video from './Video.svelte';
-  import ProgressBar from "./ProgressBar.svelte";
+  // import Video from './Video.svelte';
+  // import ProgressBar from "./ProgressBar.svelte";
+  import DashedBox from "./DashedBox.svelte";
+  import * as DATA from './Constans.svelte'; // Import all from data.js
+
+  import { Container, Input, Button, Col, Row } from '@sveltestrap/sveltestrap';
+  
 
 
-  type State = "loading" | "loaded" | "convert.ready" | "covert.start" | "convert.error" | "convert.done";
+  type State = "loading" | "loaded" | "convert.ready" | "convert.start" | "convert.error" | "convert.done";
+  type typeTransformState = "1/2" | "2/2" | "0/2" 
 
   let files;
   let videoData;
 
   let state: State = "loading"
+  let transformState: typeTransformState = "0/2"
+  
   let error = "";
+  
   let ffmpeg: FFmpeg;
   let progress = tweened(0);
 
@@ -31,6 +40,23 @@
   
   // Re-implementation
   // https://github.com/ffmpegwasm/ffmpeg.wasm/issues/603
+  const readFromBlobOrFile = (blob) => new Promise((resolve, reject) => {
+    const fileReader = new FileReader();
+    fileReader.onload = () => {
+        const { result } = fileReader;
+        if (result instanceof ArrayBuffer) {
+            resolve(new Uint8Array(result));
+        }
+        else {
+            resolve(new Uint8Array());
+        }
+    };
+    fileReader.onerror = (event) => {
+        reject(Error(`File could not be read! Code=${event?.target?.error?.code || -1}`));
+    };
+    fileReader.readAsArrayBuffer(blob);
+});
+
 //   async function fetchFile(file) {
 //     return new Promise(resolve => {
 //         const fileReader = new FileReader();
@@ -44,6 +70,32 @@
 //         fileReader.readAsArrayBuffer(file);
 //     })
 // }
+
+  const fetchFile = async (file) => {
+      let data;
+      if (typeof file === "string") {
+          /* From base64 format */
+          if (/data:_data\/([a-zA-Z]*);base64,([^"]*)/.test(file)) {
+              data = atob(file.split(",")[1])
+                  .split("")
+                  .map((c) => c.charCodeAt(0));
+              /* From remote server/URL */
+          }
+          else {
+              data = await (await fetch(file)).arrayBuffer();
+          }
+      }
+      else if (file instanceof URL) {
+          data = await (await fetch(file)).arrayBuffer();
+      }
+      else if (file instanceof File || file instanceof Blob) {
+          data = await readFromBlobOrFile(file);
+      }
+      else {
+          return new Uint8Array();
+      }
+      return new Uint8Array(data);
+  };
 
   async function readFile(file): Promise<Uint8Array> {
     return new Promise(resolve=>{
@@ -67,22 +119,25 @@
   }
 
   async function convertVideo() {
-    state = "covert.start";
+    state = "convert.start";
     // const videData = await readFile(files[0]);
     const { name } = files[0];
     await ffmpeg.writeFile(name, await fetchFile(files[0]));
     // await ffmpeg.writeFile("input.webm", videData);
     // await ffmpeg.exec(["-i", "input.webm", "output.mp4"]);
-    await ffmpeg.writeFile("greenscreen.png", await fetchFile("src/routes/greenscreen.png"));
-    await ffmpeg.exec(['-i', 'greenscreen.png' ,'-i', name, '-filter_complex', "[1:v]scale=w='min(iw,510)':h='min(ih,382)':force_original_aspect_ratio=decrease,pad=512:382:((512-iw)/2)+1:((382-ih)/2)+1:color=black[overlay];[0:v][overlay]overlay=x=140:y=94", '-c:v', 'libx264', '-c:a',  'copy', '-preset', 'ultrafast', 'output_temp.mp4']);
-    await ffmpeg.writeFile("video.mp4", await fetchFile("src/routes/video.mp4"));
-    await ffmpeg.exec(['-i', 'output_temp.mp4' ,'-i', 'video.mp4', '-filter_complex', "[1:v]scale=768:576 [scaledv]; [0:v][0:a][scaledv][1:a]concat=n=2:v=1:a=1[v][a]", '-map', '[v]', '-map',  '[a]', '-preset', 'ultrafast', 'output.mp4']);
+    await ffmpeg.writeFile(DATA.NAME_GREENSCREEN_PNG, await fetchFile(DATA.PATH_GREENSCREEN_PNG));
+    transformState = "1/2"
+    await ffmpeg.exec(['-i', DATA.NAME_GREENSCREEN_PNG ,'-i', name, '-filter_complex', "[1:v]scale=w='min(iw,510)':h='min(ih,382)':force_original_aspect_ratio=decrease,pad=512:382:((512-iw)/2)+1:((382-ih)/2)+1:color=black[overlay];[0:v][overlay]overlay=x=140:y=94", '-c:v', 'libx264', '-c:a',  'copy', '-preset', 'ultrafast', 'output_temp.mp4']);
+    await ffmpeg.writeFile(DATA.NAME_TEMPLATE_VIDEO, await fetchFile(DATA.PATH_TEMPLATE_VIDEO));
+    transformState = "2/2"
+    await ffmpeg.exec(['-i', DATA.NAME_TEMP_OUTPUT ,'-i', DATA.NAME_TEMPLATE_VIDEO, '-filter_complex', "[1:v]scale=768:576 [scaledv]; [0:v][0:a][scaledv][1:a]concat=n=2:v=1:a=1[v][a]", '-map', '[v]', '-map',  '[a]', '-preset', 'ultrafast', 'output.mp4']);
     // const data = await fetchFile("output.mp4");
     const data = await ffmpeg.readFile('output.mp4');
 
 
     videoData = data
     state = "convert.done";
+    transformState = "0/2"
 
     // injectVideo(data)
     // return data as Uint8Array;
@@ -113,9 +168,9 @@
 
   }
 
-  function downloadVideo(data: Uint8Array) {
+  function downloadVideo() {
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([data.buffer], {type: "video/mp4"})) 
+    a.href = URL.createObjectURL(new Blob([videoData.buffer], {type: "video/mp4"})) 
     a.download = "output.mp4";
     setTimeout(()=>{
       a.click();
@@ -124,6 +179,7 @@
   }
 
   function injectVideo(data: any) {
+    return
     // const a = document.createElement('a');
     // let videoObject = URL.createObjectURL(new Blob([data.buffer], {type: "video/mp4"})) 
     // a.download = "output.mp4";
@@ -150,99 +206,106 @@
     state = "loaded";
   }
 
+  async function resetFfmpeg() {
+    state = "loading";
+    ffmpeg.terminate();
+    loadFfmpeg();
+  }
+
   onMount(()=>{
     loadFfmpeg()
   })
   $: console.log({ state })
 </script>
 
-
-<!-- svelte-ignore a11y-no-static-element-interactions -->
-<div
-  on:drop|preventDefault={handleDrop}
-  on:dragover|preventDefault={() => (state === "loaded" ? (state = "hover") : {})} 
-  on:dragleave|preventDefault={() => (state === "hover" ? (state = "loaded") : {})} 
-
-  data-state={state}
-  class="drop box"
-  >
-  <h3>Wrzuć wideło</h3>
-  {#if state === "loading"}
-    <p in:fade>Ładuję ffmpeg...</p>
-  {:else if state === "loaded"}
-    <!-- <p in:fade class="box">Drop a video file here</p> -->
-    <p in:fade>
-      Dropnij wideło albo kliknij by "załonczyć"
-      </p>
-    <!-- <input type="file" accept="video/*" bind:files /> -->
-    <label in:fade for="file-upload" class="custom-file-upload">
-      <input in:fade type="file" id="file-upload" accept="video/*" bind:files>
-      Przeglądaj...
-    </label>
-    {#if !files}
-    <button class="custom-file-upload" disabled>Okiłizuj</button>
-    {:else}
-    <button class="custom-file-upload" style="background-color: orange;" on:click={convertVideo} >Okiłizuj</button>
-    {/if}
-  {:else if state === "covert.start"}
+  <DashedBox>
+    <!-- <Row> -->
+      {#if state === "loading"}
+        <h3>Wrzuć wideło</h3>
+        <p in:fade>Ładuję ffmpeg...</p>
+      {:else if state === "loaded"}
+      <!-- <p in:fade >Drop a video file here</p> -->
+        <h3>Wrzuć wideło</h3>
+        <p in:fade>
+          Dropnij wideło albo kliknij by "załonczyć"
+          </p>
+      <Input type="file" name="file" id="exampleFile" bind:files />
+        <!-- <FormText> -->
+          <!-- This is some placeholder block-level help text for the above input. It's a bit lighter and easily wraps to a new line. -->
+        <!-- </FormText> -->
+        <p in:fade>
+          max. wielkośc 2GB. Testowane wyłącznie na plikach .mp4, .webm o długości poniżej 60 sekund. 1 plik naraz.
+          </p>
+      {#if !files}
+      <Button outline block disabled color="secondary">Okiłizuj</Button>
+      {:else}
+      <Button outline block on:click={convertVideo} color="warning">Okiłizuj</Button>
+      {/if}
+  {:else if state === "convert.start"}
     <h2>
       Kliknij by anulować
     </h2>
-  {:else if state === "covert.done"}
-    <p in:fade>
-      Dropnij wideło albo kliknij by "załonczyć"
-      </p>
-    <!-- <input type="file" accept="video/*" bind:files /> -->
-    <label in:fade for="file-upload" class="custom-file-upload">
-      <input in:fade type="file" id="file-upload" accept="video/*" bind:files>
-      Przeglądaj...
-    </label>
+    <!-- <button>Anuluj (niedizala)</button> -->
+    <Button on:click={resetFfmpeg} block color="danger">Anuluj</Button>
+  {:else if state === "convert.done"}
+      <!-- <p in:fade >Drop a video file here</p> -->
+      <h3>Wrzuć wideło</h3>
+      <p in:fade>
+        Dropnij wideło albo kliknij by "załonczyć"
+        </p>
+    <Input type="file" name="file" bind:files />
+      <!-- <FormText> -->
+        <!-- This is some placeholder block-level help text for the above input. It's a bit lighter and easily wraps to a new line. -->
+      <!-- </FormText> -->
+      <p in:fade>
+        max. wielkośc 2GB. Testowane wyłącznie na plikach .mp4, .webm o długości poniżej 60 sekund.
+        </p>
+    {#if !files}
+    <Button outline block disabled color="secondary">Okiłizuj</Button>
+    {:else}
+    <Button outline block on:click={convertVideo} color="warning">Okiłizuj</Button>
+    {/if}
   {/if}
+</DashedBox>
+
+<Container md>
+  <Row>
+    <Col>
+      <DashedBox>
+        <h3 in:fade>Podgląd</h3>
+        {#if state === "convert.start"}
+          {#if transformState == "1/2"}
+          <p>1/2 Nakładanie na "Okił"-a...</p>
+          {:else if transformState === "2/2"}
+          <p>2/2 Dodawanie reakcji Boczka...</p>
+          {/if}
+        <h2>{$progress.toFixed(0)} %</h2>
+        {:else if state === "convert.done"}
+        <Container>
+          <Row>
+            <Col>
+              <div id="video-container">
+                <video src={URL.createObjectURL(new Blob([videoData.buffer], { type: 'video/mp4' }))} controls autoplay muted></video>
+              </div>
+            </Col>
+          </Row>
+        </Container>  
+      
+        <Button outline block on:click={downloadVideo} color="success">Pobierz</Button>
+      
+      {:else if state === "convert.error"}
+        <p in:fade style="color:red">Error: {error}</p>
+      {:else}
+        <p in:fade>(Z pustego to i Salamon nie naleje)</p>
+      {/if}
+      </DashedBox>
+    </Col>
+  </Row>
+</Container>
 
 
-</div>
-
-<div class="box" id="preview">
-  <h3 in:fade>Podgląd</h3>
-  {#if state === "covert.start"}
-  <!-- Add proggress bar -->
-  <!-- <ProgressBar progress={progress}></ProgressBar> -->
-  <!-- <div class="progress" style:--progress={$progress}> -->
-    <!-- {$progress.toFixed(0)} -->
-  <!-- </div> -->
-  <h2>{$progress.toFixed(0)} %</h2>
-{:else if state === "convert.done"}
-  <!-- <div use:confetti></div> -->
-  <!-- <p in:fade>Done!! 🎉</p> -->
-  <video src={URL.createObjectURL(new Blob([videoData.buffer], { type: 'video/mp4' }))} controls autoplay muted></video>
-  <!-- <video ></video> -->
-  <!-- <video src={URL.createObjectURL(new Blob([videoData.buffer]))} controls autoplay muted></video> -->
-
-{:else if state === "convert.error"}
-  <p in:fade style="color:red">Error: {error}</p>
-{:else}
-  <!-- <Image src="src/routes/ferdek.jpeg" /> -->
-  <p in:fade>(Z pustego to i Salamon nie naleje)</p>
-{/if}
-
-</div>
 <style>
-	.box {
-	  width: 100%;
-	  height: 200px;
-	  display: flex;
-    flex-direction: column;
-	  justify-content: center;
-	  align-items: center;
-	  /* color: var(--); */
-	  font-size: 16px;
-	  /* background-color: #000; */
-	  border: 2px dashed var(--txt-clr);
-	  border-radius: 5px;
-	  
-    margin-top: 20px;
-    margin-bottom: 20px;
-	}
+
   .drop {
     cursor: pointer;
   }
@@ -252,47 +315,23 @@
     transform: scale(1.05); /* Zoom in by 5% on hover */
   }
 
-  #preview {
-    height: auto;
-  }
-
-  .custom-file-upload {
-  /* Base styles (similar to Bootstrap button) */
-  display: inline-block;
-  padding: 0.5rem 1rem;
-  border: 1px solid #3f3d3d; /* Adjust border color as needed */
-  border-radius: 0.25rem; /* Adjust border-radius as needed */
-  cursor: pointer;
-  text-align: center;
-  font-weight: bold; /* Simulate Bootstrap button weight */
-  color: #000000; /* White text for primary button */
-  background-color: #f9d300; /* Bootstrap primary color */
-  transition: background-color 0.2s ease-in-out;
-  margin-top: 5px;
-  margin-bottom: 5px;
-  }
-
   /* Hide the default browser file input */
-  input[type="file"] {
-    display: none;
+  Input[type="file"] {
+    display: none !important;
   }
 
-  /* Optional hover and active states (similar to Bootstrap) */
-  .custom-file-upload:hover {
-    background-color: #f5e589; /* Darken on hover */
-  }
-
-  /* Disabled state styles */
-  .custom-file-upload:disabled {
-  background-color: #ccc; /* Light gray for disabled state */
-  cursor: not-allowed; /* Indicate disabled behavior */
-  opacity: 0.65; /* Reduce opacity for disabled look */
-}
-
-video {
-      height: auto;
-      width: 100%;
+  video {
+      max-height: 400px;
+      width: auto;
       margin: 10px
+      
+    }
+
+    #video-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
     }
 
   </style>
