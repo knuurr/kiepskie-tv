@@ -339,11 +339,11 @@
   }
 
   video {
-      max-height: 400px;
-      width: auto;
-      margin: 10px
-      
-    }
+    width: 100%;
+    height: auto;
+    margin: 10px
+  }
+
 
     #video-container {
       display: flex;
