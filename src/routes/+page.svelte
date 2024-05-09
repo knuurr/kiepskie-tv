@@ -3,14 +3,12 @@
 	import { fade } from "svelte/transition";
   import { onMount } from "svelte";
   import { FFmpeg } from "@ffmpeg/ffmpeg";
+  import saveAs from 'file-saver';
   // import { fetchFile, toBlobURL } from '@ffmpeg/util';
   // import { toBlobURL } from '@ffmpeg/util';
 
-  // import Image from './Image.svelte';
-  // import Video from './Video.svelte';
-  // import ProgressBar from "./ProgressBar.svelte";
   import DashedBox from "./DashedBox.svelte";
-  import * as DATA from './Constans.svelte'; // Import all from data.js
+  import * as DATA from './Constans.svelte'; // reusable constans
 
   import { Fade, Container, Input, Button, Col, Row } from '@sveltestrap/sveltestrap';
   
@@ -40,6 +38,7 @@
   }
   
   // Re-implementation
+  // Take straight from ffmpeg-wasm due to import issue
   // https://github.com/ffmpegwasm/ffmpeg.wasm/issues/603
   const readFromBlobOrFile = (blob) => new Promise((resolve, reject) => {
     const fileReader = new FileReader();
@@ -58,20 +57,9 @@
     fileReader.readAsArrayBuffer(blob);
 });
 
-//   async function fetchFile(file) {
-//     return new Promise(resolve => {
-//         const fileReader = new FileReader();
-//         console.log(file)
-//         fileReader.onload = () => {
-//             const {result} = fileReader;
-//             if (result instanceof ArrayBuffer) {
-//                 resolve(new Uint8Array(result));
-//             }
-//         }
-//         fileReader.readAsArrayBuffer(file);
-//     })
-// }
-
+  // Re-implementation 
+  // Take straight from ffmpeg-wasm due to import issue
+  // https://github.com/ffmpegwasm/ffmpeg.wasm/issues/603
   const fetchFile = async (file) => {
       let data;
       if (typeof file === "string") {
@@ -120,6 +108,7 @@
   }
 
   async function convertVideo() {
+    console.log(files)
     state = "convert.start";
     // const videData = await readFile(files[0]);
     const { name } = files[0];
@@ -144,55 +133,29 @@
     // return data as Uint8Array;
   }
 
-  async function handleDrop(event: DragEvent) {
-    if(!event.dataTransfer) return;
-    const files = event.dataTransfer.files;
-    if( files.length > 1 ) {
-      error = "Upload one file!";
-      state = "convert.error";
-      return;
-    }
-    const [file] = files;
-    // const { type } = file;
-    // if(type !== "video/webm") {
-    //   error = "File must be webm";
-    //   state = "convert.error"
-    //   return;
-    // }
+  // async function handleDrop(event: DragEvent) {
+  //   if(!event.dataTransfer) return;
+  //   const files = event.dataTransfer.files;
+  //   if( files.length > 1 ) {
+  //     error = "Upload one file!";
+  //     state = "convert.error";
+  //     return;
+  //   }
+  //   const [file] = files;
+
+  //   state = "convert.ready"
 
 
+  // }
 
-    state = "convert.ready"
-    // const data = await convertVideo(file);
-    // downloadVideo(data);
-    // injectVideo(data);
-
-  }
 
   function downloadVideo() {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([videoData.buffer], {type: "video/mp4"})) 
-    a.download = "output.mp4";
-    setTimeout(()=>{
-      a.click();
-      state = "convert.done"
-    }, 1000)
-  }
+    const blob = new Blob([videoData.buffer], { type: "video/mp4" });
+    const fileName = "kiepskietv-" + files[0].name + ".mp4"
 
-  function injectVideo(data: any) {
-    return
-    // const a = document.createElement('a');
-    // let videoObject = URL.createObjectURL(new Blob([data.buffer], {type: "video/mp4"})) 
-    // a.download = "output.mp4";
-    // setTimeout(()=>{
-    //   a.click();
-    //   state = "convert.done"
-    // }, 1000)
-
-    // state = "convert.done"
+    saveAs(blob, fileName);  // Trigger file picker and save
 
   }
-
 
   async function loadFfmpeg() {
     const baseUrl = "https://unpkg.com/@ffmpeg/core@0.12.4/dist/esm";
@@ -225,7 +188,6 @@
     Zobacz
   </Button>
   <Fade {isOpen}>
-  <!-- <p>Lol</p> -->
   <Container>
     <Row>
       <Col>
@@ -240,20 +202,16 @@
 </Container>
 <Container>
   <DashedBox>
-    <!-- <Row> -->
       {#if state === "loading"}
         <h3>Wrzuć wideło</h3>
         <p in:fade>Ładuję ffmpeg...</p>
       {:else if state === "loaded"}
-      <!-- <p in:fade >Drop a video file here</p> -->
         <h3>Wrzuć wideło</h3>
         <p in:fade>
           Dropnij wideło albo kliknij by "załonczyć"
           </p>
       <Input type="file" name="file" id="exampleFile" bind:files />
-        <!-- <FormText> -->
-          <!-- This is some placeholder block-level help text for the above input. It's a bit lighter and easily wraps to a new line. -->
-        <!-- </FormText> -->
+
         <p in:fade>
           max. wielkość 2GB. Testowane wyłącznie na plikach .mp4, .webm o długości poniżej 60 sekund. 1 plik naraz.
           </p>
@@ -266,18 +224,15 @@
     <h2>
       Kliknij by anulować
     </h2>
-    <!-- <button>Anuluj (niedizala)</button> -->
     <Button on:click={resetFfmpeg} block color="danger">Anuluj</Button>
   {:else if state === "convert.done"}
-      <!-- <p in:fade >Drop a video file here</p> -->
+
       <h3>Wrzuć wideło</h3>
       <p in:fade>
         Dropnij wideło albo kliknij by "załonczyć"
         </p>
     <Input type="file" name="file" bind:files />
-      <!-- <FormText> -->
-        <!-- This is some placeholder block-level help text for the above input. It's a bit lighter and easily wraps to a new line. -->
-      <!-- </FormText> -->
+
       <p in:fade>
         max. wielkośc 2GB. Testowane wyłącznie na plikach .mp4, .webm o długości poniżej 60 sekund.
         </p>
@@ -291,8 +246,6 @@
 </Container>
 
 <Container md>
-  <!-- <Row> -->
-    <!-- <Col> -->
       <DashedBox>
         <h3 in:fade>Twoje wideo</h3>
         {#if state === "convert.start"}
@@ -304,16 +257,14 @@
         <h2>{$progress.toFixed(0)} %</h2>
         {:else if state === "convert.done"}
         <Container sm>
-          <!-- <Row> -->
-            <!-- <Col> -->
+
               <div id="video-container">
                 <video src={URL.createObjectURL(new Blob([videoData.buffer], { type: 'video/mp4' }))} controls autoplay muted></video>
               </div>
-            <!-- </Col> -->
-          <!-- </Row> -->
+
         </Container>  
       
-        <Button outline block on:click={downloadVideo} color="success">Pobierz</Button>
+        <Button block on:click={downloadVideo} color="success">Zapisz wideo</Button>
       
       {:else if state === "convert.error"}
         <p in:fade style="color:red">Error: {error}</p>
@@ -321,8 +272,7 @@
         <p in:fade>(Z pustego to i Salamon nie naleje)</p>
       {/if}
       </DashedBox>
-    <!-- </Col> -->
-  <!-- </Row> -->
+
 </Container>
 
 <style>
