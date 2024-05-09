@@ -3,9 +3,9 @@
     --txt-clr: hsl(220 10% 98%);
 }
 
-html, body {
-    height: 100%;
-}
+/* html, body { */
+    /* height: 100%; */
+/* } */
 
 body {
     /* display: flex; */

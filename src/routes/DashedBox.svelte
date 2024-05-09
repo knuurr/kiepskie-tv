@@ -6,8 +6,8 @@
   </script>
   
   <style>
-	.container  {
-	  width: 100%;
+	#dashed-box  {
+	  width: auto;
 	  min-height: 200px;
 	  display: flex;
 	flex-direction: column;
@@ -23,7 +23,7 @@
 	padding: 20px;
 	}
 
-	.container > * {
+	#dashed-box > * {
 		margin-top: 15px;
 		margin-bottom: 15px;
 	}
@@ -31,7 +31,7 @@
 
   </style>
   
-  <div class="container">
+  <div id="dashed-box">
 		<slot />
     
   </div>

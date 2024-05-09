@@ -218,6 +218,7 @@
   })
   $: console.log({ state })
 </script>
+<Container sm>
 <DashedBox>
   <h3 in:fade>Przykładowy efekt obróbki</h3>
   <Button color="secondary" on:click={() => (isOpen = !isOpen)}>
@@ -236,7 +237,8 @@
   </Container>  
   </Fade>
 </DashedBox>
-
+</Container>
+<Container>
   <DashedBox>
     <!-- <Row> -->
       {#if state === "loading"}
@@ -286,10 +288,11 @@
     {/if}
   {/if}
 </DashedBox>
+</Container>
 
 <Container md>
-  <Row>
-    <Col>
+  <!-- <Row> -->
+    <!-- <Col> -->
       <DashedBox>
         <h3 in:fade>Twoje wideo</h3>
         {#if state === "convert.start"}
@@ -300,14 +303,14 @@
           {/if}
         <h2>{$progress.toFixed(0)} %</h2>
         {:else if state === "convert.done"}
-        <Container>
-          <Row>
-            <Col>
+        <Container sm>
+          <!-- <Row> -->
+            <!-- <Col> -->
               <div id="video-container">
                 <video src={URL.createObjectURL(new Blob([videoData.buffer], { type: 'video/mp4' }))} controls autoplay muted></video>
               </div>
-            </Col>
-          </Row>
+            <!-- </Col> -->
+          <!-- </Row> -->
         </Container>  
       
         <Button outline block on:click={downloadVideo} color="success">Pobierz</Button>
@@ -318,8 +321,8 @@
         <p in:fade>(Z pustego to i Salamon nie naleje)</p>
       {/if}
       </DashedBox>
-    </Col>
-  </Row>
+    <!-- </Col> -->
+  <!-- </Row> -->
 </Container>
 
 <style>
@@ -339,7 +342,7 @@
   }
 
   video {
-    width: 100%;
+    max-width: 80%;
     height: auto;
     margin: 10px
   }

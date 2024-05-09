@@ -4,6 +4,10 @@
     export const NAME_GREENSCREEN_PNG = 'greenscreen.png'
     export const NAME_TEMP_OUTPUT = 'output_temp.mp4'
     export const NAME_TEMPLATE_VIDEO = 'video.mp4' 
+    export const APP_TITLE2 = '📺 Kiepskie TV';
+    export const APP_TITLE = 'Kiepskie TV 🍻';
+	export const APP_DESC = 'Zobacz swoje wideo oczami Ferdka z zapierdziałego fotela';
+
     // Paths
     export const PATH_TEMPLATE_VIDEO = '/video.mp4'
     export const PATH_GREENSCREEN_PNG = '/greenscreen.png'

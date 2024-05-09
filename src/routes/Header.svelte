@@ -6,7 +6,7 @@
 </script>
   
 <style>
-	.container {
+	div {
 	  display: flex;
 	  flex-direction: column;
 	  align-items: center;
@@ -21,7 +21,7 @@
 	}
   </style>
   
-  <div class="container">
+  <div>
 	<header>
 	  <h1>{title}</h1>
 	  <p>{desc}</p>

@@ -6,40 +6,26 @@
 	// import UploadFile from './UploadFile.svelte';
 	import Footer from './Footer.svelte';
   	// import Counter from './Counter.svelte';
+	import {APP_TITLE, APP_DESC, APP_TITLE2} from './Constans.svelte'; // Import all from data.js
 
-	export let title = 'Kiepskie TV 🍻';
-	export let desc = 'Zobacz swoje wideo oczami Ferdka z zapierdziałego fotela';
 </script>
 <svelte:head>
-    <title>Kiepskie TV</title>
+    <title>{APP_TITLE2}</title>
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 </svelte:head>
 
 <Styles />
 
-<Container fluid>
-	<Row>
-		<Col>
-		  <!-- <Button color="primary" outline>Hello World!</Button> -->
-		  <Header title={title} desc={desc}/>
-		</Col>
-	</Row>
-	<Row>
-		<Col>
-			<slot />
-		</Col>
-	</Row>
-	<Row>
-		<Container sm>
-			<Row>
-				<Col>
-					<Footer></Footer>
-				</Col>
-			</Row>
-		</Container>
-	</Row>
+<Container sm>
+	<Header title={APP_TITLE} desc={APP_DESC}/>
+	<slot />
+	<Footer></Footer>
 </Container>
+
 
 <style>
 	@import 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css';
+	/* #container {
+		max-width: 100px;
+	} */
   </style>
