@@ -138,6 +138,7 @@
     transformState = "0/2";
     state = "convert.done";
     console.log("Finishing batch video converting");
+    files = undefined;
   }
 
   async function convertVideo(file) {
@@ -247,10 +248,11 @@
 <!-- </Container> -->
 <!-- <Container> -->
 <DashedBox>
+  <!-- {#if state === "loading"} -->
   {#if state === "loading"}
     <h3>Wrzuć wideło</h3>
     <p in:fade>Ładuję ffmpeg...</p>
-  {:else if state === "loaded"}
+  {:else if state === "loaded" || state === "convert.done"}
     <h3>Wrzuć wideło</h3>
     <p in:fade>Dropnij wideło albo kliknij by "załonczyć"</p>
     <InputGroup theme="dark">
@@ -304,23 +306,25 @@
     </Container>
   {:else if state === "convert.start"}
     <h2>Kliknij by anulować</h2>
-    <Button on:click={resetFfmpeg} block color="danger">Anuluj</Button>
-  {:else if state === "convert.done"}
-    <h3>Wrzuć wideło</h3>
-    <p in:fade>Dropnij wideło albo kliknij by "załonczyć"</p>
-    <Input type="file" name="file" multiple bind:files />
+    <Container>
+      <Button on:click={resetFfmpeg} block color="danger">Anuluj</Button>
+    </Container>
+    <!-- {:else if state === "convert.done"} -->
+    <!-- <h3>Wrzuć wideło</h3> -->
+    <!-- <p in:fade>Dropnij wideło albo kliknij by "załonczyć"</p> -->
+    <!-- <Input type="file" name="file" multiple bind:files /> -->
 
-    <p in:fade>
-      max. wielkośc 2GB. Testowane wyłącznie na plikach .mp4, .webm o długości
-      poniżej 60 sekund.
-    </p>
-    {#if !files}
-      <Button outline block disabled color="secondary">Okiłizuj</Button>
-    {:else}
-      <Button block on:click={convertVideos(files)} color="warning"
-        >Okiłizuj</Button
-      >
-    {/if}
+    <!-- <p in:fade> -->
+    <!-- max. wielkośc 2GB. Testowane wyłącznie na plikach .mp4, .webm o długości -->
+    <!-- poniżej 60 sekund. -->
+    <!-- </p> -->
+    <!-- {#if !files} -->
+    <!-- <Button outline block disabled color="secondary">Okiłizuj</Button> -->
+    <!-- {:else} -->
+    <!-- <Button block on:click={convertVideos(files)} color="warning" -->
+    <!-- >Okiłizuj</Button -->
+    <!-- > -->
+    <!-- {/if} -->
   {/if}
 </DashedBox>
 <!-- </Container> -->
@@ -340,28 +344,32 @@
     {#if videoDataList.length > 0}
       <Container fluid>
         <Accordion stayOpen={true} theme="dark">
-          <Container fluid>
-            {#each videoDataList as item, i}
-              <AccordionItem active={i === 0 ? true : false}>
-                <p class="m-1" slot="header">
-                  ({i + 1}/{videoDataList.length}) {item.videoName}
-                </p>
+          <!-- <Container fluid> -->
+          {#each videoDataList as item, i}
+            <AccordionItem active={i === 0 ? true : false}>
+              <p class="m-1" slot="header">
+                ({i + 1}/{videoDataList.length}) {item.videoName}
+              </p>
 
-                <div id="video-container">
-                  <video
-                    src={item.videoBlobURL}
-                    controls
-                    autoplay={i === 0 ? true : false}
-                  ></video>
-                </div>
-                <Button
-                  block
-                  on:click={() => downloadVideo(item.videoBlob, item.videoName)}
-                  color="success">Zapisz #{i + 1}</Button
-                >
-              </AccordionItem>
-            {/each}
-          </Container>
+              <div id="video-container">
+                <video
+                  src={item.videoBlobURL}
+                  controls
+                  autoplay={i === 0 ? true : false}
+                ></video>
+              </div>
+              <Button
+                block
+                on:click={() => downloadVideo(item.videoBlob, item.videoName)}
+                color="success">Zapisz #{i + 1}</Button
+              >
+              <p>
+                Nie wyskoczyło okienko? Sprawdź powiadomienia albo pobrane w
+                przeglądarce
+              </p>
+            </AccordionItem>
+          {/each}
+          <!-- </Container> -->
         </Accordion>
       </Container>
     {/if}
