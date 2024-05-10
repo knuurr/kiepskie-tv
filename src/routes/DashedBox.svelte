@@ -26,10 +26,10 @@
 	padding-right: 8px;
 	}
 
-	/* #dashed-box > * { */
-		/* margin-top: 15px; */
-		/* margin-bottom: 15px; */
-	/* } */
+	#dashed-box > * {
+		margin-top: 1.5rem;
+		margin-bottom: 1.5rem;
+	}
 
 
   </style>

@@ -10,7 +10,7 @@
   import DashedBox from "./DashedBox.svelte";
   import * as DATA from './Constans.svelte'; // reusable constans
 
-  import { FormText, Badge, Fade, Container, Input, Button, Col, Row, Accordion, AccordionItem } from '@sveltestrap/sveltestrap';
+  import { InputGroup, FormText, Badge, Fade, Container, Input, Button, Col, Row, Accordion, AccordionItem } from '@sveltestrap/sveltestrap';
   
 
 
@@ -18,7 +18,6 @@
   type typeTransformState = "1/2" | "2/2" | "0/2" 
 
   let isOpen = false
-  // let files = [];
   let files: FileList;
   // let videoData;
   let videoDataList: Array = [];
@@ -31,13 +30,7 @@
   let ffmpeg: FFmpeg;
   let progress = tweened(0);
 
-  // if (files) {
-  //   if( files.length > 1 ) {
-  //   error = "Upload one file!";
-  //   state = "convert.error";
-  //   // return;
-  //   }  
-  // }
+
 
   const removeFile = (index) => {
 
@@ -48,11 +41,6 @@
     files = _dataTransfer.files;
 }
 
-// Usage
-// const updatedFileList = removeItemFromFileList(originalFileList, 2); // Remove item at index 2
-
-
-  // };
   
   // Re-implementation
   // Take straight from ffmpeg-wasm due to import issue
@@ -144,11 +132,6 @@
 }
 
   async function convertVideo(file) {
-    // console.log(files)
-    // state = "convert.start";
-    // const videData = await readFile(files[0]);
-    // const { name } = files[0];
-    // const { name } = file.name;
     await ffmpeg.writeFile(file.name, await fetchFile(file));
     // await ffmpeg.writeFile("input.webm", videData);
     // await ffmpeg.exec(["-i", "input.webm", "output.mp4"]);
@@ -158,37 +141,13 @@
     await ffmpeg.writeFile(DATA.NAME_TEMPLATE_VIDEO, await fetchFile(DATA.PATH_TEMPLATE_VIDEO));
     transformState = "2/2"
     await ffmpeg.exec(['-i', DATA.NAME_TEMP_OUTPUT ,'-i', DATA.NAME_TEMPLATE_VIDEO, '-filter_complex', "[1:v]scale=768:576 [scaledv]; [0:v][0:a][scaledv][1:a]concat=n=2:v=1:a=1[v][a]", '-map', '[v]', '-map',  '[a]', '-preset', 'ultrafast', 'output.mp4']);
-    // const data = await fetchFile("output.mp4");
+
     const data = await ffmpeg.readFile('output.mp4');
 
-
-    // videoData = data
-    // videoDataList.push({videoName: name, videoBlobURL: URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }))})
     const blob = new Blob([data.buffer], { type: 'video/mp4' })
     videoDataList.push({videoName: file.name, videoBlob: blob, videoBlobURL: URL.createObjectURL(blob)})
 
-    // state = "convert.done";
-    // transformState = "0/2"
-
-    // injectVideo(data)
-    // return data as Uint8Array;
   }
-
-  // async function handleDrop(event: DragEvent) {
-  //   if(!event.dataTransfer) return;
-  //   const files = event.dataTransfer.files;
-  //   if( files.length > 1 ) {
-  //     error = "Upload one file!";
-  //     state = "convert.error";
-  //     return;
-  //   }
-  //   const [file] = files;
-
-  //   state = "convert.ready"
-
-
-  // }
-
 
   function downloadVideo(fileBlob, fileName) {
     // const blob = new Blob([videoData.buffer], { type: "video/mp4" });
@@ -221,41 +180,25 @@
     loadFfmpeg()
   })
   $: console.log({ state })
+
 </script>
 <Container sm={true}>
 <DashedBox>
-  <h3 in:fade>Zobacz przykład wideo</h3>
+  <h3 in:fade>Jak to wygląda?</h3>
   <Container>
   <Accordion theme="dark">
     <Container sm>
     <AccordionItem>
-      <p class="m-0" slot="header">Pokaż</p>
-      
-        <!-- <Row> -->
-          <!-- <Col> -->
+      <p class="m-0" slot="header">Zobacz przykład</p>
+
             <div id="video-container">
               <video src={DATA.EXAMPLE_URL} controls></video>
             </div>
-          <!-- </Col> -->
-        <!-- </Row> -->
-      
+
     </AccordionItem>
   </Container>  
   </Accordion>
-  <!-- <Button color="secondary" on:click={() => (isOpen = !isOpen)}> -->
-    <!-- { isOpen ? 'Ukryj' : 'Zobacz' } -->
-  <!-- </Button> -->
-  <!-- <Fade {isOpen}> -->
-  <!-- <Container> -->
-    <!-- <Row> -->
-      <!-- <Col> -->
-        <!-- <div id="video-container"> -->
-          <!-- <video src={DATA.EXAMPLE_URL} controls></video> -->
-        <!-- </div> -->
-      <!-- </Col> -->
-    <!-- </Row> -->
-  <!-- </Container>   -->
-  <!-- </Fade> -->
+
 </Container>
 </DashedBox>
 </Container>
@@ -269,22 +212,33 @@
         <p in:fade>
           Dropnij wideło albo kliknij by "załonczyć"
           </p>
-        <Input type="file" name="file" id="exampleFile" multiple bind:files />
+      <InputGroup theme="dark">
+        <Container>
+        <Input type="file" bsSize="lg" name="file" multiple bind:files />
         <FormText inline={true}>
           max. wielkość 2GB. Testowane na plikach .mp4, .webm poniżej 60 sekund.
         </FormText>
-          {#if files}
+      </Container>
+        
+      </InputGroup>
+
+        {#if files}
           {#if files.length > 0}
+          <Container fluid>
+          <Accordion theme="dark">
+          <AccordionItem >
+            <p class="m-0" slot="header">Pliki</p>
           {#each Array.from(files) as file}
-          <Container sm>
-            <Row>
-            <Button block={false} color="dark" key={file.index} on:click={removeFile(file.index)}>
+
+            <Button block={false} color="info" size="sm" outline key={file.index} on:click={() => removeFile(file.index)}>
               {file.name}
               <Badge color="danger">x</Badge>
             </Button>
-          </Row>
-          </Container>
+
             {/each}
+          </AccordionItem>
+          </Accordion>
+        </Container>
     {/if}
           {/if}
           
@@ -304,7 +258,6 @@
       <p in:fade>
         Dropnij wideło albo kliknij by "załonczyć"
         </p>
-    <!-- <Input type="file" name="file" bind:files /> -->
     <Input type="file" name="file" multiple bind:files />
 
 
@@ -341,14 +294,10 @@
             {#each videoDataList as item, i}
               <AccordionItem active={i === 0 ? true : false}>
                 <p class="m-1" slot="header">({i+1}/{videoDataList.length}) {item.videoName}</p>  
-                <!-- <Container fluid> -->
-  
+
                 <div id="video-container">
                   <video src={item.videoBlobURL} controls autoplay={i === 0 ? true : false }></video>
-                </div>
-  
-                <!-- </Container> -->
-  
+                </div>  
                 <Button block on:click={ () => downloadVideo(item.videoBlob, item.videoName)} color="success">Zapisz #{i+1}</Button>
               </AccordionItem>
             {/each}
@@ -362,15 +311,6 @@
           <p in:fade>(Z pustego to i Salamon nie naleje)</p>
         {/if}
 
-        <!-- <Container sm> -->
-
-              <!-- <div id="video-container"> -->
-                <!-- <video src={URL.createObjectURL(new Blob([videoData.buffer], { type: 'video/mp4' }))} controls autoplay muted></video> -->
-              <!-- </div> -->
-
-        <!-- </Container>   -->
-      
-        <!-- <Button block on:click={downloadVideo} color="success">Zapisz wideo</Button> -->
       </DashedBox>
 
 </Container>
