@@ -1,7 +1,7 @@
 <script lang="ts">
   import { tweened } from "svelte/motion";
   import { fade } from "svelte/transition";
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import { FFmpeg } from "@ffmpeg/ffmpeg";
   import saveAs from "file-saver";
   // import { fetchFile, toBlobURL } from '@ffmpeg/util';
@@ -14,14 +14,15 @@
     InputGroup,
     FormText,
     Badge,
-    Fade,
+    // Fade,
     Container,
     Input,
     Button,
-    Col,
-    Row,
+    // Col,
+    // Row,
     Accordion,
     AccordionItem,
+    Table,
   } from "@sveltestrap/sveltestrap";
 
   type State =
@@ -33,7 +34,7 @@
     | "convert.done";
   type typeTransformState = "1/2" | "2/2" | "0/2";
 
-  let isOpen = false;
+  // let isOpen = false;
   let files: FileList;
   // let videoData;
   let videoDataList: Array = [];
@@ -41,10 +42,89 @@
   let state: State = "loading";
   let transformState: typeTransformState = "0/2";
 
+  // let transformSettings = {
+  //   addBoczek: true,
+  //   addIntro: false,
+  // };
+  let transformSettings = {};
+
   let error = "";
 
   let ffmpeg: FFmpeg;
   let progress = tweened(0);
+
+  function getVideoDuration(file) {
+    const video = document.createElement("video");
+    const objectURL = URL.createObjectURL(file);
+
+    video.src = objectURL;
+
+    return new Promise((resolve, reject) => {
+      video.addEventListener("loadedmetadata", () => {
+        const duration = video.duration;
+        URL.revokeObjectURL(objectURL);
+        video.remove();
+        resolve(duration);
+      });
+
+      video.addEventListener("error", (error) => {
+        URL.revokeObjectURL(objectURL);
+        video.remove();
+        reject(error);
+      });
+    });
+  }
+
+  // Function to reset settings to default values
+  function resetSettings() {
+    transformSettings = { ...DATA.DEFAULT_SETTINGS };
+    saveSettings(transformSettings);
+    console.log("Settings reset to default:", transformSettings);
+  }
+  // Function to save settings to local storage
+  function saveSettings(settings) {
+    localStorage.setItem("transformSettings", JSON.stringify(settings));
+    console.log("Settings saved:", settings);
+  }
+
+  // Function to update settings and save to local storage
+  function updateSettings(key, value) {
+    console.log("Updating settings:", key, value);
+    transformSettings = { ...transformSettings, [key]: value };
+    saveSettings(transformSettings);
+  }
+
+  // Function to handle UI changes
+  function handleSwitchChange(key, event) {
+    updateSettings(key, event.target.checked);
+  }
+
+  function loadSettings() {
+    const savedSettings = localStorage.getItem("transformSettings");
+    if (savedSettings) {
+      try {
+        const parsedSettings = JSON.parse(savedSettings);
+        const mergedSettings = { ...DATA.DEFAULT_SETTINGS };
+
+        for (const key in DATA.DEFAULT_SETTINGS) {
+          if (key in parsedSettings) {
+            mergedSettings[key] = parsedSettings[key];
+          } else {
+            console.warn(
+              `Setting for key "${key}" not found in saved settings. Defaulting to default value.`,
+            );
+          }
+        }
+
+        return mergedSettings;
+      } catch (error) {
+        console.error("Error parsing saved settings:", error.message);
+        return DATA.DEFAULT_SETTINGS;
+      }
+    } else {
+      return DATA.DEFAULT_SETTINGS;
+    }
+  }
 
   // Function for removing file inputs
   // Used when clicked on button representing individual button
@@ -105,30 +185,6 @@
     return new Uint8Array(data);
   };
 
-  // async function readFile(file): Promise<Uint8Array> {
-  //   return new Promise((resolve) => {
-  //     const fileReader = new FileReader();
-  //     fileReader.onload = (e) => {
-  //       const { result } = fileReader;
-  //       if (result instanceof ArrayBuffer) {
-  //         resolve(new Uint8Array(result));
-  //       }
-  //     };
-
-  //     fileReader.onerror = (e) => {
-  //       error = "Error reading file";
-  //       state = "convert.error";
-  //       resolve(null);
-  //       console.error(e);
-  //     };
-
-  //     fileReader.readAsArrayBuffer(file);
-  //   });
-  // }
-
-  // Function which loops over list of File video
-  // Which
-  //
   async function convertVideos(files: FileList) {
     console.log("Started batch video converting");
     console.log(files);
@@ -140,18 +196,24 @@
     for (const file of files) {
       // Your code to be executed for each element
       console.log("About to convert: " + file.name);
-      await convertVideo(file);
+      const duration = await getVideoDuration(file);
+      console.log("Video duration:", duration);
+      await convertVideo(file, duration);
     }
     console.log("Converts doen. Setting state.");
-    console.log(videoDataList);
+    // console.log(videoDataList);
     transformState = "0/2";
     state = "convert.done";
     console.log("Finishing batch video converting");
-    files = undefined;
+    const _dataTransfer = new DataTransfer();
+    // filesArr.forEach((_file) => _dataTransfer.items.add(_file));
+    files = _dataTransfer.files;
   }
 
   // Apply ffmpeg logic to individual input file
-  async function convertVideo(file) {
+  async function convertVideo(file, duration) {
+    let _i = 0;
+    let outputs = [];
     await ffmpeg.writeFile(file.name, await fetchFile(file));
     // await ffmpeg.writeFile("input.webm", videData);
     // await ffmpeg.exec(["-i", "input.webm", "output.mp4"]);
@@ -166,37 +228,89 @@
       "-i",
       file.name,
       "-filter_complex",
-      "[1:v]scale=w='min(iw,510)':h='min(ih,382)':force_original_aspect_ratio=decrease,pad=512:382:((512-iw)/2)+1:((382-ih)/2)+1:color=black[overlay];[0:v][overlay]overlay=x=140:y=94",
+      DATA.FFMPEG_FILTER_ADD_GREENSCREEN,
       "-c:v",
       "libx264",
       "-c:a",
       "copy",
       "-preset",
       "ultrafast",
-      "output_temp.mp4",
+      // `${DATA.NAME_TEMP_OUTPUT}-${_i}${DATA.NAME_TEMP_OUTPUT_FORMAT}`,
+      `output${_i}.mp4`,
     ]);
-    await ffmpeg.writeFile(
-      DATA.NAME_TEMPLATE_VIDEO,
-      await fetchFile(DATA.PATH_TEMPLATE_VIDEO),
-    );
-    transformState = "2/2";
-    await ffmpeg.exec([
-      "-i",
-      DATA.NAME_TEMP_OUTPUT,
-      "-i",
-      DATA.NAME_TEMPLATE_VIDEO,
-      "-filter_complex",
-      "[1:v]scale=768:576 [scaledv]; [0:v][0:a][scaledv][1:a]concat=n=2:v=1:a=1[v][a]",
-      "-map",
-      "[v]",
-      "-map",
-      "[a]",
-      "-preset",
-      "ultrafast",
-      "output.mp4",
-    ]);
+    outputs.push(`output${_i}.mp4`);
+    _i++;
+    // await ffmpeg.readFile(DATA.NAME_TEMP_OUTPUT);
 
-    const data = await ffmpeg.readFile("output.mp4");
+    transformState = "2/2";
+
+    if (transformSettings.addBoczek) {
+      console.log("Appending Boczek reaction");
+      await ffmpeg.writeFile(
+        DATA.NAME_TEMPLATE_VIDEO,
+        await fetchFile(DATA.PATH_TEMPLATE_VIDEO),
+      );
+      await ffmpeg.exec([
+        "-i",
+        // DATA.NAME_TEMP_OUTPUT,
+        // `${DATA.NAME_TEMP_OUTPUT}-${_i - 1}${DATA.NAME_TEMP_OUTPUT_FORMAT}`,
+        outputs[_i - 1],
+        "-i",
+        DATA.NAME_TEMPLATE_VIDEO,
+        "-filter_complex",
+        DATA.FFMPEG_FILTER_ADD_BOCZEK,
+        "-map",
+        "[v]",
+        "-map",
+        "[a]",
+        "-preset",
+        "ultrafast",
+        // DATA.NAME_TEMP_OUTPUT + _i + DATA.NAME_TEMP_OUTPUT_FORMAT,
+        // `${DATA.NAME_TEMP_OUTPUT}-${_i}${DATA.NAME_TEMP_OUTPUT_FORMAT}`,
+        `output${_i}.mp4`,
+      ]);
+      // await ffmpeg.readFile(DATA.NAME_TEMP_OUTPUT);
+      outputs.push(`output${_i}.mp4`);
+
+      _i++;
+    }
+    // Add intro sound
+    if (transformSettings.addIntro) {
+      console.log("Adding intro audio sound");
+      await ffmpeg.writeFile(
+        // DATA.NAME_TEMPLATE_VIDEO,
+        DATA.NAME_INTRO_AUDIO,
+        await fetchFile(DATA.NAME_INTRO_AUDIO),
+      );
+      await ffmpeg.exec([
+        "-i",
+        // DATA.NAME_TEMP_OUTPUT, // Input video file
+        // `${DATA.NAME_TEMP_OUTPUT}-${_i - 1}${DATA.NAME_TEMP_OUTPUT_FORMAT}`,
+        outputs[_i - 1],
+        "-i",
+        DATA.NAME_INTRO_AUDIO, // Input audio file
+        "-filter_complex",
+        DATA.FFMPEG_FILTER_ADD_INTRO, // Filter complex with variable
+        "-c:v",
+        "copy", // Copy video stream without re-encoding
+        // DATA.NAME_TEMP_OUTPUT + _i + DATA.NAME_TEMP_OUTPUT_FORMAT, // Output file name
+        // "output.mp4", // Output file name
+        // `${DATA.NAME_TEMP_OUTPUT}-${_i}${DATA.NAME_TEMP_OUTPUT_FORMAT}`,
+        `output${_i}.mp4`,
+      ]);
+      // await ffmpeg.writeFile(DATA.NAME_TEMP_OUTPUT, DATA.NAME_TEMP_OUTPUT);
+      // await ffmpeg.readFile(DATA.NAME_TEMP_OUTPUT);
+      outputs.push(`output${_i}.mp4`);
+
+      _i++;
+    }
+
+    // const data = await ffmpeg.readFile("output.mp4");
+    // const data = await ffmpeg.readFile(DATA.NAME_TEMP_OUTPUT);
+    const data = await ffmpeg.readFile(
+      // `${DATA.NAME_TEMP_OUTPUT}-${_i}${DATA.NAME_TEMP_OUTPUT_FORMAT}`,
+      `output${_i - 1}.mp4`,
+    );
 
     const blob = new Blob([data.buffer], { type: "video/mp4" });
     videoDataList.push({
@@ -235,29 +349,31 @@
 
   onMount(() => {
     loadFfmpeg();
+    transformSettings = loadSettings();
   });
+
   $: console.log({ state });
 </script>
 
-<!-- <Container sm={true}> -->
 <DashedBox>
-  <h3 in:fade>Jak to wygląda?</h3>
+  <h3 in:fade>Jak to działa?</h3>
   <Container>
     <Accordion theme="dark">
       <!-- <Container sm> -->
       <AccordionItem>
         <p class="m-0" slot="header">Zobacz przykład</p>
-
+        <p>1. Załącz swoje wideo</p>
+        <p>2. Dobierz ustawienia</p>
+        <p>3. Poczekaj aż sie przeprocesują</p>
+        <p>4. Profit</p>
         <div id="video-container">
           <video src={DATA.EXAMPLE_URL} controls></video>
         </div>
       </AccordionItem>
-      <!-- </Container> -->
     </Accordion>
   </Container>
 </DashedBox>
-<!-- </Container> -->
-<!-- <Container> -->
+
 <DashedBox>
   <!-- {#if state === "loading"} -->
   {#if state === "loading"}
@@ -275,6 +391,7 @@
           name="file"
           multiple
           bind:files
+          accept="video/*"
         />
         <FormText inline={true}>
           max. wielkość 2GB. Testowane na plikach .mp4, .webm poniżej 60 sekund.
@@ -306,6 +423,57 @@
         </Container>
       {/if}
     {/if}
+    <Container fluid>
+      <Accordion theme="dark">
+        <AccordionItem>
+          <p class="m-0" slot="header">Ustawienia</p>
+          <Table bordered>
+            <thead>
+              <tr>
+                <th>Opis</th>
+                <th>Przycisk</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Dodaj kultowy efekt przejścia na starcie</td>
+                <td
+                  ><Input
+                    type="switch"
+                    label=""
+                    bsSize="lg"
+                    reverse
+                    checked={transformSettings.addIntro}
+                    on:change={(e) => handleSwitchChange("addIntro", e)}
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td>Dodaj reakcję Boczka</td>
+                <td
+                  ><Input
+                    type="switch"
+                    label=""
+                    bsSize="lg"
+                    reverse
+                    checked={transformSettings.addBoczek}
+                    on:change={(e) => handleSwitchChange("addBoczek", e)}
+                  /></td
+                >
+              </tr>
+              <tr>
+                <td>Resetuj ustawienia do domyślnych</td>
+                <td>
+                  <Button color="danger" reverse on:click={resetSettings}
+                    >Resetuj</Button
+                  >
+                </td>
+              </tr>
+            </tbody>
+          </Table>
+        </AccordionItem>
+      </Accordion>
+    </Container>
     <Container>
       {#if !files}
         <Button outline block disabled color="secondary">Okiłizuj</Button>
@@ -320,27 +488,9 @@
     <Container>
       <Button on:click={resetFfmpeg} block color="danger">Anuluj</Button>
     </Container>
-    <!-- {:else if state === "convert.done"} -->
-    <!-- <h3>Wrzuć wideło</h3> -->
-    <!-- <p in:fade>Dropnij wideło albo kliknij by "załonczyć"</p> -->
-    <!-- <Input type="file" name="file" multiple bind:files /> -->
-
-    <!-- <p in:fade> -->
-    <!-- max. wielkośc 2GB. Testowane wyłącznie na plikach .mp4, .webm o długości -->
-    <!-- poniżej 60 sekund. -->
-    <!-- </p> -->
-    <!-- {#if !files} -->
-    <!-- <Button outline block disabled color="secondary">Okiłizuj</Button> -->
-    <!-- {:else} -->
-    <!-- <Button block on:click={convertVideos(files)} color="warning" -->
-    <!-- >Okiłizuj</Button -->
-    <!-- > -->
-    <!-- {/if} -->
   {/if}
 </DashedBox>
-<!-- </Container> -->
 
-<!-- <Container md> -->
 <DashedBox>
   <h3 in:fade>Twoje wideo</h3>
   {#if state === "convert.start"}
@@ -393,8 +543,6 @@
     <p in:fade>(Z pustego to i Salamon nie naleje)</p>
   {/if}
 </DashedBox>
-
-<!-- </Container> -->
 
 <style>
   video {
