@@ -10,8 +10,10 @@
 body {
     /* display: flex; */
     /* flex-direction: column; */
-    /* align-items: center; Center items horizontally */
-    /* justify-content: center; Center items vertically */
+    /* Center items horizontally */
+    /* align-items: center;  */
+    /* Center items vertically */
+    /* justify-content: center; */
     font-family: 'Manrope Variable' , sans-serif;
     color: var(--txt-clr) !important;
     background-color: var(--bg-clr) !important;

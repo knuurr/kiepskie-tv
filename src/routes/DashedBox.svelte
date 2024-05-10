@@ -7,7 +7,7 @@
   
   <style>
 	#dashed-box  {
-	  width: auto;
+	  /* width: auto; */
 	  min-height: 200px;
 	  display: flex;
 	flex-direction: column;
@@ -20,13 +20,16 @@
 	  border-radius: 5px;
     margin-top: 40px;
     margin-bottom: 40px;
-	padding: 20px;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	padding-left: 8px;
+	padding-right: 8px;
 	}
 
-	#dashed-box > * {
-		margin-top: 15px;
-		margin-bottom: 15px;
-	}
+	/* #dashed-box > * { */
+		/* margin-top: 15px; */
+		/* margin-bottom: 15px; */
+	/* } */
 
 
   </style>
