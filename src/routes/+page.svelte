@@ -46,6 +46,8 @@
   let ffmpeg: FFmpeg;
   let progress = tweened(0);
 
+  // Function for removing file inputs
+  // Used when clicked on button representing individual button
   const removeFile = (index) => {
     const filesArr = Array.from(files); // Convert FileList to Array
     filesArr.splice(index, 1); // Remove item at index
@@ -103,30 +105,37 @@
     return new Uint8Array(data);
   };
 
-  async function readFile(file): Promise<Uint8Array> {
-    return new Promise((resolve) => {
-      const fileReader = new FileReader();
-      fileReader.onload = (e) => {
-        const { result } = fileReader;
-        if (result instanceof ArrayBuffer) {
-          resolve(new Uint8Array(result));
-        }
-      };
+  // async function readFile(file): Promise<Uint8Array> {
+  //   return new Promise((resolve) => {
+  //     const fileReader = new FileReader();
+  //     fileReader.onload = (e) => {
+  //       const { result } = fileReader;
+  //       if (result instanceof ArrayBuffer) {
+  //         resolve(new Uint8Array(result));
+  //       }
+  //     };
 
-      fileReader.onerror = (e) => {
-        error = "Error reading file";
-        state = "convert.error";
-        resolve(null);
-        console.error(e);
-      };
+  //     fileReader.onerror = (e) => {
+  //       error = "Error reading file";
+  //       state = "convert.error";
+  //       resolve(null);
+  //       console.error(e);
+  //     };
 
-      fileReader.readAsArrayBuffer(file);
-    });
-  }
+  //     fileReader.readAsArrayBuffer(file);
+  //   });
+  // }
 
+  // Function which loops over list of File video
+  // Which
+  //
   async function convertVideos(files: FileList) {
     console.log("Started batch video converting");
     console.log(files);
+    // Reset array of processed videos
+    // To avoid appending new videos to past processing
+    // So that only new video will be presented in Twoje wideo
+    videoDataList = [];
     state = "convert.start";
     for (const file of files) {
       // Your code to be executed for each element
@@ -141,6 +150,7 @@
     files = undefined;
   }
 
+  // Apply ffmpeg logic to individual input file
   async function convertVideo(file) {
     await ffmpeg.writeFile(file.name, await fetchFile(file));
     // await ffmpeg.writeFile("input.webm", videData);
@@ -196,6 +206,7 @@
     });
   }
 
+  // Save on disk individual processed file
   function downloadVideo(fileBlob, fileName) {
     // const blob = new Blob([videoData.buffer], { type: "video/mp4" });
     const downloadFileName = "kiepskietv-" + fileName + ".mp4";
@@ -338,40 +349,43 @@
     {:else if transformState === "2/2"}
       <p>2/2 Dodawanie reakcji Boczka...</p>
     {/if}
+    <p>Twoje wideo będą poniżej</p>
     <h2>{$progress.toFixed(0)} %</h2>
   {:else if state === "convert.done"}
     <p>Wszystko gotowe!</p>
-    {#if videoDataList.length > 0}
-      <Container fluid>
-        <Accordion stayOpen={true} theme="dark">
-          <!-- <Container fluid> -->
-          {#each videoDataList as item, i}
-            <AccordionItem active={i === 0 ? true : false}>
-              <p class="m-1" slot="header">
-                ({i + 1}/{videoDataList.length}) {item.videoName}
-              </p>
+    {#if videoDataList}
+      {#if videoDataList.length > 0}
+        <Container fluid>
+          <Accordion stayOpen={true} theme="dark">
+            <!-- <Container fluid> -->
+            {#each videoDataList as item, i}
+              <AccordionItem active={i === 0 ? true : false}>
+                <p class="m-1" slot="header">
+                  ({i + 1}/{videoDataList.length}) {item.videoName}
+                </p>
 
-              <div id="video-container">
-                <video
-                  src={item.videoBlobURL}
-                  controls
-                  autoplay={i === 0 ? true : false}
-                ></video>
-              </div>
-              <Button
-                block
-                on:click={() => downloadVideo(item.videoBlob, item.videoName)}
-                color="success">Zapisz #{i + 1}</Button
-              >
-              <p>
-                Nie wyskoczyło okienko? Sprawdź powiadomienia albo pobrane w
-                przeglądarce
-              </p>
-            </AccordionItem>
-          {/each}
-          <!-- </Container> -->
-        </Accordion>
-      </Container>
+                <div id="video-container">
+                  <video
+                    src={item.videoBlobURL}
+                    controls
+                    autoplay={i === 0 ? true : false}
+                  ></video>
+                </div>
+                <Button
+                  block
+                  on:click={() => downloadVideo(item.videoBlob, item.videoName)}
+                  color="success">Zapisz #{i + 1}</Button
+                >
+                <p>
+                  Nie wyskoczyło okienko? Sprawdź powiadomienia albo pobrane w
+                  przeglądarce
+                </p>
+              </AccordionItem>
+            {/each}
+            <!-- </Container> -->
+          </Accordion>
+        </Container>
+      {/if}
     {/if}
   {:else if state === "convert.error"}
     <p in:fade style="color:red">Error: {error}</p>
