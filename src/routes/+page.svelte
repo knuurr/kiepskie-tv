@@ -573,8 +573,19 @@
   <ResponsiveContainer>
     <DashedBox>
       <p in:fade class="font-bold text-2xl mt-1 mb-1">Twoje wideo</p>
-
-      {#if state === "convert.start"}
+      {#if state === "loaded"}
+        <div class="join join-vertical w-full">
+          <details class="collapse bg-base-200 collapse-arrow collapse-close">
+            <summary class="collapse-title text-lg font-medium">
+              Tu będą Twoje wideło...
+            </summary>
+            <div class="collapse-content">
+              <p>Brak &#128546;</p>
+            </div>
+            <!-- </div> -->
+          </details>
+        </div>
+      {:else if state === "convert.start"}
         {#if transformState == "1/2"}
           <p class="text-lg">1/2 Nakładanie na "Okił"-a...</p>
         {:else if transformState === "2/2"}
@@ -583,7 +594,7 @@
         <p class="text-sm mt-1">Twoje wideo będą poniżej</p>
         <p class="text-lg">{$progress.toFixed(0)} %</p>
       {:else if state === "convert.done"}
-        <p>Wszystko gotowe!</p>
+        <p>Wideło gotowe!</p>
         {#if videoDataList}
           {#if videoDataList.length > 0}
             <div class="join join-vertical w-full">
