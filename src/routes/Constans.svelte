@@ -20,10 +20,12 @@
   export const PATH_TEMPLATE_VIDEO = "/video.mp4";
   export const PATH_GREENSCREEN_PNG = "/greenscreen.png";
   // URLs
-  export const GH_PROFILE_URL = "https://github.com/knuurr";
-  export const GH_PROJECT_URL = "https://github.com/knuurr/kiepscy-tv";
-  // export const EXAMPLE_URL = 'https://github.com/knuurr/kiepscy-tv/raw/main/example.mp4'
+  export const GH_BASE_URL = "https://github.com/knuurr";
+  export const GH_REPO_URL = "?tab=repositories";
+  export const GH_PROJECT_URL = "/kiepscy-tv";
+  export const GH_ISSUE_URL = "/kiepscy-tv/issues";
   export const EXAMPLE_URL = "/example.webm";
+
   //   FFmpeg presets
   export const FFMPEG_FILTER_ADD_INTRO =
     "[1:a]adelay=0|0[a1];[0:a][a1]amix=inputs=2";

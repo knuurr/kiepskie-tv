@@ -1,31 +1,10 @@
 <script>
-
-	export let title
-	export let desc
-	export let disclaimer = "Twoje wideo nigdzie nie jest wysłane - obróbka jest 100% offline"
+  export let title = "";
+  export let description = "";
 </script>
-  
-<style>
-	div {
-	  display: flex;
-	  flex-direction: column;
-	  align-items: center;
-	  justify-content: top;
-	  /* height: 100vh; Adjust this value to fit your layout */
-	  margin-top: 30px;
-	  margin-bottom: 30px;
-	}
-	
-	header {
-	  text-align: center;
-	}
-  </style>
-  
-  <div>
-	<header>
-	  <h1>{title}</h1>
-	  <p>{desc}</p>
-	  <p>{disclaimer}</p>
-	</header>
-  </div>
-  
+
+<div class="p-8 text-center">
+  <h1 class="text-4xl font-bold mb-4">{title}</h1>
+  <p class="text-lg">{description}</p>
+  <slot></slot>
+</div>

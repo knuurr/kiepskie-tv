@@ -1,45 +1,39 @@
 <script lang="ts">
-    // export let githubUrl = "https://github.com/knuurr"; // Replace with your GitHub URL
-    // export let projectUrl = "https://github.com/knuurr/kiepscy-tv";
-    import { GH_PROJECT_URL, GH_PROFILE_URL } from './Constans.svelte'; // Import all from data.js
+  import {
+    GH_BASE_URL,
+    GH_ISSUE_URL,
+    GH_PROJECT_URL,
+    GH_REPO_URL,
+  } from "./Constans.svelte"; // Import all from data.js
+</script>
 
-  </script>
-  
-  <style>
-    footer {
-      text-align: center;
-      margin-top: 5rem; /* Adjust margin as needed */
-    }
-  
-    a {
-      color: #e7d000;
-      text-decoration: none;
-      margin: 0.5rem;
-    }
-  
-    a:hover {
-      text-decoration: underline;
-    }
+<footer class="footer footer-center p-10 bg-base-200 text-base-content rounded">
+  <aside>
+    <p class="font-bold f">Kiepskie TV (TiWi)</p>
+    <p class="font-bold f">© Jakub Mikos 2024</p>
+  </aside>
+  <nav class="grid grid-flow-col gap-4">
+    <a
+      href={GH_BASE_URL + GH_PROJECT_URL}
+      class="link link-hover text-yellow-200">Repozytorium projektu</a
+    >
+    <a href={GH_BASE_URL + GH_ISSUE_URL} class="link link-hover text-yellow-200"
+      >Zgłoś błąd/ficzer</a
+    >
+    <a href={GH_BASE_URL + GH_REPO_URL} class="link link-hover text-yellow-200"
+      >Inne projekty</a
+    >
+  </nav>
 
-    p {
-        color: gray;
-    }
-
-    * {
-      margin-top: 1rem;
-      margin-bottom: 1rem;
-    }
-  </style>
-  
-  <footer>
-    <p style="color: white;">© Jakub Mikos 2024 </p>
-    <a href="{GH_PROFILE_URL}">Mój Github (knuurr)</a>
-    <a href="{GH_PROJECT_URL}">GitHub Projektu</a>
-    <!-- <a href="{liUrl}">LinkedIn</a> -->
-    <br/>
-    <p >Nazwa "Okił" nawiązuje do fikcyjnej marki telewizora w serialu "Świat Weług Kiepskich". Zbieżność nazwisk przypadkowa.</p>
-    <p >Projekt nie jest w żadnen sposób powiązany z serialem "Świat Według Kiepskich" autorstwa ATM GRUPA SPÓŁKA AKCYJNA.</p>
-    
-
-  </footer>
-  
+  <aside>
+    <p>
+      Nazwa "Okił" nawiązuje do fikcyjnej marki telewizora w serialu "Świat
+      Weług Kiepskich". Zbieżność nazwisk przypadkowa.
+    </p>
+    <p>
+      Projekt nie jest w żadnen sposób powiązany z serialem "Świat Według
+      Kiepskich" autorstwa ATM GRUPA SPÓŁKA AKCYJNA ani Telewizja Polsat sp. z
+      o.o.
+    </p>
+  </aside>
+</footer>
