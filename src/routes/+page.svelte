@@ -192,7 +192,7 @@
       console.log("Video duration:", duration);
       await convertVideo(file, duration);
     }
-    console.log("Converts doen. Setting state.");
+    console.log("Converts done. Setting state.");
     // console.log(videoDataList);
     transformState = "0/2";
     state = "convert.done";
@@ -297,6 +297,30 @@
       _i++;
     }
 
+    // if (transformSettings.addWatermark) {
+    //   console.log("[*] Adding watermark");
+    //   await ffmpeg.writeFile(
+    //     // DATA.NAME_TEMPLATE_VIDEO,
+    //     DATA.NAME_WATERMARK,
+    //     await fetchFile(DATA.NAME_WATERMARK),
+    //   ),
+    //     await ffmpeg.exec([
+    //       "-i",
+    //       outputs[_i - 1],
+    //       "-i",
+    //       DATA.NAME_WATERMARK, // Watermark file
+    //       "-filter_complex",
+    //       DATA.FFMPEG_FILTER_ADD_WATERMARK, // Filter complex with variable
+    //       "-c:a",
+    //       "copy",
+    //       `output${_i}.mp4`,
+    //     ]);
+
+    //   outputs.push(`output${_i}.mp4`);
+
+    //   _i++;
+    // }
+
     // const data = await ffmpeg.readFile("output.mp4");
     // const data = await ffmpeg.readFile(DATA.NAME_TEMP_OUTPUT);
     const data = await ffmpeg.readFile(
@@ -310,6 +334,22 @@
       videoBlob: blob,
       videoBlobURL: URL.createObjectURL(blob),
     });
+
+    console.log("[*] Attempting cleanup of Virtual FS");
+    let dirList = await ffmpeg.listDir("/");
+    console.log("[*] List of Virtual FS (before): ", dirList);
+
+    for (const output of outputs) {
+      const _fileDelete = await ffmpeg.deleteFile(output);
+      console.log("[*] File cleanup from Virtual FS: ", _fileDelete);
+    }
+
+    const _fileDelete = await ffmpeg.deleteFile(file.name);
+    console.log("[*] Cleanup original input file name: ", _fileDelete);
+
+    dirList = await ffmpeg.listDir("/");
+    console.log("[*] List of Virtual FS (after): ", dirList);
+    console.log("[*] FFmpeg Virtual FS cleaned up.");
   }
 
   // Save on disk individual processed file
@@ -400,7 +440,7 @@
           />
           <div class="label">
             <span class="label-text-alt"
-              >Max. wielkość 2GB. Testowane na plikach .mp4, .webm poniżej 60
+              >Max. wielkość 2GB. Testowane na plikach mp4/webm poniżej 60
               sekund.</span
             >
           </div>
@@ -593,6 +633,9 @@
         {/if}
         <p class="text-sm mt-1">Twoje wideo będą poniżej</p>
         <p class="text-lg">{$progress.toFixed(0)} %</p>
+        <p class="text-sm mt-1">
+          (tak - czasem wychodzi ponad setkę. Pracuję nad tym)
+        </p>
       {:else if state === "convert.done"}
         <p>Wideło gotowe!</p>
         {#if videoDataList}

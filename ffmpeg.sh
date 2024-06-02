@@ -76,3 +76,9 @@
 # ffmpeg -i ./static/video.mp4 -itsoffset 1 -i ./static/oooo.mp3 -c:v copy -c:a aac output.mp4
 # ffmpeg -i ./static/video.mp4 -itsoffset 10 -i ./static/oooo.mp3 -map 0:v -map 1:a -c:v copy -c:a aac output_video.mp4
 
+
+
+### 4:3 aspect ratio experiment ###
+# w: 510
+# h: 383-384
+

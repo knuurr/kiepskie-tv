@@ -4,6 +4,7 @@
   export const DEFAULT_SETTINGS = {
     addBoczek: true,
     addIntro: true,
+    // addWatermark: true,
   };
   // Names
   export const NAME_GREENSCREEN_PNG = "greenscreen.png";
@@ -11,6 +12,7 @@
   export const NAME_TEMP_OUTPUT_FORMAT = ".mp4";
   export const NAME_TEMPLATE_VIDEO = "video.mp4";
   export const NAME_INTRO_AUDIO = "intro.mp3";
+  export const NAME_WATERMARK = "watermark.png";
   export const APP_TITLE2 = "📺 Kiepskie TV";
   export const APP_TITLE = "Kiepskie TV 🍻";
   export const APP_DESC =
@@ -34,4 +36,6 @@
   // x, y offets are still hardcoded
   export const FFMPEG_FILTER_ADD_GREENSCREEN =
     "[1:v]scale=w='min(iw,510)':h='min(ih,382)':force_original_aspect_ratio=decrease,pad=512:382:((512-iw)/2)+1:((382-ih)/2)+1:color=black[overlay];[0:v][overlay]overlay=x=140:y=94";
+  export const FFMPEG_FILTER_ADD_WATERMARK =
+    "[1][0]scale2ref=w=oh*mdar:h=ih*0.1[wm][vid];[vid][wm]overlay=W-w-10:H-h-10";
 </script>
