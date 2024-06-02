@@ -669,9 +669,8 @@
             <div class="join join-vertical w-full">
               {#each videoDataList as item, i}
                 <details
-                  class="collapse bg-base-200 collapse-arrow {i === 0
-                    ? 'collapse-open'
-                    : ''}"
+                  class="collapse bg-base-200 collapse-arrow"
+                  open={i === 0 ? true : false}
                 >
                   <summary class="collapse-title text-lg font-medium">
                     ({i + 1}/{videoDataList.length}) {item.videoName}
@@ -685,7 +684,7 @@
                       ></video>
                     </div>
                     <button
-                      class="btn btn-success btn-block mt-1 mb-1 btn-sm"
+                      class="btn btn-success btn-block mt-1 mb-1 btn-md"
                       on:click={() =>
                         downloadVideo(item.videoBlob, item.videoName)}
                       >Zapisz #{i + 1}
@@ -705,7 +704,7 @@
                       </svg>
                     </button>
                     <button
-                      class="btn btn-info btn-block mt-1 mb-1 btn-sm"
+                      class="btn btn-info btn-block mt-1 mb-1 btn-md"
                       on:click={() =>
                         shareVideo(item.videoBlob, item.videoName)}
                       >Udostępnij #{i + 1}
