@@ -24,8 +24,8 @@
   // URLs
   export const GH_BASE_URL = "https://github.com/knuurr";
   export const GH_REPO_URL = "?tab=repositories";
-  export const GH_PROJECT_URL = "/kiepscy-tv";
-  export const GH_ISSUE_URL = "/kiepscy-tv/issues";
+  export const GH_PROJECT_URL = "/kiepskie-tv";
+  export const GH_ISSUE_URL = "/kiepskie-tv/issues";
   export const EXAMPLE_URL = "/example.webm";
 
   //   FFmpeg presets

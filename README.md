@@ -1,6 +1,6 @@
 # Kiepskie TV
 
-Test yourself: [Vercel link](https://kiepscy-tv.vercel.app/)
+🔗 Test yourself: [Vercel link](https://kiepskie-tv.vercel.app/)
 
 Inspired by Polish popular sitcom "Świat Według Kiepskich", you can put any your own video into legendary "Okił" finctional brand television, and watch Arnold Boczek react to it.
 
@@ -8,8 +8,7 @@ Inspired by Polish popular sitcom "Świat Według Kiepskich", you can put any yo
 
 Here's an example output of what you can expect, when using your video. For this example I used well-known movie [Big Buck Bunny](https://en.wikipedia.org/wiki/Big_Buck_Bunny).
 
-
-https://github.com/knuurr/kiepscy-tv/assets/135069967/700ad5d5-4a7f-4f3a-8f78-10bb1349f685
+https://github.com/knuurr/kiepskie-tv/assets/135069967/700ad5d5-4a7f-4f3a-8f78-10bb1349f685
 
 ---
 
@@ -18,7 +17,6 @@ https://github.com/knuurr/kiepscy-tv/assets/135069967/700ad5d5-4a7f-4f3a-8f78-10
 Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/main/packages/create-svelte).
 
 ## Creating a project
-
 
 ```bash
 # create a new project in the current directory
