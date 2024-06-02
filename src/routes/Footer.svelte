@@ -12,7 +12,7 @@
     <p class="font-bold f">Kiepskie TV (TiWi)</p>
     <p class="font-bold f">© Jakub Mikos 2024</p>
   </aside>
-  <nav class="grid grid-flow-col gap-4">
+  <nav class="grid grid-flow-col gap-3">
     <a
       href={GH_BASE_URL + GH_PROJECT_URL}
       class="link link-hover text-yellow-200">Repozytorium projektu</a

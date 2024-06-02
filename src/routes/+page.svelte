@@ -360,6 +360,32 @@
     saveAs(fileBlob, downloadFileName); // Trigger file picker and save
   }
 
+  async function shareVideo(blob, name) {
+    const downloadFileName = "kiepskietv-" + name + ".mp4";
+    const file = new File([blob], downloadFileName, { type: "video/mp4" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          title: downloadFileName,
+          text:
+            "Co jest kurde, noc jest kurde 🍻: " +
+            "http://kiepskie-tv.vercel.app",
+          files: [file],
+        });
+        console.log("Video shared successfully!");
+      } catch (error) {
+        console.error("Error sharing video:", error);
+      }
+    } else {
+      console.log(
+        "Web Share API not supported or sharing files is not supported.",
+      );
+      // Fallback for testing: simply log the video details
+      console.log("Sharing file:", file);
+      // You can add more debugging information or actions here
+    }
+  }
+
   async function loadFfmpeg() {
     const baseUrl = "https://unpkg.com/@ffmpeg/core@0.12.4/dist/esm";
     ffmpeg = new FFmpeg();
@@ -678,9 +704,33 @@
                         />
                       </svg>
                     </button>
+                    <button
+                      class="btn btn-info btn-block mt-1 mb-1 btn-sm"
+                      on:click={() =>
+                        shareVideo(item.videoBlob, item.videoName)}
+                      >Udostępnij #{i + 1}
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="1.5"
+                        stroke="currentColor"
+                        class="w-4 h-4"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"
+                        />
+                      </svg>
+                    </button>
                     <p class="text-sm">
                       Nie pobiera się? Sprawdź powiadomienia albo pobrane w
                       przeglądarce
+                    </p>
+                    <p class="text-sm">
+                      Nie wszystkie przeglądarki moga wspierać funkcję
+                      "Udostępnij"
                     </p>
                   </div>
                   <!-- </div> -->
