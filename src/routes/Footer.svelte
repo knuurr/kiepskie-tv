@@ -28,10 +28,10 @@
   <aside>
     <p>
       Nazwa "Okił" nawiązuje do fikcyjnej marki telewizora w serialu "Świat
-      Weług Kiepskich". Zbieżność nazwisk przypadkowa.
+      Weług Kiepskich". Zbieżność nazw i nazwisk jest przypadkowa.
     </p>
     <p>
-      Projekt nie jest w żadnen sposób powiązany z serialem "Świat Według
+      Projekt nie jest w żaden sposób powiązany z serialem "Świat Według
       Kiepskich" autorstwa ATM GRUPA SPÓŁKA AKCYJNA ani Telewizja Polsat sp. z
       o.o.
     </p>
