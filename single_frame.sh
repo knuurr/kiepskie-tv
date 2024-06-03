@@ -1,0 +1,1 @@
+ffmpeg -i static/greenscreen.png -i static/video.mp4 -filter_complex "[1:v]scale=w='min(iw,510)':h='min(ih,382)':force_original_aspect_ratio=decrease,pad=512:382:((512-iw)/2)+1:((382-ih)/2)+1:color=black[overlay];[0:v][overlay]overlay=x=140:y=94" -frames:v 1 output_image.png

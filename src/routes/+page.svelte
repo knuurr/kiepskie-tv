@@ -3,6 +3,7 @@
   import { fade } from "svelte/transition";
   import { onMount } from "svelte";
   import { FFmpeg } from "@ffmpeg/ffmpeg";
+  import { writable } from "svelte/store";
   import saveAs from "file-saver";
   // import { fetchFile, toBlobURL } from '@ffmpeg/util';
   // import { toBlobURL } from '@ffmpeg/util';
@@ -16,6 +17,8 @@
   import Footer from "./Footer.svelte";
 
   import * as DATA from "./Constans.svelte"; // reusable constans
+
+  const previewUrl = writable("");
 
   type State =
     | "loading"
@@ -335,9 +338,9 @@
       videoBlobURL: URL.createObjectURL(blob),
     });
 
-    console.log("[*] Attempting cleanup of Virtual FS");
-    let dirList = await ffmpeg.listDir("/");
-    console.log("[*] List of Virtual FS (before): ", dirList);
+    // console.log("[*] Attempting cleanup of Virtual FS");
+    // let dirList = await ffmpeg.listDir("/");
+    // console.log("[*] List of Virtual FS (before): ", dirList);
 
     for (const output of outputs) {
       const _fileDelete = await ffmpeg.deleteFile(output);
@@ -347,9 +350,52 @@
     const _fileDelete = await ffmpeg.deleteFile(file.name);
     console.log("[*] Cleanup original input file name: ", _fileDelete);
 
-    dirList = await ffmpeg.listDir("/");
+    const dirList = await ffmpeg.listDir("/");
     console.log("[*] List of Virtual FS (after): ", dirList);
     console.log("[*] FFmpeg Virtual FS cleaned up.");
+  }
+
+  async function generatePreview(file) {
+    console.log("[*] Attempting to generate preview:");
+    await ffmpeg.writeFile(file.name, await fetchFile(file));
+    await ffmpeg.writeFile(
+      DATA.NAME_GREENSCREEN_PNG,
+      await fetchFile(DATA.PATH_GREENSCREEN_PNG),
+    );
+
+    await ffmpeg.exec([
+      "-i",
+      DATA.NAME_GREENSCREEN_PNG,
+      "-i",
+      file.name,
+      "-filter_complex",
+      DATA.FFMPEG_FILTER_ADD_GREENSCREEN,
+      "-frames:v",
+      "1",
+      "-preset",
+      "ultrafast",
+      "preview_image.png",
+    ]);
+
+    const previewData = await ffmpeg.readFile(
+      // `${DATA.NAME_TEMP_OUTPUT}-${_i}${DATA.NAME_TEMP_OUTPUT_FORMAT}`,
+      "preview_image.png",
+    );
+
+    // console.log("previewData ", previewData);
+    const blob = new Blob([previewData.buffer], { type: "image/png" });
+    const previewImgBlobURL = URL.createObjectURL(blob);
+    // console.log("blob ", blob);
+
+    const _fileDelete = await ffmpeg.deleteFile("preview_image.png");
+    console.log("[*] File cleanup from Virtual FS: ", _fileDelete);
+
+    // console.log(previewImgBlobURL);
+
+    return URL.createObjectURL(blob);
+    // previewUrl.set(previewBlobUrl);
+
+    // return;
   }
 
   // Save on disk individual processed file
@@ -475,6 +521,27 @@
         {#if files}
           {#if files.length > 0}
             <div class="join join-vertical w-full">
+              <!-- Podgląd -->
+              <div class="collapse collapse-plus bg-base-200">
+                <input type="checkbox" />
+                <div class="collapse-title text-md font-medium">Podgląd</div>
+                <div class="collapse-content">
+                  {#await generatePreview(files[0])}
+                    <p>Loading preview...</p>
+                  {:then previewUrl}
+                    <img src={previewUrl} alt="Podgląd" />
+                  {:catch error}
+                    <p>Error: {error.message}</p>
+                  {/await}
+                  <p class="text-sm text-gray-600 mt-2">
+                    Podgląd generuje się jedynie dla jednego filmu naraz.
+                  </p>
+                  <p class="text-sm text-gray-600 mt-2">
+                    Czasami pierwsza klatka generuje sie bez filmu i widać
+                    greenscreen. Pracuję nad tym.
+                  </p>
+                </div>
+              </div>
               <div class="collapse collapse-plus bg-base-200">
                 <input type="checkbox" />
                 <div class="collapse-title text-md font-medium">Pliki</div>
