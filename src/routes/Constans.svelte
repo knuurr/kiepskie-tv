@@ -26,6 +26,7 @@
   export const GH_REPO_URL = "?tab=repositories";
   export const GH_PROJECT_URL = "/kiepskie-tv";
   export const GH_ISSUE_URL = "/kiepskie-tv/issues";
+  export const LI_URL = "https://www.linkedin.com/in/jakub-mikos/";
   export const EXAMPLE_URL = "/example.webm";
 
   //   FFmpeg presets
