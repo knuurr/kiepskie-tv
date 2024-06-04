@@ -1,11 +1,11 @@
 <script lang="ts">
   import "./app.css";
 
-  import { APP_TITLE, APP_DESC, APP_TITLE2 } from "./Constans.svelte"; // Import all from data.js
+  import { APP_TITLE2 } from "./Constans.svelte"; // Import all from data.js
 </script>
 
 <svelte:head>
-  <title>{APP_TITLE2}</title>
+  <title>Dom | {APP_TITLE2}</title>
 </svelte:head>
 
 <slot />

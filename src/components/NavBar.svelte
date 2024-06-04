@@ -62,7 +62,7 @@
         </li>
       </ul>
     </div>
-    <a class="btn btn-ghost text-xl">Kiepskie TV</a>
+    <a href="/" class="btn btn-ghost text-xl">Kiepskie TV</a>
   </div>
   <div class="navbar-center hidden md:flex">
     <ul class="menu menu-horizontal px-1">
