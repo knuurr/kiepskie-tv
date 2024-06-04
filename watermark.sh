@@ -12,7 +12,8 @@
 
 # This process ensures that the watermark is correctly scaled and positioned in the bottom-right corner of the video. Adjust the 0.1 in h=ih*0.1 to change the relative height of the watermark. For example, 0.15 would make the watermark 15% of the video's height.
 
-ffmpeg -i static/greenscreen.png -i static/watermark.png -filter_complex "[1][0]scale2ref=w=oh*mdar:h=ih*0.1[wm][vid];[vid][wm]overlay=W-w-10:H-h-10" -c:a copy greenscreen.png
+ffmpeg -i greenscreen.png -i watermark.png -filter_complex "[1][0]scale2ref=w=oh*mdar:h=ih*0.1[wm][vid];[vid][wm]overlay=W-w-10:10" -c:a copy greenscreen2.png
 
-ffmpeg -i static/video.mp4 -i static/watermark.png -filter_complex "[1][0]scale2ref=w=oh*mdar:h=ih*0.1[wm][vid];[vid][wm]overlay=W-w-10:H-h-10" -c:a copy video.mp4
+
+ffmpeg -i video.mp4 -i watermark.png -filter_complex "[1][0]scale2ref=w=oh*mdar:h=ih*0.1[wm][vid];[vid][wm]overlay=W-w-10:10" -c:a copy video2.mp4
 
