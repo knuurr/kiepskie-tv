@@ -1,10 +1,20 @@
 <script>
+  let isOpen = false;
+
+  const toggleDropdown = () => {
+    isOpen = !isOpen;
+  };
 </script>
 
 <div class="navbar bg-base-100">
   <div class="navbar-start">
     <div class="dropdown">
-      <div tabindex="0" role="button" class="btn btn-ghost lg:hidden">
+      <div
+        tabindex="0"
+        role="button"
+        class="btn btn-ghost lg:hidden"
+        on:click={toggleDropdown}
+      >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           class="h-5 w-5"
@@ -22,6 +32,7 @@
       <ul
         tabindex="0"
         class="menu menu-lg dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52"
+        class:hidden={!isOpen}
       >
         <li>
           <a href="/"
