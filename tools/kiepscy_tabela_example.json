@@ -1,0 +1,106 @@
+{
+  "metadata": {
+    "generated_at": "2024-12-01T08:31:53Z",
+    "header_metadata": {
+      "nr": "Odcinek",
+      "tytul": "Tytuł",
+      "opis_odcinka": "Opis odcinka",
+      "data_premiery": "Data premiery",
+      "rezyseria": "Reżyseria",
+      "scenariusz": "Scenariusz",
+      "sezon": "Sezon",
+      "link_wiki": "Link wiki"
+    },
+    "cached_data": {
+      "directors": [
+        "Adek Drabiński",
+        "Okił Khamidov",
+        "Okił Khamidow",
+        "Patrick Yoka"
+      ],
+      "writers": [
+        "Adek Drabiński",
+        "Adrian Nowakowski",
+        "Albin Przybyłowski",
+        "Aleksander Sobiszewski",
+        "Artur Rega",
+        "Barbara Łuszczyńska",
+        "Doman Nowakowski",
+        "Franciszek Loy",
+        "Grzegorz Pawelczyk",
+        "Igor Nurczyński",
+        "Jan Bożko",
+        "Janusz Sadza",
+        "Karolina Słyk",
+        "Katarzyna Lewandowska",
+        "Katarzyna Sobiszewska",
+        "Krzysztof Nowak",
+        "Marcin Cząba",
+        "Marcin Konik",
+        "Michał Kowal",
+        "Michał Lewandowski",
+        "Okił Khamidov",
+        "Okił Khamidow",
+        "Patrick Yoka",
+        "Paweł Chmielewski",
+        "Paweł Czuma",
+        "Paweł Kudzia",
+        "Piotr Kalwas",
+        "Piotr Kudzia",
+        "Renata Pałys",
+        "Robert Krzak",
+        "Robert Lewandowski",
+        "Roman Rega",
+        "Tobiasz Lewandowski",
+        "Tobiasz Lewandowski (pomysł)",
+        "Tomasz Kupiński",
+        "Wojciech Zając",
+        "Zbigniew Szymczyk (pomysł)",
+        "Zdzisław Zakąska"
+      ],
+      "years": [
+        "1999",
+        "2000",
+        "2001",
+        "2002",
+        "2003",
+        "2004",
+        "2005",
+        "2006",
+        "2007",
+        "2008",
+        "2009",
+        "2010",
+        "2011",
+        "2012",
+        "2013",
+        "2014",
+        "2015",
+        "2016",
+        "2017",
+        "2018",
+        "2019",
+        "2020",
+        "2021",
+        "2022"
+      ]
+    }
+  },
+  "data": [
+    {
+      "nr": 1,
+      "tytul": "Umarł odbiornik, niech żyje odbiornik!",
+      "opis_odcinka": "Pewnego dnia Babka psuje telewizor. Ferdek broniąc dom przed złodziejem chce zarobić na nowy telewizor przez Sex-Telefon.",
+      "data_premiery": "16.03.1999",
+      "data_components": {
+        "day": 16,
+        "month": 3,
+        "year": 1999
+      },
+      "rezyseria": "Okił Khamidov",
+      "scenariusz": "Janusz Sadza, Aleksander Sobiszewski, Artur Rega, Roman Rega, Tomasz Kupiński, Igor Nurczyński",
+      "sezon": 0,
+      "link_wiki": "https://kiepscy.fandom.com/wiki/Umar%C5%82_odbiornik,_niech_%C5%BCyje_odbiornik!"
+    }
+  ]
+}

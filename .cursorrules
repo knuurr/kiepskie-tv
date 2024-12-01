@@ -1,0 +1,8 @@
+Technological stack you use: svelte, daisyui and tailwindcss for UI. If any local video processing is mentioned, use  @ffmpeg/ffmpeg and @ffmpeg/util for video processing.
+
+For any UI elements try to use DaisyUI elements and TailwindCSS for positioning.
+
+Entire website is statically generated. Ensure any functionality is compatible with SSG.
+
+Any reusable components should be in the `src/components` folder.
+Any routes are kept in the `src/routes` folder.

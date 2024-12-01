@@ -5,7 +5,7 @@
   import Typewriter from "svelte-typewriter";
 
   import CenteredContainer from "../../components/CenteredContainer.svelte";
-  import Footer from "../Footer.svelte";
+  import Footer from "../../components/Footer.svelte";
   import NavBar from "../../components/NavBar.svelte";
   import ResponsiveContainer from "../../components/ResponsiveContainer.svelte";
   import DashedBox from "../DashedBox.svelte";

@@ -1,0 +1,544 @@
+<script lang="ts">
+  import type { PageData } from "./$types";
+  import type { EpisodeData, Filter } from "$lib/types";
+  import NavBar from "../../components/NavBar.svelte";
+  import Footer from "../../components/Footer.svelte";
+  import CenteredContainer from "../../components/CenteredContainer.svelte";
+  import ResponsiveContainer from "../../components/ResponsiveContainer.svelte";
+  import EpisodeFilter from "../../components/EpisodeFilter.svelte";
+  import HighlightText from "../../components/HighlightText.svelte";
+  import EpisodeModal from "../../components/EpisodeModal.svelte";
+  import { page } from "$app/stores";
+  import { goto } from "$app/navigation";
+  import { onMount } from "svelte";
+  import ClickableFilterValue from "../../components/ClickableFilterValue.svelte";
+  import FeedbackSection from "../../components/FeedbackSection.svelte";
+
+  export let data: PageData;
+
+  let activeFilters: Filter[] = [];
+  let filteredEpisodes: EpisodeData[] = [];
+  let isHelpOpen = false;
+  let isEpisodeModalOpen = false;
+  let selectedEpisode: EpisodeData | null = null;
+  let modalMode: "specific" = "specific";
+
+  const CHUNK_SIZE_OPTIONS = [
+    { value: 10, label: "10 wierszy" },
+    { value: 25, label: "25 wierszy" },
+    { value: 50, label: "50 wierszy" },
+    { value: 100, label: "100 wierszy" },
+  ];
+
+  let selectedChunkSize = CHUNK_SIZE_OPTIONS[0].value;
+  let visibleRows = selectedChunkSize;
+  let showAllRows = false;
+
+  let showScrollTop = false;
+
+  $: {
+    filteredEpisodes = data.tableData.data.filter((episode) => {
+      const filtersByType = activeFilters.reduce(
+        (acc, filter) => {
+          if (!acc[filter.type]) {
+            acc[filter.type] = [];
+          }
+          acc[filter.type].push(filter);
+          return acc;
+        },
+        {} as Record<string, Filter[]>,
+      );
+
+      return Object.entries(filtersByType).every(([_, filters]) => {
+        return filters.some((filter) => {
+          const value = filter.value.toLowerCase();
+          let matches = false;
+
+          switch (filter.type) {
+            case "year":
+              matches = episode.data_components.year.toString() === value;
+              break;
+            case "month":
+              matches =
+                episode.data_components.month.toString().padStart(2, "0") ===
+                value;
+              break;
+            case "day":
+              matches =
+                episode.data_components.day.toString().padStart(2, "0") ===
+                value;
+              break;
+            case "director":
+              matches =
+                episode.rezyseria.toLowerCase().includes(value) &&
+                !episode.scenariusz.toLowerCase().includes(value);
+              break;
+            case "writer":
+              matches =
+                episode.scenariusz.toLowerCase().includes(value) &&
+                !episode.rezyseria.toLowerCase().includes(value);
+              break;
+            case "title":
+              matches = episode.tytul.toLowerCase().includes(value);
+              break;
+            case "description":
+              matches = episode.opis_odcinka.toLowerCase().includes(value);
+              break;
+            case "season":
+              matches = episode.sezon === parseInt(value);
+              break;
+          }
+
+          return filter.isNegated ? !matches : matches;
+        });
+      });
+    });
+  }
+
+  $: displayedEpisodes = showAllRows
+    ? filteredEpisodes
+    : filteredEpisodes.slice(0, visibleRows);
+
+  $: searchTerms = activeFilters
+    .filter((f) =>
+      ["title", "description", "director", "writer"].includes(f.type),
+    )
+    .map((f) => f.value);
+
+  function handleAddFilter(event: CustomEvent<Filter>) {
+    activeFilters = [...activeFilters, event.detail];
+  }
+
+  function handleRemoveFilter(event: CustomEvent<number>) {
+    activeFilters = activeFilters.filter((_, i) => i !== event.detail);
+  }
+
+  function loadMore() {
+    if (showAllRows) return;
+    if (visibleRows + selectedChunkSize >= filteredEpisodes.length) {
+      showAllRows = true;
+    } else {
+      visibleRows += selectedChunkSize;
+    }
+  }
+
+  function showAll() {
+    showAllRows = true;
+    visibleRows = filteredEpisodes.length;
+  }
+
+  function handleChunkSizeChange(event: Event) {
+    const select = event.target as HTMLSelectElement;
+    selectedChunkSize = parseInt(select.value);
+    if (!showAllRows) {
+      visibleRows = Math.min(selectedChunkSize, filteredEpisodes.length);
+    }
+  }
+
+  function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  // Add scroll listener
+  if (typeof window !== "undefined") {
+    window.addEventListener("scroll", () => {
+      showScrollTop = window.scrollY > 500;
+    });
+  }
+
+  function handleRemoveAllFilters() {
+    activeFilters = [];
+  }
+
+  function handleEpisodeClick(episode: EpisodeData) {
+    selectedEpisode = episode;
+    modalMode = "specific";
+    isEpisodeModalOpen = true;
+    // Update URL without reload and without scrolling
+    const url = new URL(window.location.href);
+    url.searchParams.set("episode", episode.nr.toString());
+    window.history.pushState({}, "", url);
+  }
+
+  function handleModalClose() {
+    isEpisodeModalOpen = false;
+    if (modalMode === "specific") {
+      // Remove episode parameter from URL without scrolling
+      const url = new URL(window.location.href);
+      url.searchParams.delete("episode");
+      window.history.pushState({}, "", url);
+    }
+    selectedEpisode = null;
+  }
+
+  // Handle initial URL parameters
+  onMount(() => {
+    const episodeNr = $page.url.searchParams.get("episode");
+    if (episodeNr) {
+      const episode = data.tableData.data.find(
+        (ep) => ep.nr.toString() === episodeNr,
+      );
+      if (episode) {
+        // Don't update URL again when loading from URL parameter
+        selectedEpisode = episode;
+        modalMode = "specific";
+        isEpisodeModalOpen = true;
+      }
+    }
+  });
+
+  // Add new function to handle filter clicks
+  function handleFilterClick(
+    event: CustomEvent<{ type: string; value: string }>,
+  ) {
+    const newFilter: Filter = {
+      type: event.detail.type,
+      value: event.detail.value,
+      isNegated: false,
+    };
+
+    // Check if filter already exists
+    const filterExists = activeFilters.some(
+      (f) => f.type === newFilter.type && f.value === newFilter.value,
+    );
+
+    if (!filterExists) {
+      activeFilters = [...activeFilters, newFilter];
+    }
+  }
+</script>
+
+<div class="min-h-screen bg-base-200">
+  <NavBar />
+
+  {#if showScrollTop}
+    <button
+      class="fixed bottom-8 right-8 btn btn-circle btn-primary shadow-lg z-50"
+      on:click={scrollToTop}
+      aria-label="Przewiń do góry"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-6 w-6"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M5 15l7-7 7 7"
+        />
+      </svg>
+    </button>
+  {/if}
+
+  <main class="container mx-auto px-4 py-8">
+    <div class="space-y-6">
+      <div class="prose max-w-none mb-8">
+        <h1>Lista odcinków Świata według Kiepskich</h1>
+        <p class="text-base-content/70">
+          Przeglądaj wszystkie odcinki serialu. Użyj filtrów aby znaleźć
+          konkretne odcinki po dacie emisji, reżyserze, scenarzyście lub treści.
+          Możesz łączyć wiele filtrów i wykluczać niechciane wyniki.
+        </p>
+      </div>
+
+      <EpisodeFilter
+        episodes={data.tableData.data}
+        {activeFilters}
+        on:addFilter={handleAddFilter}
+        on:removeFilter={handleRemoveFilter}
+        on:removeAllFilters={handleRemoveAllFilters}
+      />
+
+      <div class="bg-base-200 p-4 rounded-lg mb-4 space-y-2">
+        <div class="flex items-center gap-2 text-sm">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          <span>
+            Kliknij wiersz aby zobaczyć szczegóły odcinka w oknie modalnym
+          </span>
+        </div>
+        <div class="flex items-center gap-2 text-sm">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          <span>
+            Kliknij na <span
+              class="border-b border-dotted border-base-content/30"
+              >podkreślone wartości</span
+            > w tabeli aby filtrować wyniki
+          </span>
+        </div>
+      </div>
+
+      <div class="bg-base-100 rounded-box shadow-lg overflow-x-auto">
+        {#if filteredEpisodes.length > 0}
+          <div
+            class="flex justify-between items-center p-4 border-b border-base-300"
+          >
+            <div class="flex items-center gap-4">
+              <span class="text-sm opacity-70">Wyświetl po:</span>
+              <select
+                class="select select-bordered select-sm"
+                value={selectedChunkSize}
+                on:change={handleChunkSizeChange}
+                disabled={showAllRows}
+              >
+                {#each CHUNK_SIZE_OPTIONS as option}
+                  <option value={option.value}>{option.label}</option>
+                {/each}
+              </select>
+            </div>
+            {#if !showAllRows && filteredEpisodes.length > visibleRows}
+              <button class="btn btn-sm" on:click={showAll}>
+                Pokaż wszystkie ({filteredEpisodes.length})
+              </button>
+            {/if}
+          </div>
+        {/if}
+
+        <table class="table table-zebra w-full">
+          <thead>
+            <tr>
+              {#each Object.entries(data.tableData.metadata.header_metadata) as [key, header]}
+                <th
+                  class="{key === 'opis_odcinka'
+                    ? 'min-w-[300px] max-w-[400px] whitespace-normal'
+                    : ''} 
+                         {key === 'tytul'
+                    ? 'max-w-[150px] whitespace-normal'
+                    : ''}
+                         {['rezyseria', 'scenariusz'].includes(key)
+                    ? 'whitespace-normal min-w-[200px]'
+                    : 'whitespace-nowrap'}"
+                >
+                  {header}
+                </th>
+              {/each}
+            </tr>
+          </thead>
+          <tbody>
+            {#each displayedEpisodes as episode}
+              <tr
+                class="hover cursor-pointer"
+                on:click={(e) => {
+                  // Only handle click if it's not on or within the title cell
+                  if (!e.target.closest("td.title-cell")) {
+                    handleEpisodeClick(episode);
+                  }
+                }}
+              >
+                <td class="whitespace-nowrap">{episode.nr}</td>
+                <td class="whitespace-normal max-w-[150px] group title-cell">
+                  <a
+                    href={episode.link_wiki}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="link link-hover hover:text-primary transition-colors"
+                    data-tip="artykuł na wiki"
+                  >
+                    <HighlightText
+                      text={episode.tytul}
+                      highlight={searchTerms.find((term) =>
+                        episode.tytul
+                          .toLowerCase()
+                          .includes(term.toLowerCase()),
+                      )}
+                    />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke-width="1.5"
+                      stroke="currentColor"
+                      class="w-4 h-4 opacity-50 group-hover:opacity-100"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+                      />
+                    </svg>
+                  </a>
+                </td>
+                <td class="min-w-[300px] max-w-[400px] whitespace-normal">
+                  <HighlightText
+                    text={episode.opis_odcinka}
+                    highlight={searchTerms.find((term) =>
+                      episode.opis_odcinka
+                        .toLowerCase()
+                        .includes(term.toLowerCase()),
+                    )}
+                  />
+                </td>
+                <td class="whitespace-nowrap">
+                  <ClickableFilterValue
+                    value={episode.data_components.day
+                      .toString()
+                      .padStart(2, "0")}
+                    type="day"
+                    on:filter={handleFilterClick}
+                  /> /
+                  <ClickableFilterValue
+                    value={episode.data_components.month
+                      .toString()
+                      .padStart(2, "0")}
+                    type="month"
+                    on:filter={handleFilterClick}
+                  /> /
+                  <ClickableFilterValue
+                    value={episode.data_components.year.toString()}
+                    type="year"
+                    on:filter={handleFilterClick}
+                  />
+                </td>
+                <td class="whitespace-normal">
+                  {#each episode.rezyseria.split(", ") as director, i}
+                    <div class="flex">
+                      <ClickableFilterValue
+                        value={director}
+                        type="director"
+                        on:filter={handleFilterClick}
+                      >
+                        <HighlightText
+                          text={director}
+                          highlight={searchTerms.find((term) =>
+                            director.toLowerCase().includes(term.toLowerCase()),
+                          )}
+                        />
+                      </ClickableFilterValue>
+                      {#if i < episode.rezyseria.split(", ").length - 1}
+                        <span class="text-base-content/50">,</span>
+                      {/if}
+                    </div>
+                  {/each}
+                </td>
+                <td class="whitespace-normal">
+                  {#each episode.scenariusz.split(", ") as writer, i}
+                    <div class="flex">
+                      <ClickableFilterValue
+                        value={writer}
+                        type="writer"
+                        on:filter={handleFilterClick}
+                      >
+                        <HighlightText
+                          text={writer}
+                          highlight={searchTerms.find((term) =>
+                            writer.toLowerCase().includes(term.toLowerCase()),
+                          )}
+                        />
+                      </ClickableFilterValue>
+                      {#if i < episode.scenariusz.split(", ").length - 1}
+                        <span class="text-base-content/50">,</span>
+                      {/if}
+                    </div>
+                  {/each}
+                </td>
+                <td class="whitespace-nowrap">
+                  <ClickableFilterValue
+                    value={episode.sezon.toString()}
+                    type="season"
+                    on:filter={handleFilterClick}
+                  />
+                </td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+
+        {#if filteredEpisodes.length > visibleRows && !showAllRows}
+          <div
+            class="flex flex-col items-center py-4 bg-base-200 bg-opacity-50 cursor-pointer hover:bg-opacity-70 transition-all"
+            on:click={loadMore}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-6 w-6 animate-bounce"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+            <span class="text-base-content/60">
+              Pokaż kolejne {Math.min(
+                selectedChunkSize,
+                filteredEpisodes.length - visibleRows,
+              )} wierszy
+            </span>
+          </div>
+        {/if}
+        <div class="p-4 bg-base-200 text-center space-y-4">
+          <p class="text-sm opacity-70">
+            Podziękowania dla <a
+              href="https://example.com/source"
+              class="link link-primary"
+              target="_blank"
+              rel="noopener noreferrer">Kiepscy Wiki</a
+            > za tabele z danymi odcinków.
+          </p>
+
+          <button
+            class="btn btn-primary gap-2"
+            on:click={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 15l7-7 7 7"
+              />
+            </svg>
+            Przewiń do góry
+          </button>
+        </div>
+
+        <FeedbackSection />
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+
+  <EpisodeModal
+    isOpen={isEpisodeModalOpen}
+    episodes={filteredEpisodes}
+    {selectedEpisode}
+    mode={modalMode}
+    onClose={handleModalClose}
+  />
+</div>

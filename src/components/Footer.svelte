@@ -5,7 +5,7 @@
     GH_PROJECT_URL,
     GH_REPO_URL,
     LI_URL,
-  } from "./Constans.svelte"; // Import all from data.js
+  } from "../routes/Constans.svelte"; // Import all from data.js
 </script>
 
 <footer class="footer footer-center p-10 bg-base-200 text-base-content rounded">

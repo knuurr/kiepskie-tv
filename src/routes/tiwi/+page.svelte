@@ -14,7 +14,7 @@
   import ResponsiveContainer from "../../components/ResponsiveContainer.svelte";
   import NavBar from "../../components/NavBar.svelte";
   import Header from "../Header.svelte";
-  import Footer from "../Footer.svelte";
+  import Footer from "../../components/Footer.svelte";
 
   import * as DATA from "../Constans.svelte"; // reusable constans
 

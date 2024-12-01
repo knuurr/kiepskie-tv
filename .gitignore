@@ -11,3 +11,7 @@ node_modules
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 output*
+
+venv/
+
+prompts/

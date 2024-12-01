@@ -1,6 +1,6 @@
 <script lang="ts">
   import NavBar from "../components/NavBar.svelte";
-  import Footer from "./Footer.svelte";
+  import Footer from "../components/Footer.svelte";
   import CenteredContainer from "../components/CenteredContainer.svelte";
   import ResponsiveContainer from "../components/ResponsiveContainer.svelte";
   import Header from "./Header.svelte";
