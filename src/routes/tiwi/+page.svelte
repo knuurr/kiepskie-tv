@@ -460,370 +460,404 @@
 </script>
 
 <CenteredContainer>
-  <NavBar></NavBar>
+  <NavBar />
 
   <ResponsiveContainer>
     <Header title={DATA.APP_TITLE} description={DATA.APP_DESC}>
       <p class="text-lg">
         Twoje wideo nigdzie nie jest wysłane - obróbka jest 100% offline
-      </p></Header
-    >
+      </p>
+    </Header>
   </ResponsiveContainer>
 
+  <!-- How it works section -->
   <ResponsiveContainer>
-    <DashedBox>
-      <p in:fade class="font-bold text-2xl mt-1 mb-1">Jak to działa?</p>
-
-      <div class="collapse collapse-plus bg-base-200">
-        <input type="checkbox" />
-        <div class="collapse-title text-lg font-medium">Zobacz przykład</div>
-        <div class="collapse-content text-sm">
-          <p>1. Załącz swoje wideo</p>
-          <p>2. Dobierz ustawienia</p>
-          <p>3. Poczekaj aż sie przeprocesują</p>
-          <p>4. Profit</p>
-          <div id="video-container">
-            <video src={DATA.EXAMPLE_URL} controls></video>
-          </div>
-        </div>
-      </div>
-    </DashedBox>
-  </ResponsiveContainer>
-  <ResponsiveContainer>
-    <DashedBox>
-      <p in:fade class=" font-bold text-2xl mt-1 mb-1">Wrzuć wideło</p>
-
-      {#if state === "loading"}
-        <p in:fade>Ładuję ffmpeg...</p>
-      {:else if state === "loaded" || state === "convert.done"}
-        <p in:fade>Dropnij wideło albo kliknij by "załonczyć"</p>
-
-        <label class="form-control w-full">
-          <input
-            type="file"
-            name="file"
-            multiple
-            bind:files
-            accept="video/*"
-            class="file-input file-input-bordered w-full {files &&
-            files.length > 0
-              ? 'file-input-success'
-              : ''}"
-          />
-          <div class="label">
-            <span class="label-text-alt"
-              >Max. wielkość 2GB. Testowane na plikach mp4/webm poniżej 60
-              sekund.</span
-            >
-            <span class="label-text-alt"
-              >Twoje pliki nigdzie nie są wysyłane - obróbka jest offline na
-              Twoim urządzeniu.</span
-            >
-          </div>
-        </label>
-
-        {#if files}
-          {#if files.length > 0}
-            <div class="join join-vertical w-full">
-              <!-- Podgląd -->
-              <div class="collapse collapse-plus bg-base-200">
-                <input type="checkbox" />
-                <div class="collapse-title text-md font-medium">Podgląd</div>
-                <div class="collapse-content">
-                  {#await generatePreview(files[0])}
-                    <p>Loading preview...</p>
-                  {:then previewUrl}
-                    <img src={previewUrl} alt="Podgląd" />
-                  {:catch error}
-                    <p>Error: {error.message}</p>
-                  {/await}
-                  <p class="text-sm text-gray-600 mt-2">
-                    Podgląd generuje się jedynie dla jednego filmu naraz.
-                  </p>
-                  <p class="text-sm text-gray-600 mt-2">
-                    Czasami pierwsza klatka generuje sie bez filmu i widać
-                    greenscreen. Pracuję nad tym.
-                  </p>
-                </div>
-              </div>
-              <div class="collapse collapse-plus bg-base-200">
-                <input type="checkbox" />
-                <div class="collapse-title text-md font-medium">Pliki</div>
-                <div class="collapse-content">
-                  {#each Array.from(files) as file, i}
-                    <button
-                      class="btn btn-outline btn-info btn-sm"
-                      on:click={() => removeFile(i)}
-                    >
-                      {file.name}
-                      <div class="badge">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke-width="1.5"
-                          stroke="currentColor"
-                          class="w-2 h-2"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            d="M6 18 18 6M6 6l12 12"
-                          />
-                        </svg>
-                      </div>
-                    </button>
-                  {/each}
-                </div>
-              </div>
-            </div>
-          {/if}
-        {/if}
+    <div class="card bg-base-100 shadow-xl">
+      <div class="card-body">
+        <h2 class="card-title">Jak to działa?</h2>
 
         <div class="collapse collapse-plus bg-base-200">
           <input type="checkbox" />
-          <div class="collapse-title text-md font-medium">Ustawienia</div>
-
-          <div class="collapse-content">
-            <div class="overflow-x-auto">
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th>Opis</th>
-                    <th>Przycisk</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>Dodaj kultowy efekt przejścia na starcie</td>
-                    <td
-                      ><input
-                        type="checkbox"
-                        checked={transformSettings.addIntro}
-                        class="toggle toggle-success"
-                        on:change={(e) => handleSwitchChange("addIntro", e)}
-                      />
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Dodaj reakcję Boczka</td>
-                    <td
-                      ><input
-                        type="checkbox"
-                        checked={transformSettings.addBoczek}
-                        class="toggle toggle-success"
-                        on:change={(e) => handleSwitchChange("addBoczek", e)}
-                      /></td
-                    >
-                  </tr>
-                  <tr>
-                    <td>Resetuj ustawienia do domyślnych</td>
-                    <td>
-                      <button
-                        class="btn btn-error btn-sm"
-                        on:click={() => {
-                          resetSettings();
-                        }}
-                        >Reset
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke-width="1.5"
-                          stroke="currentColor"
-                          class="w-4 h-4"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z"
-                          />
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
-                          />
-                        </svg>
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+          <div class="collapse-title text-lg font-medium">Zobacz przykład</div>
+          <div class="collapse-content text-sm">
+            <div class="steps steps-vertical">
+              <div class="step step-primary">Załącz swoje wideo</div>
+              <div class="step step-primary">Dobierz ustawienia</div>
+              <div class="step step-primary">Poczekaj aż sie przeprocesują</div>
+              <div class="step step-primary">Profit</div>
+            </div>
+            <div id="video-container" class="mt-4">
+              <video src={DATA.EXAMPLE_URL} controls class="rounded-lg"></video>
             </div>
           </div>
         </div>
-
-        {#if !files}
-          <button
-            class="btn btn-warning btn-outline btn-disabled btn-block btn-lg mt-1 mb-1"
-            >Okiłizuj
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="1.5"
-              stroke="currentColor"
-              class="w-4 h-4"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z"
-              />
-            </svg>
-          </button>
-        {:else}
-          <button
-            on:click={() => {
-              convertVideos(files);
-            }}
-            class="btn btn-warning btn-block bg-yellow-500"
-            >Okiłizuj
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="1.5"
-              stroke="currentColor"
-              class="w-4 h-4"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z"
-              />
-            </svg>
-          </button>
-        {/if}
-      {:else if state === "convert.start"}
-        <h2>Kliknij by anulować</h2>
-
-        <button
-          on:click={() => {
-            resetFfmpeg();
-          }}
-          class="btn btn-error btn-block">Anuluj</button
-        >
-      {/if}
-    </DashedBox>
+      </div>
+    </div>
   </ResponsiveContainer>
+
+  <!-- Upload section -->
   <ResponsiveContainer>
-    <DashedBox>
-      <p in:fade class="font-bold text-2xl mt-1 mb-1">Twoje wideo</p>
-      {#if state === "loaded"}
-        <div class="join join-vertical w-full">
-          <details class="collapse bg-base-200 collapse-arrow collapse-close">
-            <summary class="collapse-title text-lg font-medium">
-              Tu będą Twoje wideło...
-            </summary>
-            <div class="collapse-content">
-              <p>Brak &#128546;</p>
+    <div class="card bg-base-100 shadow-xl">
+      <div class="card-body">
+        <h2 class="card-title">Wrzuć wideło</h2>
+
+        {#if state === "loading"}
+          <div class="flex items-center justify-center">
+            <span class="loading loading-spinner loading-lg"></span>
+            <p class="ml-2">Ładuję ffmpeg...</p>
+          </div>
+        {:else if state === "loaded" || state === "convert.done"}
+          <p class="text-lg mb-4">Dropnij wideło albo kliknij by "załonczyć"</p>
+
+          <label class="form-control w-full">
+            <input
+              type="file"
+              name="file"
+              multiple
+              bind:files
+              accept="video/*"
+              class="file-input file-input-bordered w-full {files &&
+              files.length > 0
+                ? 'file-input-success'
+                : ''}"
+            />
+            <div class="label">
+              <span class="label-text-alt"
+                >Max. wielkość 2GB. Testowane na plikach mp4/webm poniżej 60
+                sekund.</span
+              >
+              <span class="label-text-alt"
+                >Twoje pliki nigdzie nie są wysyłane - obróbka jest offline.</span
+              >
             </div>
-            <!-- </div> -->
-          </details>
-        </div>
-      {:else if state === "convert.start"}
-        {#if transformState == "1/2"}
-          <p class="text-lg">1/2 Nakładanie na "Okił"-a...</p>
-        {:else if transformState === "2/2"}
-          <p class="text-lg">2/2 Dodawanie reakcji Boczka...</p>
-        {/if}
-        <p class="text-sm mt-1">Twoje wideo będą poniżej</p>
-        <p class="text-lg">{$progress.toFixed(0)} %</p>
-        <p class="text-sm mt-1">
-          (tak - czasem wychodzi ponad setkę. Pracuję nad tym)
-        </p>
-      {:else if state === "convert.done"}
-        <p>Wideło gotowe!</p>
-        {#if videoDataList}
-          {#if videoDataList.length > 0}
-            <div class="join join-vertical w-full">
-              {#each videoDataList as item, i}
-                <details
-                  class="collapse bg-base-200 collapse-arrow"
-                  open={i === 0 ? true : false}
-                >
-                  <summary class="collapse-title text-lg font-medium">
-                    ({i + 1}/{videoDataList.length}) {item.videoName}
-                  </summary>
-                  <div class="collapse-content">
-                    <div id="video-container">
-                      <video
-                        src={item.videoBlobURL}
-                        controls
-                        autoplay={i === 0 ? true : false}
-                      ></video>
-                    </div>
-                    <button
-                      class="btn btn-success btn-block mt-1 mb-1 btn-md"
-                      on:click={() =>
-                        downloadVideo(item.videoBlob, item.videoName)}
-                      >Zapisz #{i + 1}
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke-width="1.5"
-                        stroke="currentColor"
-                        class="w-4 h-4"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M9 8.25H7.5a2.25 2.25 0 0 0-2.25 2.25v9a2.25 2.25 0 0 0 2.25 2.25h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25H15M9 12l3 3m0 0 3-3m-3 3V2.25"
-                        />
-                      </svg>
-                    </button>
-                    <button
-                      class="btn btn-info btn-block mt-1 mb-1 btn-md"
-                      on:click={() =>
-                        shareVideo(item.videoBlob, item.videoName)}
-                      >Udostępnij #{i + 1}
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke-width="1.5"
-                        stroke="currentColor"
-                        class="w-4 h-4"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"
-                        />
-                      </svg>
-                    </button>
-                    <p class="text-sm">
-                      Nie pobiera się? Sprawdź powiadomienia albo pobrane w
-                      przeglądarce
-                    </p>
-                    <p class="text-sm">
-                      Nie wszystkie przeglądarki moga wspierać funkcję
-                      "Udostępnij"
-                    </p>
+          </label>
+
+          {#if files && files.length > 0}
+            <!-- Preview Card -->
+            <div class="card bg-base-200 mt-4">
+              <div class="card-body">
+                <h3 class="card-title text-lg">Podgląd</h3>
+                {#await generatePreview(files[0])}
+                  <div class="flex justify-center">
+                    <span class="loading loading-spinner loading-md"></span>
                   </div>
-                  <!-- </div> -->
-                </details>
-              {/each}
+                {:then previewUrl}
+                  <img src={previewUrl} alt="Podgląd" class="rounded-lg" />
+                {:catch error}
+                  <div class="alert alert-error">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="stroke-current shrink-0 h-6 w-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      ><path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      /></svg
+                    >
+                    <span>Error: {error.message}</span>
+                  </div>
+                {/await}
+                <p class="text-sm text-gray-600 mt-2">
+                  Podgląd generuje się jedynie dla jednego filmu naraz.
+                </p>
+              </div>
+            </div>
+
+            <!-- Files List -->
+            <div class="card bg-base-200 mt-4">
+              <div class="card-body">
+                <h3 class="card-title text-lg">
+                  Wybrane pliki
+                  <div class="badge badge-primary">{files.length}</div>
+                </h3>
+
+                <div class="overflow-x-auto">
+                  <table class="table table-zebra">
+                    <thead>
+                      <tr>
+                        <th>Nazwa pliku</th>
+                        <th>Rozmiar</th>
+                        <th>Akcje</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {#each Array.from(files) as file, i}
+                        <tr>
+                          <td class="max-w-xs truncate">
+                            {file.name}
+                          </td>
+                          <td>{(file.size / (1024 * 1024)).toFixed(2)} MB</td>
+                          <td>
+                            <button
+                              class="btn btn-sm btn-error btn-outline"
+                              on:click={() => removeFile(i)}
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="h-4 w-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  stroke-width="2"
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                />
+                              </svg>
+                              <span class="sr-only">Usuń {file.name}</span>
+                            </button>
+                          </td>
+                        </tr>
+                      {:else}
+                        <tr>
+                          <td colspan="3" class="text-center text-gray-500">
+                            Brak wybranych plików
+                          </td>
+                        </tr>
+                      {/each}
+                    </tbody>
+                  </table>
+                </div>
+
+                {#if files.length > 0}
+                  <div class="card-actions justify-end mt-2">
+                    <button
+                      class="btn btn-sm btn-error"
+                      on:click={() => {
+                        const _dataTransfer = new DataTransfer();
+                        files = _dataTransfer.files;
+                      }}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
+                      Usuń wszystkie
+                    </button>
+                  </div>
+                {/if}
+              </div>
+            </div>
+
+            <!-- Settings Card -->
+            <div class="card bg-base-200 mt-4">
+              <div class="card-body">
+                <h3 class="card-title text-lg">Ustawienia</h3>
+                <div class="overflow-x-auto">
+                  <table class="table">
+                    <tbody>
+                      <tr>
+                        <td>Dodaj kultowy efekt przejścia na starcie</td>
+                        <td>
+                          <input
+                            type="checkbox"
+                            checked={transformSettings.addIntro}
+                            class="toggle toggle-success"
+                            on:change={(e) => handleSwitchChange("addIntro", e)}
+                          />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>Dodaj reakcję Boczka</td>
+                        <td>
+                          <input
+                            type="checkbox"
+                            checked={transformSettings.addBoczek}
+                            class="toggle toggle-success"
+                            on:change={(e) =>
+                              handleSwitchChange("addBoczek", e)}
+                          />
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="card-actions justify-end">
+                  <button class="btn btn-error btn-sm" on:click={resetSettings}>
+                    Reset ustawień
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
             </div>
           {/if}
+
+          <!-- Convert Button -->
+          <div class="card-actions justify-end mt-4">
+            <button
+              on:click={() => convertVideos(files)}
+              class="btn btn-primary btn-lg gap-2 {!files
+                ? 'btn-disabled'
+                : ''}"
+            >
+              Okiłizuj
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </button>
+          </div>
+        {:else if state === "convert.start"}
+          <div class="card bg-base-200">
+            <div class="card-body">
+              <h3 class="card-title">Przetwarzanie...</h3>
+              <progress
+                class="progress progress-primary"
+                value={$progress}
+                max="100"
+              ></progress>
+              <p class="text-center">{$progress.toFixed(0)}%</p>
+              <div class="card-actions justify-center">
+                <button on:click={resetFfmpeg} class="btn btn-error">
+                  Anuluj
+                </button>
+              </div>
+            </div>
+          </div>
         {/if}
-      {:else if state === "convert.error"}
-        <p in:fade style="color:red">Error: {error}</p>
-      {:else}
-        <p in:fade>(Z pustego to i Salamon nie naleje)</p>
-      {/if}
-    </DashedBox>
+      </div>
+    </div>
+  </ResponsiveContainer>
+
+  <!-- Results section -->
+  <ResponsiveContainer>
+    <div class="card bg-base-100 shadow-xl">
+      <div class="card-body">
+        <h2 class="card-title">Twoje wideo</h2>
+
+        {#if state === "convert.done" && videoDataList.length > 0}
+          {#each videoDataList as item, i}
+            <div class="card bg-base-200 mt-4">
+              <div class="card-body">
+                <h3 class="card-title">
+                  ({i + 1}/{videoDataList.length}) {item.videoName}
+                </h3>
+                <div class="aspect-video">
+                  <video
+                    src={item.videoBlobURL}
+                    controls
+                    autoplay={i === 0}
+                    class="w-full h-full rounded-lg"
+                  ></video>
+                </div>
+                <div class="card-actions justify-end gap-2 mt-4">
+                  <button
+                    class="btn btn-primary gap-2"
+                    on:click={() =>
+                      downloadVideo(item.videoBlob, item.videoName)}
+                  >
+                    Zapisz
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                      />
+                    </svg>
+                  </button>
+                  <button
+                    class="btn btn-secondary gap-2"
+                    on:click={() => shareVideo(item.videoBlob, item.videoName)}
+                  >
+                    Udostępnij
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          {/each}
+        {:else if state === "convert.error"}
+          <div class="alert alert-error">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="stroke-current shrink-0 h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              ><path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+              /></svg
+            >
+            <span>{error}</span>
+          </div>
+        {/if}
+      </div>
+    </div>
   </ResponsiveContainer>
 </CenteredContainer>
-<Footer></Footer>
+
+<Footer />
 
 <style>
   video {
     max-width: 100%;
     height: auto;
-    /* margin: 10px */
     margin-bottom: 10px;
     margin-top: 5px;
   }
