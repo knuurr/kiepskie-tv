@@ -50,6 +50,15 @@
   let ffmpeg: FFmpeg;
   let progress = tweened(0);
 
+  type PreviewFrame = {
+    timestamp: number;
+    url: string;
+  };
+
+  const previewFrames = writable<PreviewFrame[]>([]);
+
+  let selectedPreviewIndex = 0;
+
   function getVideoDuration(file: File): Promise<number> {
     const video = document.createElement("video");
     const objectURL = URL.createObjectURL(file);
@@ -309,47 +318,58 @@
     console.log("[*] FFmpeg Virtual FS cleaned up.");
   }
 
-  async function generatePreview(file) {
-    console.log("[*] Attempting to generate preview:");
-    await ffmpeg.writeFile(file.name, await fetchFile(file));
-    await ffmpeg.writeFile(
-      DATA.NAME_GREENSCREEN_PNG,
-      await fetchFile(DATA.PATH_GREENSCREEN_PNG),
-    );
+  async function generatePreview(file: File): Promise<PreviewFrame[]> {
+    console.log("[*] Attempting to generate previews");
 
-    await ffmpeg.exec([
-      "-i",
-      DATA.NAME_GREENSCREEN_PNG,
-      "-i",
-      file.name,
-      "-filter_complex",
-      DATA.FFMPEG_FILTER_ADD_GREENSCREEN,
-      "-frames:v",
-      "1",
-      "-preset",
-      "ultrafast",
-      "preview_image.png",
-    ]);
+    // Get video duration to calculate frame timestamps
+    const duration = await getVideoDuration(file);
+    const timestamps = [
+      duration * 0.25, // 25% through the video
+      duration * 0.5, // 50% through the video
+      duration * 0.75, // 75% through the video
+    ];
 
-    const previewData = await ffmpeg.readFile(
-      // `${DATA.NAME_TEMP_OUTPUT}-${_i}${DATA.NAME_TEMP_OUTPUT_FORMAT}`,
-      "preview_image.png",
-    );
+    const frames: PreviewFrame[] = [];
 
-    // console.log("previewData ", previewData);
-    const blob = new Blob([previewData.buffer], { type: "image/png" });
-    const previewImgBlobURL = URL.createObjectURL(blob);
-    // console.log("blob ", blob);
+    for (const timestamp of timestamps) {
+      await ffmpeg.writeFile(file.name, await fetchFile(file));
+      await ffmpeg.writeFile(
+        DATA.NAME_GREENSCREEN_PNG,
+        await fetchFile(DATA.PATH_GREENSCREEN_PNG),
+      );
 
-    const _fileDelete = await ffmpeg.deleteFile("preview_image.png");
-    console.log("[*] File cleanup from Virtual FS: ", _fileDelete);
+      // Extract frame at timestamp and process it
+      await ffmpeg.exec([
+        // "-ss",
+        // timestamp.toString(),
+        "-i",
+        DATA.NAME_GREENSCREEN_PNG,
+        "-i",
+        file.name,
+        "-filter_complex",
+        DATA.FFMPEG_FILTER_ADD_GREENSCREEN,
+        "-frames:v",
+        "1",
+        "-preset",
+        "ultrafast",
+        `preview_${timestamp}.png`,
+      ]);
 
-    // console.log(previewImgBlobURL);
+      const previewData = await ffmpeg.readFile(`preview_${timestamp}.png`);
+      const blob = new Blob([previewData.buffer], { type: "image/png" });
+      const url = URL.createObjectURL(blob);
 
-    return URL.createObjectURL(blob);
-    // previewUrl.set(previewBlobUrl);
+      frames.push({
+        timestamp,
+        url,
+      });
 
-    // return;
+      // Cleanup
+      await ffmpeg.deleteFile(`preview_${timestamp}.png`);
+      await ffmpeg.deleteFile(file.name);
+    }
+
+    return frames;
   }
 
   // Save on disk individual processed file
@@ -446,6 +466,18 @@
       selectedFileIndex--;
     }
   };
+
+  // Reset preview index when file changes
+  $: if (selectedFileIndex !== undefined) {
+    selectedPreviewIndex = 0;
+  }
+
+  // Add cleanup on file change
+  $: if (files) {
+    // Cleanup old preview URLs
+    $previewFrames.forEach((frame) => URL.revokeObjectURL(frame.url));
+    previewFrames.set([]);
+  }
 </script>
 
 <CenteredContainer>
@@ -622,44 +654,78 @@
                         <h3 class="card-title text-lg">Podgląd i ustawienia</h3>
 
                         <!-- Preview -->
-                        <div
-                          class="aspect-video bg-base-300 rounded-lg overflow-hidden"
-                        >
-                          {#await generatePreview(file)}
-                            <div
-                              class="w-full h-full flex items-center justify-center"
-                            >
-                              <span class="loading loading-spinner loading-lg"
-                              ></span>
-                            </div>
-                          {:then previewUrl}
-                            <img
-                              src={previewUrl}
-                              alt="Podgląd"
-                              class="w-full h-full object-contain"
-                            />
-                          {:catch error}
-                            <div
-                              class="w-full h-full flex items-center justify-center"
-                            >
-                              <div class="alert alert-error">
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  class="stroke-current shrink-0 h-6 w-6"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-                                  />
-                                </svg>
-                                <span>Error: {error.message}</span>
+                        <div class="space-y-4">
+                          <div
+                            class="aspect-video bg-base-300 rounded-lg overflow-hidden"
+                          >
+                            {#await generatePreview(file)}
+                              <div
+                                class="w-full h-full flex items-center justify-center"
+                              >
+                                <span class="loading loading-spinner loading-lg"
+                                ></span>
                               </div>
-                            </div>
-                          {/await}
+                            {:then frames}
+                              {#if frames.length > 0}
+                                <!-- Main preview image -->
+                                <img
+                                  src={frames[selectedPreviewIndex || 0].url}
+                                  alt="Podgląd"
+                                  class="w-full h-full object-contain"
+                                />
+
+                                <!-- Frame picker -->
+                                <div class="flex gap-2 mt-4 justify-center">
+                                  {#each frames as frame, i}
+                                    <button
+                                      class="w-24 h-16 overflow-hidden rounded-lg border-2 transition-all {selectedPreviewIndex ===
+                                      i
+                                        ? 'border-primary'
+                                        : 'border-transparent hover:border-primary/50'}"
+                                      on:click={() =>
+                                        (selectedPreviewIndex = i)}
+                                    >
+                                      <img
+                                        src={frame.url}
+                                        alt="Podgląd klatki {i + 1}"
+                                        class="w-full h-full object-cover"
+                                      />
+                                    </button>
+                                  {/each}
+                                </div>
+
+                                <!-- Timestamp indicator -->
+                                <div
+                                  class="text-center text-sm text-gray-500 mt-2"
+                                >
+                                  Klatka z {frames[
+                                    selectedPreviewIndex || 0
+                                  ].timestamp.toFixed(1)}s
+                                </div>
+                              {/if}
+                            {:catch error}
+                              <div
+                                class="w-full h-full flex items-center justify-center"
+                              >
+                                <div class="alert alert-error">
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="stroke-current shrink-0 h-6 w-6"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      stroke-width="2"
+                                      d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    />
+                                  </svg>
+                                  <span>Error: {error.message}</span>
+                                </div>
+                              </div>
+                            {/await}
+                          </div>
                         </div>
 
                         <!-- Settings -->
