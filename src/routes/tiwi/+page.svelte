@@ -59,6 +59,11 @@
 
   let selectedPreviewIndex = 0;
 
+  type VideoFrame = {
+    timestamp: number;
+    blob: Blob;
+  };
+
   function getVideoDuration(file: File): Promise<number> {
     const video = document.createElement("video");
     const objectURL = URL.createObjectURL(file);
@@ -318,58 +323,108 @@
     console.log("[*] FFmpeg Virtual FS cleaned up.");
   }
 
-  async function generatePreview(file: File): Promise<PreviewFrame[]> {
-    console.log("[*] Attempting to generate previews");
-
-    // Get video duration to calculate frame timestamps
+  async function extractFrames(file: File): Promise<VideoFrame[]> {
+    console.log("[*] Starting frame extraction");
     const duration = await getVideoDuration(file);
-    const timestamps = [
-      duration * 0.25, // 25% through the video
-      duration * 0.5, // 50% through the video
-      duration * 0.75, // 75% through the video
-    ];
+    const timestamps = [duration * 0.25, duration * 0.5, duration * 0.75];
 
-    const frames: PreviewFrame[] = [];
+    const frames: VideoFrame[] = [];
 
     for (const timestamp of timestamps) {
+      console.log(`[*] Extracting frame at ${timestamp.toFixed(2)}s`);
+      await ffmpeg.writeFile(file.name, await fetchFile(file));
+
+      // Extract frame at timestamp
+      await ffmpeg.exec([
+        "-ss",
+        timestamp.toString(),
+        "-i",
+        file.name,
+        "-frames:v",
+        "1",
+        "-f",
+        "image2",
+        "-c:v",
+        "png",
+        `frame_${timestamp}.png`,
+      ]);
+
+      const frameData = await ffmpeg.readFile(`frame_${timestamp}.png`);
+      const blob = new Blob([frameData.buffer], { type: "image/png" });
+
+      frames.push({
+        timestamp,
+        blob,
+      });
+
+      // Cleanup
+      await ffmpeg.deleteFile(`frame_${timestamp}.png`);
+      await ffmpeg.deleteFile(file.name);
+    }
+
+    console.log(`[*] Extracted ${frames.length} frames`);
+    return frames;
+  }
+
+  async function generatePreview(
+    file: File,
+    frames: VideoFrame[],
+  ): Promise<PreviewFrame[]> {
+    console.log(`[*] Starting preview generation for ${frames.length} frames`);
+
+    const previewFrames: PreviewFrame[] = [];
+
+    for (const frame of frames) {
+      console.log(
+        `[*] Processing preview for timestamp ${frame.timestamp.toFixed(2)}s`,
+      );
       await ffmpeg.writeFile(file.name, await fetchFile(file));
       await ffmpeg.writeFile(
         DATA.NAME_GREENSCREEN_PNG,
         await fetchFile(DATA.PATH_GREENSCREEN_PNG),
       );
 
-      // Extract frame at timestamp and process it
+      // Create a temporary file from the frame blob
+      const frameFileName = `input_frame_${frame.timestamp}.png`;
+      await ffmpeg.writeFile(frameFileName, await fetchFile(frame.blob));
+
+      // Process the frame with greenscreen effect
       await ffmpeg.exec([
-        // "-ss",
-        // timestamp.toString(),
         "-i",
         DATA.NAME_GREENSCREEN_PNG,
         "-i",
-        file.name,
+        frameFileName,
         "-filter_complex",
         DATA.FFMPEG_FILTER_ADD_GREENSCREEN,
         "-frames:v",
         "1",
         "-preset",
         "ultrafast",
-        `preview_${timestamp}.png`,
+        `preview_${frame.timestamp}.png`,
       ]);
 
-      const previewData = await ffmpeg.readFile(`preview_${timestamp}.png`);
-      const blob = new Blob([previewData.buffer], { type: "image/png" });
-      const url = URL.createObjectURL(blob);
+      const previewData = await ffmpeg.readFile(
+        `preview_${frame.timestamp}.png`,
+      );
+      const previewBlob = new Blob([previewData.buffer], { type: "image/png" });
+      const url = URL.createObjectURL(previewBlob);
 
-      frames.push({
-        timestamp,
+      previewFrames.push({
+        timestamp: frame.timestamp,
         url,
       });
 
       // Cleanup
-      await ffmpeg.deleteFile(`preview_${timestamp}.png`);
+      await ffmpeg.deleteFile(`preview_${frame.timestamp}.png`);
+      await ffmpeg.deleteFile(frameFileName);
       await ffmpeg.deleteFile(file.name);
+      console.log(
+        `[*] Generated preview for timestamp ${frame.timestamp.toFixed(2)}s`,
+      );
     }
 
-    return frames;
+    console.log("[*] Preview generation complete");
+    return previewFrames;
   }
 
   // Save on disk individual processed file
@@ -656,9 +711,10 @@
                         <!-- Preview -->
                         <div class="space-y-4">
                           <div
-                            class="aspect-video bg-base-300 rounded-lg overflow-hidden"
+                            class="bg-base-300 rounded-lg overflow-hidden"
+                            style="min-height: 400px;"
                           >
-                            {#await generatePreview(file)}
+                            {#await extractFrames(file).then( (frames) => generatePreview(file, frames), )}
                               <div
                                 class="w-full h-full flex items-center justify-center"
                               >
@@ -668,30 +724,38 @@
                             {:then frames}
                               {#if frames.length > 0}
                                 <!-- Main preview image -->
-                                <img
-                                  src={frames[selectedPreviewIndex || 0].url}
-                                  alt="Podgląd"
-                                  class="w-full h-full object-contain"
-                                />
+                                <div class="relative flex flex-col items-center">
+                                  <img
+                                    src={frames[selectedPreviewIndex].url}
+                                    alt="Podgląd"
+                                    class="max-w-full max-h-[400px] w-auto h-auto object-contain"
+                                  />
 
-                                <!-- Frame picker -->
-                                <div class="flex gap-2 mt-4 justify-center">
-                                  {#each frames as frame, i}
-                                    <button
-                                      class="w-24 h-16 overflow-hidden rounded-lg border-2 transition-all {selectedPreviewIndex ===
-                                      i
-                                        ? 'border-primary'
-                                        : 'border-transparent hover:border-primary/50'}"
-                                      on:click={() =>
-                                        (selectedPreviewIndex = i)}
-                                    >
-                                      <img
-                                        src={frame.url}
-                                        alt="Podgląd klatki {i + 1}"
-                                        class="w-full h-full object-cover"
-                                      />
-                                    </button>
-                                  {/each}
+                                  <!-- Frame picker thumbnails -->
+                                  <div
+                                    class="mt-4 flex gap-2 justify-center"
+                                  >
+                                    {#each frames as frame, i}
+                                      <button
+                                        class="w-20 h-12 overflow-hidden rounded border-2 transition-all {selectedPreviewIndex ===
+                                        i
+                                          ? 'border-primary shadow-lg scale-110'
+                                          : 'border-base-100 hover:border-primary/50'}"
+                                        on:click={() => {
+                                          console.log(
+                                            `[*] Selecting preview frame ${i} (${frame.timestamp.toFixed(2)}s)`,
+                                          );
+                                          selectedPreviewIndex = i;
+                                        }}
+                                      >
+                                        <img
+                                          src={frame.url}
+                                          alt="Podgląd klatki {i + 1}"
+                                          class="w-full h-full object-cover"
+                                        />
+                                      </button>
+                                    {/each}
+                                  </div>
                                 </div>
 
                                 <!-- Timestamp indicator -->
@@ -699,7 +763,7 @@
                                   class="text-center text-sm text-gray-500 mt-2"
                                 >
                                   Klatka z {frames[
-                                    selectedPreviewIndex || 0
+                                    selectedPreviewIndex
                                   ].timestamp.toFixed(1)}s
                                 </div>
                               {/if}
