@@ -56,8 +56,13 @@
   };
 
   const previewFrames = writable<PreviewFrame[]>([]);
+  const previewProgress = writable<{
+    stage: "extracting" | "processing";
+    current: number;
+  }>({ stage: "extracting", current: 0 });
 
   let selectedPreviewIndex = 0;
+  let showSettings = false;
 
   type VideoFrame = {
     timestamp: number;
@@ -325,12 +330,15 @@
 
   async function extractFrames(file: File): Promise<VideoFrame[]> {
     console.log("[*] Starting frame extraction");
+    previewProgress.set({ stage: "extracting", current: 0 });
     const duration = await getVideoDuration(file);
     const timestamps = [duration * 0.25, duration * 0.5, duration * 0.75];
 
     const frames: VideoFrame[] = [];
 
-    for (const timestamp of timestamps) {
+    for (let i = 0; i < timestamps.length; i++) {
+      const timestamp = timestamps[i];
+      previewProgress.set({ stage: "extracting", current: i + 1 });
       console.log(`[*] Extracting frame at ${timestamp.toFixed(2)}s`);
       await ffmpeg.writeFile(file.name, await fetchFile(file));
 
@@ -371,10 +379,13 @@
     frames: VideoFrame[],
   ): Promise<PreviewFrame[]> {
     console.log(`[*] Starting preview generation for ${frames.length} frames`);
+    previewProgress.set({ stage: "processing", current: 0 });
 
     const previewFrames: PreviewFrame[] = [];
 
-    for (const frame of frames) {
+    for (let i = 0; i < frames.length; i++) {
+      const frame = frames[i];
+      previewProgress.set({ stage: "processing", current: i + 1 });
       console.log(
         `[*] Processing preview for timestamp ${frame.timestamp.toFixed(2)}s`,
       );
@@ -597,61 +608,112 @@
               ? 'file-input-success'
               : ''}"
           />
-          <div class="label">
-            <span class="label-text-alt"
+          <div class="label flex flex-col items-start gap-1">
+            <span class="label-text-alt text-gray-400"
               >Max. wielkość 2GB. Testowane na plikach mp4/webm poniżej 60
               sekund.</span
             >
-            <span class="label-text-alt"
+            <span class="label-text-alt text-gray-400"
               >Twoje pliki nigdzie nie są wysyłane - obróbka jest offline.</span
             >
           </div>
         </label>
 
-        {#if files && files.length > 0}
-          <!-- Preview Card -->
-          <div class="card bg-base-200 mt-4">
-            <div class="card-body">
-              <h3 class="card-title text-lg">
+        <!-- Preview Card -->
+        <div class="card bg-base-200 mt-4">
+          <div class="card-body">
+            <div
+              class="flex flex-col sm:flex-row justify-start items-start sm:items-center gap-2 sm:gap-0 mb-4"
+            >
+              <h3 class="text-lg font-bold flex items-center gap-2">
                 Wybrane pliki
-                <div class="badge badge-primary">{files.length}</div>
+                <div class="badge badge-primary">{files?.length || 0}</div>
               </h3>
+              <button
+                class="btn btn-sm btn-error btn-outline gap-2 sm:ml-2 {!files?.length
+                  ? 'btn-disabled'
+                  : ''}"
+                on:click={() => {
+                  const _dataTransfer = new DataTransfer();
+                  files = _dataTransfer.files;
+                  selectedFileIndex = undefined;
+                }}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+                Usuń wszystkie pliki
+              </button>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <!-- File List -->
+              <div class="lg:col-span-1 overflow-x-auto">
+                <div class="flex flex-col gap-2">
+                  <!-- Mobile Select -->
+                  <div class="lg:hidden">
+                    <select
+                      class="select select-bordered w-full {files?.length
+                        ? 'select-primary'
+                        : ''}"
+                      value={selectedFileIndex}
+                      on:change={(e) =>
+                        (selectedFileIndex = parseInt(e.target.value))}
+                      disabled={!files?.length}
+                    >
+                      <option
+                        value={undefined}
+                        disabled
+                        selected={selectedFileIndex === undefined}
+                      >
+                        {files?.length
+                          ? "Wybierz plik do edycji"
+                          : "Brak plików"}
+                      </option>
+                      {#each Array.from(files || []) as file, i}
+                        <option value={i}>
+                          {file.name} ({(file.size / (1024 * 1024)).toFixed(2)} MB)
+                        </option>
+                      {/each}
+                    </select>
+                  </div>
 
-              <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <!-- File List -->
-                <div class="lg:col-span-1 overflow-x-auto">
-                  <div class="flex flex-col gap-2">
-                    <div class="flex justify-between items-center mb-2">
-                      <h4 class="text-sm text-gray-500">Lista plików</h4>
-                      {#if files.length > 0}
-                        <button
-                          class="btn btn-sm btn-error btn-outline gap-2"
-                          on:click={() => {
-                            const _dataTransfer = new DataTransfer();
-                            files = _dataTransfer.files;
-                            selectedFileIndex = undefined;
-                          }}
-                        >
+                  <!-- Desktop List -->
+                  <div class="hidden lg:block">
+                    <div class="flex flex-col gap-2">
+                      {#if !files?.length}
+                        <div class="text-center p-8 bg-base-100 rounded-lg">
                           <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="h-4 w-4"
+                            class="mx-auto h-12 w-12 text-gray-400"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
+                            aria-hidden="true"
                           >
                             <path
                               stroke-linecap="round"
                               stroke-linejoin="round"
                               stroke-width="2"
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                             />
                           </svg>
-                          Usuń wszystkie
-                        </button>
+                          <h3 class="mt-2 text-sm font-medium">Brak plików</h3>
+                          <p class="mt-1 text-sm text-gray-500">
+                            Wybierz pliki do przetworzenia
+                          </p>
+                        </div>
                       {/if}
-                    </div>
-                    <div class="flex flex-col gap-2">
-                      {#each Array.from(files) as file, i}
+                      {#each Array.from(files || []) as file, i}
                         {@const settingId = $videoSettings[i]?.id}
                         {@const isSelected = selectedFileIndex === i}
                         <button
@@ -698,49 +760,122 @@
                     </div>
                   </div>
                 </div>
+              </div>
 
-                <!-- Preview and Settings -->
-                <div class="lg:col-span-2">
-                  {#if selectedFileIndex !== undefined && files[selectedFileIndex]}
-                    {@const file = files[selectedFileIndex]}
-                    {@const settingId = $videoSettings[selectedFileIndex]?.id}
-                    <div class="card bg-base-100">
-                      <div class="card-body">
-                        <h3 class="card-title text-lg">Podgląd i ustawienia</h3>
+              <!-- Preview and Settings -->
+              <div class="lg:col-span-2">
+                {#if !files?.length}
+                  <div class="card bg-base-100">
+                    <div class="card-body">
+                      <div class="text-center text-gray-500">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          class="h-12 w-12 mx-auto mb-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                          />
+                        </svg>
+                        <p>Wybierz pliki aby zobaczyć podgląd i ustawienia</p>
+                      </div>
+                    </div>
+                  </div>
+                {/if}
+                {#if selectedFileIndex !== undefined && files[selectedFileIndex]}
+                  {@const file = files[selectedFileIndex]}
+                  {@const settingId = $videoSettings[selectedFileIndex]?.id}
+                  <div class="card bg-base-100">
+                    <div class="card-body">
+                      <!-- Mobile tabs -->
+                      <div class="lg:hidden tabs tabs-boxed mb-4">
+                        <button
+                          class="tab flex-1 {!showSettings ? 'tab-active' : ''}"
+                          on:click={() => (showSettings = false)}
+                        >
+                          Podgląd
+                        </button>
+                        <button
+                          class="tab flex-1 {showSettings ? 'tab-active' : ''}"
+                          on:click={() => (showSettings = true)}
+                        >
+                          Ustawienia
+                        </button>
+                      </div>
 
-                        <!-- Preview -->
-                        <div class="space-y-4">
-                          <div
-                            class="bg-base-300 rounded-lg overflow-hidden"
-                            style="min-height: 400px;"
-                          >
-                            {#await extractFrames(file).then( (frames) => generatePreview(file, frames), )}
-                              <div
-                                class="w-full h-full flex items-center justify-center"
-                              >
+                      <!-- Desktop title -->
+                      <h3 class="card-title text-lg hidden lg:block">
+                        Podgląd i ustawienia
+                      </h3>
+
+                      <!-- Preview -->
+                      <div
+                        class="space-y-4 {showSettings
+                          ? 'hidden lg:block'
+                          : ''}"
+                      >
+                        <div
+                          class="bg-base-300 rounded-lg overflow-hidden"
+                          style="min-height: 400px;"
+                        >
+                          {#await extractFrames(file).then( (frames) => generatePreview(file, frames), )}
+                            <div
+                              class="w-full h-[400px] flex flex-col items-center justify-center gap-4"
+                            >
+                              <div class="flex flex-col items-center gap-2">
                                 <span class="loading loading-spinner loading-lg"
                                 ></span>
+                                <div class="text-sm text-gray-500 text-center">
+                                  <p>Generowanie podglądu...</p>
+                                  <p class="text-xs mt-1">
+                                    {#if $previewProgress.stage === "extracting"}
+                                      Wyciąganie klatki {$previewProgress.current}/3
+                                    {:else if $previewProgress.stage === "processing"}
+                                      Przetwarzanie klatki {$previewProgress.current}/3
+                                    {/if}
+                                  </p>
+                                </div>
                               </div>
-                            {:then frames}
-                              {#if frames.length > 0}
-                                <!-- Main preview image -->
-                                <div class="relative flex flex-col items-center">
+                            </div>
+                          {:then frames}
+                            {#if frames.length > 0}
+                              <!-- Main preview image -->
+                              <div
+                                class="relative flex flex-col lg:flex-row items-center lg:items-start gap-4 p-4"
+                              >
+                                <div class="flex-1">
                                   <img
                                     src={frames[selectedPreviewIndex].url}
                                     alt="Podgląd"
-                                    class="max-w-full max-h-[400px] w-auto h-auto object-contain"
+                                    class="max-w-full max-h-[400px] w-auto h-auto object-contain mx-auto"
                                   />
-
-                                  <!-- Frame picker thumbnails -->
+                                  <!-- Timestamp indicator -->
                                   <div
-                                    class="mt-4 flex gap-2 justify-center"
+                                    class="text-center text-sm text-gray-500 mt-2"
+                                  >
+                                    Klatka z {frames[
+                                      selectedPreviewIndex
+                                    ].timestamp.toFixed(1)}s
+                                  </div>
+                                </div>
+                                <!-- Frame picker thumbnails -->
+                                <div class="w-full lg:w-32 flex-none">
+                                  <div
+                                    class="text-sm text-gray-500 mb-2 text-center"
+                                  >
+                                    Podgląd klatek
+                                  </div>
+                                  <div
+                                    class="flex lg:flex-col gap-2 justify-center"
                                   >
                                     {#each frames as frame, i}
                                       <button
-                                        class="w-20 h-12 overflow-hidden rounded border-2 transition-all {selectedPreviewIndex ===
-                                        i
-                                          ? 'border-primary shadow-lg scale-110'
-                                          : 'border-base-100 hover:border-primary/50'}"
+                                        class="relative w-24 lg:w-full aspect-video group"
                                         on:click={() => {
                                           console.log(
                                             `[*] Selecting preview frame ${i} (${frame.timestamp.toFixed(2)}s)`,
@@ -748,155 +883,140 @@
                                           selectedPreviewIndex = i;
                                         }}
                                       >
+                                        <div
+                                          class="absolute inset-0 rounded-lg border-2 transition-all {selectedPreviewIndex ===
+                                          i
+                                            ? 'border-primary bg-primary/10 shadow-lg'
+                                            : 'border-base-100 group-hover:border-primary/50'}"
+                                        />
                                         <img
                                           src={frame.url}
                                           alt="Podgląd klatki {i + 1}"
-                                          class="w-full h-full object-cover"
+                                          class="w-full h-full object-cover rounded-lg"
                                         />
+                                        <!-- Selection indicator -->
+                                        {#if selectedPreviewIndex === i}
+                                          <div
+                                            class="absolute -left-2 top-1/2 -translate-y-1/2"
+                                          >
+                                            <svg
+                                              xmlns="http://www.w3.org/2000/svg"
+                                              class="h-4 w-4 text-primary"
+                                              viewBox="0 0 20 20"
+                                              fill="currentColor"
+                                            >
+                                              <path
+                                                fill-rule="evenodd"
+                                                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                                                clip-rule="evenodd"
+                                              />
+                                            </svg>
+                                          </div>
+                                        {/if}
+                                        <div
+                                          class="absolute bottom-1 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-black/50 rounded text-[10px] text-white"
+                                        >
+                                          {frame.timestamp.toFixed(1)}s
+                                        </div>
                                       </button>
                                     {/each}
                                   </div>
                                 </div>
-
-                                <!-- Timestamp indicator -->
-                                <div
-                                  class="text-center text-sm text-gray-500 mt-2"
-                                >
-                                  Klatka z {frames[
-                                    selectedPreviewIndex
-                                  ].timestamp.toFixed(1)}s
-                                </div>
-                              {/if}
-                            {:catch error}
-                              <div
-                                class="w-full h-full flex items-center justify-center"
-                              >
-                                <div class="alert alert-error">
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    class="stroke-current shrink-0 h-6 w-6"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path
-                                      stroke-linecap="round"
-                                      stroke-linejoin="round"
-                                      stroke-width="2"
-                                      d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-                                    />
-                                  </svg>
-                                  <span>Error: {error.message}</span>
-                                </div>
                               </div>
-                            {/await}
-                          </div>
-                        </div>
-
-                        <!-- Settings -->
-                        <div class="divider">Ustawienia</div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <label
-                            class="flex items-center gap-4 p-4 bg-base-200 rounded-lg"
-                          >
-                            <span class="flex-1">Dodaj efekt przejścia</span>
-                            <input
-                              type="checkbox"
-                              class="toggle toggle-success"
-                              checked={$videoSettings[selectedFileIndex]
-                                ?.settings.addIntro}
-                              on:change={(e) =>
-                                videoSettings.updateSettings(settingId, {
-                                  addIntro: e.target.checked,
-                                })}
-                            />
-                          </label>
-                          <label
-                            class="flex items-center gap-4 p-4 bg-base-200 rounded-lg"
-                          >
-                            <span class="flex-1">Dodaj reakcję Boczka</span>
-                            <input
-                              type="checkbox"
-                              class="toggle toggle-success"
-                              checked={$videoSettings[selectedFileIndex]
-                                ?.settings.addBoczek}
-                              on:change={(e) =>
-                                videoSettings.updateSettings(settingId, {
-                                  addBoczek: e.target.checked,
-                                })}
-                            />
-                          </label>
-                        </div>
-                        <div class="card-actions justify-end mt-4">
-                          <button
-                            class="btn btn-ghost btn-sm"
-                            on:click={() =>
-                              videoSettings.resetToDefault(settingId)}
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              class="h-4 w-4"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
+                            {/if}
+                          {:catch error}
+                            <div
+                              class="w-full h-full flex items-center justify-center"
                             >
-                              <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                              />
-                            </svg>
-                            Reset ustawień
-                          </button>
+                              <div class="alert alert-error">
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  class="stroke-current shrink-0 h-6 w-6"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                  />
+                                </svg>
+                                <span>Error: {error.message}</span>
+                              </div>
+                            </div>
+                          {/await}
                         </div>
                       </div>
-                    </div>
-                  {:else}
-                    <div class="card bg-base-100">
-                      <div class="card-body">
-                        <div class="text-center text-gray-500">
-                          <p>
-                            Wybierz plik z listy aby zobaczyć podgląd i
-                            ustawienia
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  {/if}
-                </div>
-              </div>
 
-              {#if files.length > 0}
-                <div class="card-actions justify-end mt-4">
-                  <button
-                    class="btn btn-sm btn-error gap-2"
-                    on:click={() => {
-                      const _dataTransfer = new DataTransfer();
-                      files = _dataTransfer.files;
-                      selectedFileIndex = undefined;
-                    }}
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      class="h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                      />
-                    </svg>
-                    Usuń wszystkie
-                  </button>
-                </div>
-              {/if}
+                      <!-- Settings -->
+                      <div class="divider hidden lg:flex">Ustawienia</div>
+                      <div
+                        class="grid grid-cols-1 md:grid-cols-2 gap-4 {!showSettings
+                          ? 'hidden lg:grid'
+                          : ''}"
+                      >
+                        <label
+                          class="flex items-center gap-4 p-4 bg-base-200 rounded-lg"
+                        >
+                          <span class="flex-1">Dodaj efekt przejścia</span>
+                          <input
+                            type="checkbox"
+                            class="toggle toggle-success"
+                            checked={$videoSettings[selectedFileIndex]?.settings
+                              .addIntro}
+                            on:change={(e) =>
+                              videoSettings.updateSettings(settingId, {
+                                addIntro: e.target.checked,
+                              })}
+                          />
+                        </label>
+                        <label
+                          class="flex items-center gap-4 p-4 bg-base-200 rounded-lg"
+                        >
+                          <span class="flex-1">Dodaj reakcję Boczka</span>
+                          <input
+                            type="checkbox"
+                            class="toggle toggle-success"
+                            checked={$videoSettings[selectedFileIndex]?.settings
+                              .addBoczek}
+                            on:change={(e) =>
+                              videoSettings.updateSettings(settingId, {
+                                addBoczek: e.target.checked,
+                              })}
+                          />
+                        </label>
+                      </div>
+                      <div class="card-actions justify-end mt-4">
+                        <button
+                          class="btn btn-ghost btn-sm"
+                          on:click={() =>
+                            videoSettings.resetToDefault(settingId)}
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                            />
+                          </svg>
+                          Reset ustawień
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                {/if}
+              </div>
             </div>
           </div>
-        {/if}
+        </div>
 
         <!-- Convert Button -->
         <div class="card-actions justify-end mt-4">
