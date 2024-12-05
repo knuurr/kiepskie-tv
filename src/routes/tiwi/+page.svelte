@@ -61,6 +61,12 @@
     current: number;
   }>({ stage: "extracting", current: 0 });
 
+  // Cache for storing generated previews
+  const previewCache = new Map<
+    string,
+    { frames: PreviewFrame[]; timestamp: number }
+  >();
+
   let selectedPreviewIndex = 0;
   let showSettings = false;
 
@@ -515,6 +521,11 @@
   // Function for removing file inputs and its settings
   const removeFile = (index: number, settingId: string) => {
     const filesArr = Array.from(files);
+    // Remove preview from cache before removing the file
+    const fileToRemove = filesArr[index];
+    if (fileToRemove) {
+      removeCachedPreview(fileToRemove);
+    }
     filesArr.splice(index, 1);
     const _dataTransfer = new DataTransfer();
     filesArr.forEach((_file) => _dataTransfer.items.add(_file));
@@ -543,6 +554,54 @@
     // Cleanup old preview URLs
     $previewFrames.forEach((frame) => URL.revokeObjectURL(frame.url));
     previewFrames.set([]);
+  }
+
+  // Function to get cache key for a file
+  function getPreviewCacheKey(file: File): string {
+    return `${file.name}_${file.size}_${file.lastModified}`;
+  }
+
+  // Function to get cached preview if available
+  function getCachedPreview(file: File): PreviewFrame[] | null {
+    const cacheKey = getPreviewCacheKey(file);
+    const cached = previewCache.get(cacheKey);
+
+    if (cached) {
+      console.log("[*] Found cached preview for", file.name);
+      return cached.frames;
+    }
+    return null;
+  }
+
+  // Function to store preview in cache
+  function cachePreview(file: File, frames: PreviewFrame[]): void {
+    const cacheKey = getPreviewCacheKey(file);
+    console.log("[*] Caching preview for", file.name);
+    previewCache.set(cacheKey, {
+      frames,
+      timestamp: Date.now(),
+    });
+  }
+
+  // Function to remove preview from cache
+  function removeCachedPreview(file: File): void {
+    const cacheKey = getPreviewCacheKey(file);
+    console.log("[*] Removing cached preview for", file.name);
+    previewCache.delete(cacheKey);
+  }
+
+  // Function to generate or get cached preview
+  async function getOrGeneratePreview(file: File): Promise<PreviewFrame[]> {
+    const cached = getCachedPreview(file);
+    if (cached) {
+      return cached;
+    }
+
+    const frames = await extractFrames(file).then((frames) =>
+      generatePreview(file, frames),
+    );
+    cachePreview(file, frames);
+    return frames;
   }
 </script>
 
@@ -634,6 +693,10 @@
                   ? 'btn-disabled'
                   : ''}"
                 on:click={() => {
+                  // Clear all previews from cache
+                  Array.from(files || []).forEach((file) => {
+                    removeCachedPreview(file);
+                  });
                   const _dataTransfer = new DataTransfer();
                   files = _dataTransfer.files;
                   selectedFileIndex = undefined;
@@ -823,7 +886,7 @@
                           class="bg-base-300 rounded-lg overflow-hidden"
                           style="min-height: 400px;"
                         >
-                          {#await extractFrames(file).then( (frames) => generatePreview(file, frames), )}
+                          {#await getOrGeneratePreview(file)}
                             <div
                               class="w-full h-[400px] flex flex-col items-center justify-center gap-4"
                             >
