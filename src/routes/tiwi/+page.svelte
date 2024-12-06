@@ -155,29 +155,41 @@
     return new Uint8Array(data);
   };
 
+  // Add this new store for tracking current processing file index
+  const currentProcessingIndex = writable<number | null>(null);
+
+  // Modify the progress store to track progress per file
+  const fileProgress = writable<Map<number, number>>(new Map());
+
+  // Add a store to track which files have been processed
+  const processedFiles = writable<Set<number>>(new Set());
+
+  // Add a store to track if processing has started
+  const processingStarted = writable(false);
+
   async function convertVideos(files: FileList) {
     console.log("Started batch video converting");
     console.log(files);
-    // Reset array of processed videos
-    // To avoid appending new videos to past processing
-    // So that only new video will be presented in Twoje wideo
-    videoDataList = [];
+    videoDataList = new Array(files.length); // Pre-allocate array
     state = "convert.start";
-    for (const file of files) {
-      // Your code to be executed for each element
+    processedFiles.set(new Set()); // Reset processed files
+    fileProgress.set(new Map());
+    processingStarted.set(true); // Set processing started flag
+
+    for (let i = 0; i < files.length; i++) {
+      currentProcessingIndex.set(i);
+      const file = files[i];
       console.log("About to convert: " + file.name);
       const duration = await getVideoDuration(file);
       console.log("Video duration:", duration);
       await convertVideo(file, duration);
     }
+
     console.log("Converts done. Setting state.");
-    // console.log(videoDataList);
     transformState = "0/2";
     state = "convert.done";
+    currentProcessingIndex.set(null);
     console.log("Finishing batch video converting");
-    const _dataTransfer = new DataTransfer();
-    // filesArr.forEach((_file) => _dataTransfer.items.add(_file));
-    files = _dataTransfer.files;
   }
 
   // Apply ffmpeg logic to individual input file
@@ -311,11 +323,24 @@
     );
 
     const blob = new Blob([data.buffer], { type: "video/mp4" });
-    videoDataList.push({
-      videoName: file.name,
-      videoBlob: blob,
-      videoBlobURL: URL.createObjectURL(blob),
-    });
+
+    // Get the current index safely
+    const currentIndex = $currentProcessingIndex;
+    if (currentIndex !== null) {
+      videoDataList[currentIndex] = {
+        videoName: file.name,
+        videoBlob: blob,
+        videoBlobURL: URL.createObjectURL(blob),
+      };
+
+      // Mark this file as processed
+      processedFiles.update((set) => {
+        if (currentIndex !== null) {
+          set.add(currentIndex);
+        }
+        return set;
+      });
+    }
 
     // console.log("[*] Attempting cleanup of Virtual FS");
     // let dirList = await ffmpeg.listDir("/");
@@ -486,13 +511,18 @@
       wasmURL: `${baseUrl}/ffmpeg-core.wasm`,
     });
     ffmpeg.on("progress", ({ progress }) => {
-      $progress = progress * 100;
+      $currentProcessingIndex !== null &&
+        fileProgress.update((map) => {
+          map.set($currentProcessingIndex, progress * 100);
+          return map;
+        });
     });
     state = "loaded";
   }
 
   async function resetFfmpeg() {
     state = "loading";
+    processingStarted.set(false); // Reset processing flag
     ffmpeg.terminate();
     loadFfmpeg();
   }
@@ -725,30 +755,63 @@
                 <div class="flex flex-col gap-2">
                   <!-- Mobile Select -->
                   <div class="lg:hidden">
-                    <select
-                      class="select select-bordered w-full {files?.length
-                        ? 'select-primary'
-                        : ''}"
-                      value={selectedFileIndex}
-                      on:change={(e) =>
-                        (selectedFileIndex = parseInt(e.target.value))}
-                      disabled={!files?.length}
-                    >
-                      <option
-                        value={undefined}
-                        disabled
-                        selected={selectedFileIndex === undefined}
+                    <div class="flex flex-col gap-2">
+                      <select
+                        class="select select-bordered w-full {files?.length
+                          ? 'select-primary'
+                          : ''}"
+                        value={selectedFileIndex}
+                        on:change={(e) =>
+                          (selectedFileIndex = Number(e.currentTarget.value))}
+                        disabled={!files?.length}
                       >
-                        {files?.length
-                          ? "Wybierz plik do edycji"
-                          : "Brak plików"}
-                      </option>
-                      {#each Array.from(files || []) as file, i}
-                        <option value={i}>
-                          {file.name} ({(file.size / (1024 * 1024)).toFixed(2)} MB)
+                        <option
+                          value={undefined}
+                          disabled
+                          selected={selectedFileIndex === undefined}
+                        >
+                          {files?.length
+                            ? "Wybierz plik do edycji"
+                            : "Brak plików"}
                         </option>
-                      {/each}
-                    </select>
+                        {#each Array.from(files || []) as file, i}
+                          <option value={i}>
+                            {file.name} ({(file.size / (1024 * 1024)).toFixed(
+                              2,
+                            )} MB)
+                          </option>
+                        {/each}
+                      </select>
+
+                      <!-- Add mobile file removal button when a file is selected -->
+                      {#if selectedFileIndex !== undefined && files[selectedFileIndex]}
+                        {@const settingId =
+                          $videoSettings[selectedFileIndex]?.id}
+                        <button
+                          class="btn btn-error btn-outline btn-sm gap-2 w-full"
+                          on:click={() => {
+                            const currentIndex = selectedFileIndex;
+                            removeFile(currentIndex, settingId);
+                          }}
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                          Usuń wybrany plik
+                        </button>
+                      {/if}
+                    </div>
                   </div>
 
                   <!-- Desktop List -->
@@ -931,10 +994,21 @@
                                   <div
                                     class="text-sm text-gray-500 mb-2 text-center"
                                   >
-                                    Podgląd klatek
+                                    {#if frames.length > 0}
+                                      <span class="hidden lg:inline"
+                                        >Podgl��d klatek</span
+                                      >
+                                      <span class="lg:hidden"
+                                        >Podgląd z {selectedPreviewIndex +
+                                          1}/{frames.length} klatki ({frames[
+                                          selectedPreviewIndex
+                                        ].timestamp.toFixed(1)}s)</span
+                                      >
+                                    {/if}
                                   </div>
+                                  <!-- Desktop thumbnails -->
                                   <div
-                                    class="flex lg:flex-col gap-2 justify-center"
+                                    class="hidden lg:flex lg:flex-col gap-2 justify-center"
                                   >
                                     {#each frames as frame, i}
                                       <button
@@ -957,7 +1031,6 @@
                                           alt="Podgląd klatki {i + 1}"
                                           class="w-full h-full object-cover rounded-lg"
                                         />
-                                        <!-- Selection indicator -->
                                         {#if selectedPreviewIndex === i}
                                           <div
                                             class="absolute -left-2 top-1/2 -translate-y-1/2"
@@ -983,6 +1056,70 @@
                                         </div>
                                       </button>
                                     {/each}
+                                  </div>
+
+                                  <!-- Mobile navigation arrows -->
+                                  <div
+                                    class="flex lg:hidden justify-center items-center gap-4"
+                                  >
+                                    <button
+                                      class="btn btn-circle btn-sm {selectedPreviewIndex ===
+                                      0
+                                        ? 'btn-disabled'
+                                        : ''}"
+                                      on:click={() =>
+                                        (selectedPreviewIndex = Math.max(
+                                          0,
+                                          selectedPreviewIndex - 1,
+                                        ))}
+                                      disabled={selectedPreviewIndex === 0}
+                                      aria-label="Poprzednia klatka"
+                                    >
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        class="h-4 w-4"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                      >
+                                        <path
+                                          stroke-linecap="round"
+                                          stroke-linejoin="round"
+                                          stroke-width="2"
+                                          d="M15 19l-7-7 7-7"
+                                        />
+                                      </svg>
+                                    </button>
+
+                                    <button
+                                      class="btn btn-circle btn-sm {selectedPreviewIndex ===
+                                      frames.length - 1
+                                        ? 'btn-disabled'
+                                        : ''}"
+                                      on:click={() =>
+                                        (selectedPreviewIndex = Math.min(
+                                          frames.length - 1,
+                                          selectedPreviewIndex + 1,
+                                        ))}
+                                      disabled={selectedPreviewIndex ===
+                                        frames.length - 1}
+                                      aria-label="Następna klatka"
+                                    >
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        class="h-4 w-4"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                      >
+                                        <path
+                                          stroke-linecap="round"
+                                          stroke-linejoin="round"
+                                          stroke-width="2"
+                                          d="M9 5l7 7-7 7"
+                                        />
+                                      </svg>
+                                    </button>
                                   </div>
                                 </div>
                               </div>
@@ -1113,16 +1250,23 @@
       {:else if state === "convert.start"}
         <div class="card bg-base-200">
           <div class="card-body">
-            <h3 class="card-title">Przetwarzanie...</h3>
-            <progress
-              class="progress progress-primary"
-              value={$progress}
-              max="100"
-            ></progress>
-            <p class="text-center">{$progress.toFixed(0)}%</p>
             <div class="card-actions justify-center">
-              <button on:click={resetFfmpeg} class="btn btn-error">
-                Anuluj
+              <button on:click={resetFfmpeg} class="btn btn-error gap-2">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+                Anuluj przetwarzanie
               </button>
             </div>
           </div>
@@ -1138,81 +1282,203 @@
     <div class="card-body">
       <h2 class="card-title">Twoje wideo</h2>
 
-      {#if state === "convert.done" && videoDataList.length > 0}
-        {#each videoDataList as item, i}
+      {#if files?.length > 0 && $processingStarted}
+        {#each Array.from(files) as file, i}
           <div class="card bg-base-200 mt-4">
             <div class="card-body">
-              <h3 class="card-title">
-                ({i + 1}/{videoDataList.length}) {item.videoName}
-              </h3>
-              <div class="aspect-video">
-                <video
-                  src={item.videoBlobURL}
-                  controls
-                  autoplay={i === 0}
-                  class="w-full h-full rounded-lg"
-                ></video>
-              </div>
-              <div class="card-actions justify-end gap-2 mt-4">
-                <button
-                  class="btn btn-primary gap-2"
-                  on:click={() => downloadVideo(item.videoBlob, item.videoName)}
-                >
-                  Zapisz
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+              <div class="flex flex-col gap-4">
+                <!-- Title and status -->
+                <div class="flex items-center">
+                  <h3 class="card-title text-base">
+                    {file.name}
+                    {#if $currentProcessingIndex === i}
+                      <div class="badge badge-primary">Przetwarzanie</div>
+                    {:else if videoDataList[i]}
+                      <div class="badge badge-success">Gotowe</div>
+                    {:else if state === "convert.start"}
+                      <div class="badge">W kolejce</div>
+                    {/if}
+                  </h3>
+                </div>
+
+                <!-- Progress bar - outside accordion -->
+                {#if state === "convert.start"}
+                  <div class="space-y-2">
+                    <div
+                      class="flex justify-between text-sm {$currentProcessingIndex !==
+                      i
+                        ? 'text-gray-400'
+                        : ''}"
+                    >
+                      <span>
+                        {#if $currentProcessingIndex === i}
+                          Przetwarzanie...
+                        {:else if i > ($currentProcessingIndex ?? -1)}
+                          Czeka w kolejce...
+                        {:else}
+                          Finalizowanie...
+                        {/if}
+                      </span>
+                      <span>{($fileProgress.get(i) || 0).toFixed(0)}%</span>
+                    </div>
+                    <progress
+                      class="progress w-full {$currentProcessingIndex === i
+                        ? 'progress-primary'
+                        : 'progress-ghost'}"
+                      value={$fileProgress.get(i) || 0}
+                      max="100"
                     />
-                  </svg>
-                </button>
-                <button
-                  class="btn btn-secondary gap-2"
-                  on:click={() => shareVideo(item.videoBlob, item.videoName)}
+                    {#if transformState !== "0/2" && $currentProcessingIndex === i}
+                      <div class="text-xs text-gray-500">
+                        Etap {transformState}
+                      </div>
+                    {/if}
+                  </div>
+                {/if}
+
+                <!-- Content -->
+                <div
+                  class="collapse collapse-arrow bg-base-100 lg:collapse-open"
                 >
-                  Udostępnij
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                    />
-                  </svg>
-                </button>
+                  <input type="checkbox" />
+                  <div class="collapse-title text-sm font-medium lg:hidden">
+                    {#if videoDataList[i]}
+                      Kliknij aby zobaczyć wideo
+                    {:else if $currentProcessingIndex === i}
+                      Kliknij aby zobaczyć postęp
+                    {:else}
+                      Kliknij aby zobaczyć status
+                    {/if}
+                  </div>
+                  <div class="collapse-content">
+                    {#if videoDataList[i]}
+                      <!-- Processed video with buttons - desktop layout -->
+                      <div class="flex flex-col lg:flex-row gap-4">
+                        <!-- Video container - takes 2/3 width on desktop -->
+                        <div class="lg:w-2/3">
+                          <div class="aspect-video max-h-[500px]">
+                            <video
+                              src={videoDataList[i].videoBlobURL}
+                              controls
+                              autoplay={i === 0}
+                              class="w-full h-full rounded-lg object-contain bg-black"
+                            />
+                          </div>
+                        </div>
+
+                        <!-- Buttons container - takes 1/3 width and full height on desktop -->
+                        <div
+                          class="flex flex-col sm:flex-row lg:flex-col gap-2 lg:w-1/3 lg:justify-start"
+                        >
+                          <button
+                            class="btn btn-primary btn-sm gap-2 w-full"
+                            on:click={() =>
+                              downloadVideo(
+                                videoDataList[i].videoBlob,
+                                videoDataList[i].videoName,
+                              )}
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              class="h-4 w-4"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                              />
+                            </svg>
+                            <span>Zapisz</span>
+                          </button>
+                          <button
+                            class="btn btn-secondary btn-sm gap-2 w-full"
+                            on:click={() =>
+                              shareVideo(
+                                videoDataList[i].videoBlob,
+                                videoDataList[i].videoName,
+                              )}
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              class="h-4 w-4"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                              />
+                            </svg>
+                            <span>Udostępnij</span>
+                          </button>
+                        </div>
+                      </div>
+                    {:else}
+                      <!-- Waiting to process -->
+                      <div
+                        class="flex items-center justify-center py-8 text-gray-500"
+                      >
+                        {#if i > ($currentProcessingIndex ?? -1)}
+                          <!-- Waiting -->
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-12 w-12"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                            />
+                          </svg>
+                          <span class="ml-3">Czeka na przetworzenie</span>
+                        {:else}
+                          <!-- Already processed but no result yet -->
+                          <div class="loading loading-spinner loading-lg"></div>
+                          <span class="ml-3">Finalizowanie...</span>
+                        {/if}
+                      </div>
+                    {/if}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         {/each}
-      {:else if state === "convert.error"}
-        <div class="alert alert-error">
+      {:else}
+        <!-- No files selected or processing not started -->
+        <div class="text-center py-8 text-gray-500">
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            class="stroke-current shrink-0 h-6 w-6"
+            class="h-12 w-12 mx-auto mb-4"
             fill="none"
             viewBox="0 0 24 24"
-            ><path
+            stroke="currentColor"
+          >
+            <path
               stroke-linecap="round"
               stroke-linejoin="round"
               stroke-width="2"
-              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-            /></svg
-          >
-          <span>{error}</span>
+              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+            />
+          </svg>
+          <p>
+            {#if files?.length > 0}
+              Kliknij "Okiłizuj" aby rozpocząć przetwarzanie
+            {:else}
+              Wybierz pliki do przetworzenia
+            {/if}
+          </p>
         </div>
       {/if}
     </div>
