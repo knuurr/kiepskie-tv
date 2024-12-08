@@ -1199,141 +1199,189 @@
               <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <!-- File List -->
                 <div class="lg:col-span-1 overflow-x-auto">
-                  <div class="flex flex-col gap-2">
-                    <!-- Mobile Select -->
-                    <div class="lg:hidden">
-                      <div class="flex flex-col gap-2">
-                        <select
-                          class="select select-bordered w-full {files?.length
-                            ? 'select-primary'
-                            : ''}"
-                          value={selectedFileIndex}
-                          on:change={(e) =>
-                            (selectedFileIndex = Number(e.currentTarget.value))}
-                          disabled={!files?.length}
-                        >
-                          <option
-                            value={undefined}
-                            disabled
-                            selected={selectedFileIndex === undefined}
-                          >
-                            {files?.length
-                              ? "Wybierz plik do edycji"
-                              : "Brak plików"}
-                          </option>
-                          {#each Array.from(files || []) as file, i}
-                            <option value={i}>
-                              {file.name} ({(file.size / (1024 * 1024)).toFixed(
-                                2,
-                              )} MB)
-                            </option>
-                          {/each}
-                        </select>
-
-                        <!-- Add mobile file removal button when a file is selected -->
-                        {#if selectedFileIndex !== undefined && files[selectedFileIndex]}
-                          {@const settingId =
-                            $videoSettings[selectedFileIndex]?.id}
-                          <button
-                            class="btn btn-error btn-outline btn-sm gap-2 w-full"
-                            on:click={() => {
-                              const currentIndex = selectedFileIndex;
-                              removeFile(currentIndex, settingId);
-                            }}
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              class="h-4 w-4"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
-                            Usuń wybrany plik
-                          </button>
-                        {/if}
-                      </div>
-                    </div>
-
-                    <!-- Desktop List -->
-                    <div class="hidden lg:block">
-                      <div class="flex flex-col gap-2">
-                        {#if !files?.length}
-                          <div class="text-center p-8 bg-base-100 rounded-lg">
-                            <svg
-                              class="mx-auto h-12 w-12 text-gray-400"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                              aria-hidden="true"
-                            >
-                              <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                              />
-                            </svg>
-                            <h3 class="mt-2 text-sm font-medium">
-                              Brak plików
-                            </h3>
-                            <p class="mt-1 text-sm text-gray-500">
-                              Wybierz pliki do przetworzenia
-                            </p>
-                          </div>
-                        {/if}
-                        {#each Array.from(files || []) as file, i}
-                          {@const settingId = $videoSettings[i]?.id}
-                          {@const isSelected = selectedFileIndex === i}
-                          <button
-                            class="card bg-base-100 hover:bg-base-200 transition-colors {isSelected
-                              ? 'ring-2 ring-primary'
+                  <div class="flex flex-col h-full">
+                    <!-- Existing file list content -->
+                    <div class="flex-1">
+                      <!-- Mobile Select -->
+                      <div class="lg:hidden">
+                        <div class="flex flex-col gap-2">
+                          <select
+                            class="select select-bordered w-full {files?.length
+                              ? 'select-primary'
                               : ''}"
-                            on:click={() => (selectedFileIndex = i)}
+                            value={selectedFileIndex}
+                            on:change={(e) =>
+                              (selectedFileIndex = Number(
+                                e.currentTarget.value,
+                              ))}
+                            disabled={!files?.length}
                           >
-                            <div class="card-body p-4 relative">
-                              <div class="pr-10">
-                                <!-- Add padding-right to make space for the delete button -->
-                                <h4 class="font-medium break-all text-left">
-                                  {file.name}
-                                </h4>
-                                <p class="text-sm text-gray-500 text-left">
-                                  {(file.size / (1024 * 1024)).toFixed(2)} MB
-                                </p>
-                              </div>
-                              <div class="absolute right-4 top-4">
-                                <button
-                                  class="btn btn-sm btn-square btn-error btn-outline"
-                                  on:click|stopPropagation={() =>
-                                    removeFile(i, settingId)}
-                                >
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    class="h-4 w-4"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                  >
-                                    <path
-                                      stroke-linecap="round"
-                                      stroke-linejoin="round"
-                                      stroke-width="2"
-                                      d="M6 18L18 6M6 6l12 12"
-                                    />
-                                  </svg>
-                                </button>
-                              </div>
+                            <option
+                              value={undefined}
+                              disabled
+                              selected={selectedFileIndex === undefined}
+                            >
+                              {files?.length
+                                ? "Wybierz plik do edycji"
+                                : "Brak plików"}
+                            </option>
+                            {#each Array.from(files || []) as file, i}
+                              <option value={i}>
+                                {file.name} ({(
+                                  file.size /
+                                  (1024 * 1024)
+                                ).toFixed(2)} MB)
+                              </option>
+                            {/each}
+                          </select>
+
+                          <!-- Add mobile file removal button when a file is selected -->
+                          {#if selectedFileIndex !== undefined && files[selectedFileIndex]}
+                            {@const settingId =
+                              $videoSettings[selectedFileIndex]?.id}
+                            <button
+                              class="btn btn-error btn-outline btn-sm gap-2 w-full"
+                              on:click={() => {
+                                const currentIndex = selectedFileIndex;
+                                removeFile(currentIndex, settingId);
+                              }}
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="h-4 w-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  stroke-width="2"
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                />
+                              </svg>
+                              Usuń wybrany plik
+                            </button>
+                          {/if}
+                        </div>
+                      </div>
+
+                      <!-- Desktop List -->
+                      <div class="hidden lg:block">
+                        <div class="flex flex-col gap-2">
+                          {#if !files?.length}
+                            <div class="text-center p-8 bg-base-100 rounded-lg">
+                              <svg
+                                class="mx-auto h-12 w-12 text-gray-400"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                aria-hidden="true"
+                              >
+                                <path
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  stroke-width="2"
+                                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                                />
+                              </svg>
+                              <h3 class="mt-2 text-sm font-medium">
+                                Brak plików
+                              </h3>
+                              <p class="mt-1 text-sm text-gray-500">
+                                Wybierz pliki do przetworzenia
+                              </p>
                             </div>
-                          </button>
-                        {/each}
+                          {/if}
+                          {#each Array.from(files || []) as file, i}
+                            {@const settingId = $videoSettings[i]?.id}
+                            {@const isSelected = selectedFileIndex === i}
+                            <button
+                              class="card bg-base-100 hover:bg-base-200 transition-colors {isSelected
+                                ? 'ring-2 ring-primary'
+                                : ''}"
+                              on:click={() => (selectedFileIndex = i)}
+                            >
+                              <div class="card-body p-4 relative">
+                                <div class="pr-10">
+                                  <!-- Add padding-right to make space for the delete button -->
+                                  <h4 class="font-medium break-all text-left">
+                                    {file.name}
+                                  </h4>
+                                  <p class="text-sm text-gray-500 text-left">
+                                    {(file.size / (1024 * 1024)).toFixed(2)} MB
+                                  </p>
+                                </div>
+                                <div class="absolute right-4 top-4">
+                                  <button
+                                    class="btn btn-sm btn-square btn-error btn-outline"
+                                    on:click|stopPropagation={() =>
+                                      removeFile(i, settingId)}
+                                  >
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      class="h-4 w-4"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12"
+                                      />
+                                    </svg>
+                                  </button>
+                                </div>
+                              </div>
+                            </button>
+                          {/each}
+                        </div>
                       </div>
                     </div>
+
+                    <!-- Convert Button - Now at bottom of column -->
+                    {#if files?.length > 0}
+                      <div
+                        class="mt-4 pt-4 border-t border-base-300 hidden lg:block"
+                      >
+                        <button
+                          on:click={() => convertVideos(files)}
+                          class="btn btn-primary gap-2 w-full {state ===
+                          'loading'
+                            ? 'btn-disabled loading'
+                            : ''}"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-5 w-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                            />
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          Okiłizuj
+                        </button>
+                        <p
+                          class="text-xs text-center mt-2 text-base-content/70"
+                        >
+                          Wszystkie pliki zostaną przetworzone po kolei
+                        </p>
+                      </div>
+                    {/if}
                   </div>
                 </div>
 
@@ -1674,39 +1722,39 @@
                   {/if}
                 </div>
               </div>
-            </div>
-          </div>
 
-          <!-- Convert Button -->
-          <div class="card-actions justify-end mt-4">
-            <button
-              on:click={() => convertVideos(files)}
-              class="btn btn-primary gap-2 w-full lg:w-auto lg:btn-lg {!files
-                ? 'btn-disabled'
-                : ''}"
-            >
-              Okiłizuj
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-4 w-4 lg:h-6 lg:w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-                />
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            </button>
+              <!-- Mobile Convert Button -->
+              <div class="lg:hidden card-actions justify-end mt-4">
+                <button
+                  on:click={() => convertVideos(files)}
+                  class="btn btn-primary gap-2 w-full {!files
+                    ? 'btn-disabled'
+                    : ''}"
+                >
+                  Okiłizuj
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                    />
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
         {:else if state === "convert.start"}
           <div class="card bg-base-200">
@@ -1739,16 +1787,18 @@
     <!-- Results Section -->
     {#if activeTab === "results"}
       <div class="" transition:fade={{ duration: 200 }}>
-        <!-- Move existing results section content here -->
         {#if files?.length > 0 && $processingStarted}
-          {#each Array.from(files) as file, i}
-            <div class="card bg-base-200 mt-4">
-              <div class="card-body">
-                <div class="flex flex-col gap-4">
-                  <!-- Title and status -->
-                  <div class="flex items-center">
-                    <h3 class="card-title text-base">
+          <!-- Responsive grid of video cards -->
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {#each Array.from(files) as file, i}
+              <div class="card bg-base-200">
+                <div class="card-body p-4">
+                  <!-- Title and status badges -->
+                  <div class="card-title text-base justify-between">
+                    <div class="truncate flex-1" title={file.name}>
                       {file.name}
+                    </div>
+                    <div class="flex-none">
                       {#if $currentProcessingIndex === i}
                         <div class="badge badge-primary">Przetwarzanie</div>
                       {:else if videoDataList[i]}
@@ -1756,10 +1806,10 @@
                       {:else if state === "convert.start"}
                         <div class="badge">W kolejce</div>
                       {/if}
-                    </h3>
+                    </div>
                   </div>
 
-                  <!-- Progress bar -->
+                  <!-- Progress bar during processing -->
                   {#if state === "convert.start"}
                     <div class="space-y-2">
                       <div
@@ -1794,159 +1844,53 @@
                     </div>
                   {/if}
 
-                  <!-- Content -->
+                  <!-- Video player and actions -->
                   {#if videoDataList[i]}
-                    <!-- Mobile layout -->
-                    <div class="lg:hidden flex flex-col gap-4">
-                      <!-- Accordion for video -->
+                    <!-- Mobile accordion -->
+                    <div class="block lg:hidden">
                       <div class="collapse collapse-arrow bg-base-100">
                         <input type="checkbox" />
                         <div class="collapse-title text-sm font-medium">
                           Kliknij aby zobaczyć wideo
                         </div>
                         <div class="collapse-content">
-                          <div class="aspect-video max-h-[500px]">
+                          <div class="bg-black rounded-lg overflow-hidden">
                             <video
                               src={videoDataList[i].videoBlobURL}
                               controls
                               autoplay={false}
-                              class="w-full h-full rounded-lg object-contain bg-black"
+                              class="w-full"
                             />
                           </div>
                         </div>
                       </div>
+                    </div>
 
-                      <!-- Buttons outside accordion for mobile -->
-                      <div class="flex flex-row gap-2">
-                        <button
-                          class="btn btn-primary btn-sm gap-2 flex-1"
-                          on:click={() =>
-                            downloadVideo(
-                              videoDataList[i].videoBlob,
-                              videoDataList[i].videoName,
-                            )}
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="h-4 w-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                            />
-                          </svg>
-                          <span>Zapisz</span>
-                        </button>
-                        <button
-                          class="btn btn-secondary btn-sm gap-2 flex-1"
-                          on:click={() =>
-                            shareVideo(
-                              videoDataList[i].videoBlob,
-                              videoDataList[i].videoName,
-                            )}
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="h-4 w-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                            />
-                          </svg>
-                          <span>Udostępnij</span>
-                        </button>
+                    <!-- Desktop video player -->
+                    <div class="hidden lg:block">
+                      <div class="bg-black rounded-lg overflow-hidden">
+                        <video
+                          src={videoDataList[i].videoBlobURL}
+                          controls
+                          autoplay={false}
+                          class="w-full"
+                        />
                       </div>
                     </div>
 
-                    <!-- Desktop layout remains unchanged -->
-                    <div class="hidden lg:flex flex-col lg:flex-row gap-4">
-                      <!-- Video container - takes 2/3 width on desktop -->
-                      <div class="lg:w-2/3">
-                        <div class="aspect-video max-h-[300px]">
-                          <video
-                            src={videoDataList[i].videoBlobURL}
-                            controls
-                            autoplay={false}
-                            class="w-full h-full rounded-lg object-contain bg-black"
-                          />
-                        </div>
-                      </div>
-
-                      <!-- Buttons container - takes 1/3 width and full height on desktop -->
-                      <div
-                        class="flex flex-col sm:flex-row lg:flex-col gap-2 lg:w-1/3 lg:justify-start"
+                    <!-- Action buttons -->
+                    <div class="card-actions justify-end mt-4 gap-2">
+                      <button
+                        class="btn btn-primary btn-sm gap-2 flex-1"
+                        on:click={() =>
+                          downloadVideo(
+                            videoDataList[i].videoBlob,
+                            videoDataList[i].videoName,
+                          )}
                       >
-                        <button
-                          class="btn btn-primary btn-sm gap-2 w-full"
-                          on:click={() =>
-                            downloadVideo(
-                              videoDataList[i].videoBlob,
-                              videoDataList[i].videoName,
-                            )}
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="h-4 w-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                            />
-                          </svg>
-                          <span>Zapisz</span>
-                        </button>
-                        <button
-                          class="btn btn-secondary btn-sm gap-2 w-full"
-                          on:click={() =>
-                            shareVideo(
-                              videoDataList[i].videoBlob,
-                              videoDataList[i].videoName,
-                            )}
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="h-4 w-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                            />
-                          </svg>
-                          <span>Udostępnij</span>
-                        </button>
-                      </div>
-                    </div>
-                  {:else}
-                    <!-- Waiting to process -->
-                    <!-- <div
-                      class="flex items-center justify-center py-8 text-gray-500"
-                    > -->
-                    <!-- {#if i > ($currentProcessingIndex ?? -1)} -->
-                    <!-- Waiting -->
-                    <!-- <svg
+                        <svg
                           xmlns="http://www.w3.org/2000/svg"
-                          class="h-12 w-12"
+                          class="h-4 w-4"
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -1955,23 +1899,64 @@
                             stroke-linecap="round"
                             stroke-linejoin="round"
                             stroke-width="2"
-                            d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
                           />
                         </svg>
-                        <span class="ml-3">Czeka na przetworzenie</span>
-                      {:else} -->
-                    <!-- Already processed but no result yet -->
-                    <!-- <div class="loading loading-spinner loading-lg"></div> -->
-                    <!-- <span class="ml-3">Finalizowanie...</span> -->
-                    <!-- {/if} -->
-                    <!-- </div> -->
+                        <span>Zapisz</span>
+                      </button>
+                      <button
+                        class="btn btn-secondary btn-sm gap-2 flex-1"
+                        on:click={() =>
+                          shareVideo(
+                            videoDataList[i].videoBlob,
+                            videoDataList[i].videoName,
+                          )}
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          class="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                          />
+                        </svg>
+                        <span>Udostępnij</span>
+                      </button>
+                    </div>
+                  {:else}
+                    <!-- Waiting state -->
+                    <div
+                      class="flex items-center justify-center py-12 text-gray-500"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-12 w-12"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                        />
+                      </svg>
+                      <span class="ml-3">Czeka na przetworzenie</span>
+                    </div>
                   {/if}
                 </div>
               </div>
-            </div>
-          {/each}
+            {/each}
+          </div>
         {:else}
-          <!-- No files selected or processing not started -->
+          <!-- No files state - Keep existing empty state -->
           <div class="text-center py-8 text-gray-500">
             <svg
               xmlns="http://www.w3.org/2000/svg"
