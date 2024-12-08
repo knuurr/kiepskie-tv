@@ -1625,14 +1625,14 @@
           <div class="card-actions justify-end mt-4">
             <button
               on:click={() => convertVideos(files)}
-              class="btn btn-primary btn-lg gap-2 {!files
+              class="btn btn-primary gap-2 w-full lg:w-auto lg:btn-lg {!files
                 ? 'btn-disabled'
                 : ''}"
             >
               Okiłizuj
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                class="h-6 w-6"
+                class="h-4 w-4 lg:h-6 lg:w-6"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -1883,12 +1883,12 @@
                     </div>
                   {:else}
                     <!-- Waiting to process -->
-                    <div
+                    <!-- <div
                       class="flex items-center justify-center py-8 text-gray-500"
-                    >
-                      {#if i > ($currentProcessingIndex ?? -1)}
-                        <!-- Waiting -->
-                        <svg
+                    > -->
+                    <!-- {#if i > ($currentProcessingIndex ?? -1)} -->
+                    <!-- Waiting -->
+                    <!-- <svg
                           xmlns="http://www.w3.org/2000/svg"
                           class="h-12 w-12"
                           fill="none"
@@ -1903,12 +1903,12 @@
                           />
                         </svg>
                         <span class="ml-3">Czeka na przetworzenie</span>
-                      {:else}
-                        <!-- Already processed but no result yet -->
-                        <!-- <div class="loading loading-spinner loading-lg"></div> -->
-                        <!-- <span class="ml-3">Finalizowanie...</span> -->
-                      {/if}
-                    </div>
+                      {:else} -->
+                    <!-- Already processed but no result yet -->
+                    <!-- <div class="loading loading-spinner loading-lg"></div> -->
+                    <!-- <span class="ml-3">Finalizowanie...</span> -->
+                    <!-- {/if} -->
+                    <!-- </div> -->
                   {/if}
                 </div>
               </div>
