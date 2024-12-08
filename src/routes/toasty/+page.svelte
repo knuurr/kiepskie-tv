@@ -140,7 +140,7 @@
     <div class="card bg-base-100 shadow-xl">
       <div class="card-body">
         <div class="flex justify-between items-center mb-4">
-          <div class="badge badge-lg">Rzutów: {rollCount}</div>
+          <div class="badge badge-outline badge-lg">Rzutów: {rollCount}</div>
         </div>
 
         <div class="card bg-base-100 border-2 border-base-200">
