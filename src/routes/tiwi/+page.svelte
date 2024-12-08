@@ -23,6 +23,9 @@
 
   import BottomNav from "../../components/BottomNav.svelte";
 
+  import Toast from "../../components/Toast.svelte";
+  import { toasts } from "$lib/stores/toastStore";
+
   const previewUrl = writable("");
   let selectedFileIndex: number | undefined;
 
@@ -171,6 +174,7 @@
 
   async function convertVideos(files: FileList) {
     console.log("Started batch video converting");
+    toasts.add("Rozpoczęto przetwarzanie plików", "info");
     console.log(files);
     videoDataList = new Array(files.length); // Pre-allocate array
     state = "convert.start";
@@ -182,15 +186,22 @@
       currentProcessingIndex.set(i);
       const file = files[i];
       console.log("About to convert: " + file.name);
+      toasts.add(`Przetwarzanie: ${file.name}`, "info");
       const duration = await getVideoDuration(file);
       console.log("Video duration:", duration);
       await convertVideo(file, duration);
+      toasts.add(`Zakończono przetwarzanie: ${file.name}`, "success");
     }
 
     console.log("Converts done. Setting state.");
     transformState = "0/2";
     state = "convert.done";
     currentProcessingIndex.set(null);
+    toasts.add(
+      `Zakończono przetwarzanie wszystkich plików (${files.length})`,
+      "success",
+      5000,
+    );
     console.log("Finishing batch video converting");
   }
 
@@ -506,20 +517,24 @@
   }
 
   async function loadFfmpeg() {
-    const baseUrl = "https://unpkg.com/@ffmpeg/core@0.12.4/dist/esm";
-    ffmpeg = new FFmpeg();
-    await ffmpeg.load({
-      coreURL: `${baseUrl}/ffmpeg-core.js`,
-      wasmURL: `${baseUrl}/ffmpeg-core.wasm`,
-    });
-    ffmpeg.on("progress", ({ progress }) => {
-      $currentProcessingIndex !== null &&
-        fileProgress.update((map) => {
-          map.set($currentProcessingIndex, progress * 100);
-          return map;
-        });
-    });
-    state = "loaded";
+    try {
+      const baseUrl = "https://unpkg.com/@ffmpeg/core@0.12.4/dist/esm";
+      ffmpeg = new FFmpeg();
+      await ffmpeg.load({
+        coreURL: `${baseUrl}/ffmpeg-core.js`,
+        wasmURL: `${baseUrl}/ffmpeg-core.wasm`,
+      });
+      ffmpeg.on("progress", ({ progress }) => {
+        $currentProcessingIndex !== null &&
+          fileProgress.update((map) => {
+            map.set($currentProcessingIndex, progress * 100);
+            return map;
+          });
+      });
+      state = "loaded";
+    } catch (error) {
+      toasts.add("Błąd ładowania FFmpeg: " + error.message, "error", 5000);
+    }
   }
 
   async function resetFfmpeg() {
@@ -548,15 +563,21 @@
     Array.from(files).forEach((file) => {
       videoSettings.addFile(file.name);
     });
+    if (files.length > 0) {
+      toasts.add(
+        `Dodano ${files.length} ${files.length === 1 ? "plik" : "plików"} do przetworzenia`,
+        "success",
+      );
+    }
   }
 
   // Function for removing file inputs and its settings
   const removeFile = (index: number, settingId: string) => {
     const filesArr = Array.from(files);
-    // Remove preview from cache before removing the file
     const fileToRemove = filesArr[index];
     if (fileToRemove) {
       removeCachedPreview(fileToRemove);
+      toasts.add(`Usunięto plik: ${fileToRemove.name}`, "info");
     }
     filesArr.splice(index, 1);
     const _dataTransfer = new DataTransfer();
@@ -665,16 +686,30 @@
       | "results";
     activeTab = value;
   }
+
+  // Modify clear files function
+  function clearFiles() {
+    Array.from(files || []).forEach((file) => {
+      removeCachedPreview(file);
+    });
+    const _dataTransfer = new DataTransfer();
+    files = _dataTransfer.files;
+    selectedFileIndex = undefined;
+    toasts.add("Wyczyszczono listę plików", "info");
+  }
 </script>
+
+<!-- Add Toast component at the top level of your markup -->
+<Toast />
 
 <!-- <CenteredContainer> -->
 <NavBar />
 
 <!-- <ResponsiveContainer> -->
 <Header title={DATA.APP_TITLE} description={DATA.APP_DESC}>
-  <p class="text-lg">
+  <!-- <p class="text-lg">
     Twoje wideo nigdzie nie jest wysłane - obróbka jest 100% offline
-  </p>
+  </p> -->
   <!-- Add scroll button -->
   <button
     class="btn btn-sm btn-outline gap-2 mt-2"
@@ -709,7 +744,7 @@
 <div class="card bg-base-100 shadow-xl" id="main-card">
   <div class="card-body">
     <!-- Section Title -->
-    <div class="flex items-center gap-2 mb-4">
+    <div class="flex items-center gap-2">
       <svg
         xmlns="http://www.w3.org/2000/svg"
         class="h-5 w-5"
@@ -725,6 +760,11 @@
         />
       </svg>
       <h2 class="text-lg font-bold">Sekcje</h2>
+    </div>
+    <!-- Notice text with slight transparency -->
+    <div class="text-sm text-base-content/70">
+      Wszystkie pliki są przetwarzane lokalnie i nie opuszczają Twojego
+      urządzenia
     </div>
 
     <!-- Mobile Select -->
@@ -1036,9 +1076,7 @@
               <h2 class="card-title">Wybierz pliki do przetworzenia</h2>
             </div>
 
-            <p class="text-lg mb-4">
-              Dropnij wideło albo kliknij by "załonczyć"
-            </p>
+            <p class="text-lg">Dropnij wideło albo kliknij by "załonczyć"</p>
 
             <label class="form-control w-full">
               <input
@@ -1076,6 +1114,7 @@
                 const _dataTransfer = new DataTransfer();
                 files = _dataTransfer.files;
                 selectedFileIndex = undefined;
+                toasts.add("Wyczyszczono listę plików", "info");
               }}
             >
               <svg
@@ -1447,68 +1486,33 @@
                                       {/each}
                                     </div>
 
-                                    <!-- Mobile navigation arrows -->
+                                    <!-- Mobile navigation buttons -->
                                     <div
-                                      class="flex lg:hidden justify-center items-center gap-4"
+                                      class="flex lg:hidden justify-center items-center gap-2 mt-4"
                                     >
-                                      <button
-                                        class="btn btn-circle btn-sm {selectedPreviewIndex ===
-                                        0
-                                          ? 'btn-disabled'
-                                          : ''}"
-                                        on:click={() =>
-                                          (selectedPreviewIndex = Math.max(
-                                            0,
-                                            selectedPreviewIndex - 1,
-                                          ))}
-                                        disabled={selectedPreviewIndex === 0}
-                                        aria-label="Poprzednia klatka"
-                                      >
-                                        <svg
-                                          xmlns="http://www.w3.org/2000/svg"
-                                          class="h-4 w-4"
-                                          fill="none"
-                                          viewBox="0 0 24 24"
-                                          stroke="currentColor"
+                                      {#each frames as _, i}
+                                        <button
+                                          class="btn btn-circle btn-sm {selectedPreviewIndex ===
+                                          i
+                                            ? 'btn-primary'
+                                            : 'btn-ghost'}"
+                                          on:click={() =>
+                                            (selectedPreviewIndex = i)}
+                                          aria-label="Podgląd klatki {i + 1}"
                                         >
-                                          <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M15 19l-7-7 7-7"
-                                          />
-                                        </svg>
-                                      </button>
+                                          {i + 1}
+                                        </button>
+                                      {/each}
+                                    </div>
 
-                                      <button
-                                        class="btn btn-circle btn-sm {selectedPreviewIndex ===
-                                        frames.length - 1
-                                          ? 'btn-disabled'
-                                          : ''}"
-                                        on:click={() =>
-                                          (selectedPreviewIndex = Math.min(
-                                            frames.length - 1,
-                                            selectedPreviewIndex + 1,
-                                          ))}
-                                        disabled={selectedPreviewIndex ===
-                                          frames.length - 1}
-                                        aria-label="Następna klatka"
-                                      >
-                                        <svg
-                                          xmlns="http://www.w3.org/2000/svg"
-                                          class="h-4 w-4"
-                                          fill="none"
-                                          viewBox="0 0 24 24"
-                                          stroke="currentColor"
-                                        >
-                                          <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M9 5l7 7-7 7"
-                                          />
-                                        </svg>
-                                      </button>
+                                    <!-- Add preview info below pagination -->
+                                    <div
+                                      class="text-center text-sm text-gray-500 mt-2 lg:hidden"
+                                    >
+                                      Klatka {selectedPreviewIndex +
+                                        1}/{frames.length} ({frames[
+                                        selectedPreviewIndex
+                                      ].timestamp.toFixed(1)}s)
                                     </div>
                                   </div>
                                 </div>
