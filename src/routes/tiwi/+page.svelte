@@ -887,7 +887,7 @@
 
     <!-- How it works Section -->
     {#if activeTab === "how-it-works"}
-      <div class="mt-4" transition:fade={{ duration: 200 }}>
+      <div class="" transition:fade={{ duration: 200 }}>
         <div class="card bg-base-200">
           <div class="card-body space-y-6">
             <!-- Timeline Overview -->
@@ -1067,7 +1067,7 @@
 
     <!-- Select Files Section -->
     {#if activeTab === "select-files"}
-      <div class="mt-4" transition:fade={{ duration: 200 }}>
+      <div class="" transition:fade={{ duration: 200 }}>
         <div class="card bg-base-200">
           <div class="card-body">
             <div
@@ -1160,7 +1160,7 @@
 
     <!-- Upload Section -->
     {#if activeTab === "upload"}
-      <div class="mt-4" transition:fade={{ duration: 200 }}>
+      <div class="" transition:fade={{ duration: 200 }}>
         {#if state === "loading"}
           <div class="flex items-center justify-center">
             <span class="loading loading-spinner loading-lg"></span>
@@ -1552,7 +1552,7 @@
                           <label
                             class="flex items-center gap-4 p-4 bg-base-200 rounded-lg"
                           >
-                            <span class="flex-1"
+                            <span class="flex-1 lg:text-base text-sm"
                               >Dodaj efekt dźwiękowy przejścia</span
                             >
                             <input
@@ -1569,7 +1569,9 @@
                           <label
                             class="flex items-center gap-4 p-4 bg-base-200 rounded-lg"
                           >
-                            <span class="flex-1">Dodaj reakcję Boczka</span>
+                            <span class="flex-1 lg:text-base text-sm"
+                              >Dodaj reakcję Boczka</span
+                            >
                             <input
                               type="checkbox"
                               class="toggle toggle-success"
@@ -1584,7 +1586,7 @@
                         </div>
                         <div class="card-actions justify-end mt-4">
                           <button
-                            class="btn btn-ghost btn-sm"
+                            class="btn btn-outline btn-sm w-full lg:w-auto lg:btn-ghost"
                             on:click={() =>
                               videoSettings.resetToDefault(settingId)}
                           >
@@ -1674,7 +1676,7 @@
 
     <!-- Results Section -->
     {#if activeTab === "results"}
-      <div class="mt-4" transition:fade={{ duration: 200 }}>
+      <div class="" transition:fade={{ duration: 200 }}>
         <!-- Move existing results section content here -->
         {#if files?.length > 0 && $processingStarted}
           {#each Array.from(files) as file, i}
@@ -1695,7 +1697,7 @@
                     </h3>
                   </div>
 
-                  <!-- Progress bar - outside accordion -->
+                  <!-- Progress bar -->
                   {#if state === "convert.start"}
                     <div class="space-y-2">
                       <div
@@ -1731,122 +1733,177 @@
                   {/if}
 
                   <!-- Content -->
-                  <div
-                    class="collapse collapse-arrow bg-base-100 lg:collapse-open"
-                  >
-                    <input type="checkbox" />
-                    <div class="collapse-title text-sm font-medium lg:hidden">
-                      {#if videoDataList[i]}
-                        Kliknij aby zobaczyć wideo
-                      {:else if $currentProcessingIndex === i}
-                        Kliknij aby zobaczyć postęp
-                      {:else}
-                        Kliknij aby zobaczyć status
-                      {/if}
-                    </div>
-                    <div class="collapse-content">
-                      {#if videoDataList[i]}
-                        <!-- Processed video with buttons - desktop layout -->
-                        <div class="flex flex-col lg:flex-row gap-4">
-                          <!-- Video container - takes 2/3 width on desktop -->
-                          <div class="lg:w-2/3">
-                            <div class="aspect-video max-h-[500px]">
-                              <video
-                                src={videoDataList[i].videoBlobURL}
-                                controls
-                                autoplay={false}
-                                class="w-full h-full rounded-lg object-contain bg-black"
-                              />
-                            </div>
+                  {#if videoDataList[i]}
+                    <!-- Mobile layout -->
+                    <div class="lg:hidden flex flex-col gap-4">
+                      <!-- Accordion for video -->
+                      <div class="collapse collapse-arrow bg-base-100">
+                        <input type="checkbox" />
+                        <div class="collapse-title text-sm font-medium">
+                          Kliknij aby zobaczyć wideo
+                        </div>
+                        <div class="collapse-content">
+                          <div class="aspect-video max-h-[500px]">
+                            <video
+                              src={videoDataList[i].videoBlobURL}
+                              controls
+                              autoplay={false}
+                              class="w-full h-full rounded-lg object-contain bg-black"
+                            />
                           </div>
+                        </div>
+                      </div>
 
-                          <!-- Buttons container - takes 1/3 width and full height on desktop -->
-                          <div
-                            class="flex flex-col sm:flex-row lg:flex-col gap-2 lg:w-1/3 lg:justify-start"
-                          >
-                            <button
-                              class="btn btn-primary btn-sm gap-2 w-full"
-                              on:click={() =>
-                                downloadVideo(
-                                  videoDataList[i].videoBlob,
-                                  videoDataList[i].videoName,
-                                )}
-                            >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="h-4 w-4"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  stroke-linecap="round"
-                                  stroke-linejoin="round"
-                                  stroke-width="2"
-                                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                                />
-                              </svg>
-                              <span>Zapisz</span>
-                            </button>
-                            <button
-                              class="btn btn-secondary btn-sm gap-2 w-full"
-                              on:click={() =>
-                                shareVideo(
-                                  videoDataList[i].videoBlob,
-                                  videoDataList[i].videoName,
-                                )}
-                            >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="h-4 w-4"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  stroke-linecap="round"
-                                  stroke-linejoin="round"
-                                  stroke-width="2"
-                                  d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                                />
-                              </svg>
-                              <span>Udostępnij</span>
-                            </button>
-                          </div>
-                        </div>
-                      {:else}
-                        <!-- Waiting to process -->
-                        <div
-                          class="flex items-center justify-center py-8 text-gray-500"
+                      <!-- Buttons outside accordion for mobile -->
+                      <div class="flex flex-row gap-2">
+                        <button
+                          class="btn btn-primary btn-sm gap-2 flex-1"
+                          on:click={() =>
+                            downloadVideo(
+                              videoDataList[i].videoBlob,
+                              videoDataList[i].videoName,
+                            )}
                         >
-                          {#if i > ($currentProcessingIndex ?? -1)}
-                            <!-- Waiting -->
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              class="h-12 w-12"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-                              />
-                            </svg>
-                            <span class="ml-3">Czeka na przetworzenie</span>
-                          {:else}
-                            <!-- Already processed but no result yet -->
-                            <div
-                              class="loading loading-spinner loading-lg"
-                            ></div>
-                            <span class="ml-3">Finalizowanie...</span>
-                          {/if}
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                            />
+                          </svg>
+                          <span>Zapisz</span>
+                        </button>
+                        <button
+                          class="btn btn-secondary btn-sm gap-2 flex-1"
+                          on:click={() =>
+                            shareVideo(
+                              videoDataList[i].videoBlob,
+                              videoDataList[i].videoName,
+                            )}
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                            />
+                          </svg>
+                          <span>Udostępnij</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Desktop layout remains unchanged -->
+                    <div class="hidden lg:flex flex-col lg:flex-row gap-4">
+                      <!-- Video container - takes 2/3 width on desktop -->
+                      <div class="lg:w-2/3">
+                        <div class="aspect-video max-h-[300px]">
+                          <video
+                            src={videoDataList[i].videoBlobURL}
+                            controls
+                            autoplay={false}
+                            class="w-full h-full rounded-lg object-contain bg-black"
+                          />
                         </div>
+                      </div>
+
+                      <!-- Buttons container - takes 1/3 width and full height on desktop -->
+                      <div
+                        class="flex flex-col sm:flex-row lg:flex-col gap-2 lg:w-1/3 lg:justify-start"
+                      >
+                        <button
+                          class="btn btn-primary btn-sm gap-2 w-full"
+                          on:click={() =>
+                            downloadVideo(
+                              videoDataList[i].videoBlob,
+                              videoDataList[i].videoName,
+                            )}
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                            />
+                          </svg>
+                          <span>Zapisz</span>
+                        </button>
+                        <button
+                          class="btn btn-secondary btn-sm gap-2 w-full"
+                          on:click={() =>
+                            shareVideo(
+                              videoDataList[i].videoBlob,
+                              videoDataList[i].videoName,
+                            )}
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                            />
+                          </svg>
+                          <span>Udostępnij</span>
+                        </button>
+                      </div>
+                    </div>
+                  {:else}
+                    <!-- Waiting to process -->
+                    <div
+                      class="flex items-center justify-center py-8 text-gray-500"
+                    >
+                      {#if i > ($currentProcessingIndex ?? -1)}
+                        <!-- Waiting -->
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          class="h-12 w-12"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                          />
+                        </svg>
+                        <span class="ml-3">Czeka na przetworzenie</span>
+                      {:else}
+                        <!-- Already processed but no result yet -->
+                        <!-- <div class="loading loading-spinner loading-lg"></div> -->
+                        <!-- <span class="ml-3">Finalizowanie...</span> -->
                       {/if}
                     </div>
-                  </div>
+                  {/if}
                 </div>
               </div>
             </div>
@@ -1885,6 +1942,7 @@
 <!-- </ResponsiveContainer> -->
 <!-- </CenteredContainer> -->
 
+<Footer />
 <BottomNav
   {activeTab}
   videoCount={videoDataList.length}
@@ -1902,9 +1960,7 @@
         activeTab = "results";
     }
   }}
->
-  <Footer />
-</BottomNav>
+></BottomNav>
 
 <style>
   video {
