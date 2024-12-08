@@ -719,97 +719,104 @@
 
       <!-- Desktop Tabs -->
       <div class="hidden lg:flex flex-col sm:flex-row gap-2 p-2">
-        <button
-          class="btn sm:btn-lg {activeTab === 'how-it-works'
-            ? 'btn-primary'
-            : 'btn-ghost'} w-full sm:w-auto flex items-center justify-start gap-2 text-xs sm:text-base"
-          on:click={() => (activeTab = "how-it-works")}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+        <div class="tabs tabs-boxed">
+          <button
+            class="tab {activeTab === 'how-it-works'
+              ? 'tab-active'
+              : ''} flex items-center gap-2"
+            on:click={() => (activeTab = "how-it-works")}
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          Jak to działa
-        </button>
-        <button
-          class="btn sm:btn-lg {activeTab === 'select-files'
-            ? 'btn-primary'
-            : 'btn-ghost'} w-full sm:w-auto flex items-center justify-start gap-2 text-xs sm:text-base"
-          on:click={() => (activeTab = "select-files")}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            Jak to działa
+          </button>
+
+          <button
+            class="tab {activeTab === 'select-files'
+              ? 'tab-active'
+              : ''} flex items-center gap-2"
+            on:click={() => (activeTab = "select-files")}
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-            />
-          </svg>
-          Wybierz pliki
-        </button>
-        <button
-          class="btn sm:btn-lg {activeTab === 'upload'
-            ? 'btn-primary'
-            : 'btn-ghost'} w-full sm:w-auto flex items-center justify-start gap-2 text-xs sm:text-base"
-          on:click={() => (activeTab = "upload")}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+            Wybierz pliki
+          </button>
+
+          <button
+            class="tab {activeTab === 'upload'
+              ? 'tab-active'
+              : ''} flex items-center gap-2"
+            on:click={() => (activeTab = "upload")}
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-            />
-          </svg>
-          Podgląd i ustawienia
-        </button>
-        <button
-          class="btn sm:btn-lg {activeTab === 'results'
-            ? 'btn-primary'
-            : 'btn-ghost'} w-full sm:w-auto flex items-center justify-start gap-2 text-xs sm:text-base"
-          on:click={() => (activeTab = "results")}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+              />
+            </svg>
+            Podgląd i ustawienia
+          </button>
+
+          <button
+            class="tab {activeTab === 'results'
+              ? 'tab-active'
+              : ''} flex items-center gap-2"
+            on:click={() => (activeTab = "results")}
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-            />
-          </svg>
-          Twoje wideo
-          {#if videoDataList.length > 0}
-            <div class="badge badge-sm badge-ghost">{videoDataList.length}</div>
-          {/if}
-        </button>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+              />
+            </svg>
+            Twoje wideo
+            {#if videoDataList.length > 0}
+              <div class="badge badge-sm badge-ghost">
+                {videoDataList.length}
+              </div>
+            {/if}
+          </button>
+        </div>
       </div>
 
       <!-- How it works Section -->
