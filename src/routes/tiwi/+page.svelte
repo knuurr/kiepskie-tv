@@ -1584,7 +1584,13 @@
                             />
                           </label>
                         </div>
-                        <div class="card-actions justify-end mt-4">
+
+                        <!-- Reset button - Only show in settings tab on mobile -->
+                        <div
+                          class="{!showSettings
+                            ? 'hidden lg:block'
+                            : ''} card-actions justify-end mt-4"
+                        >
                           <button
                             class="btn btn-outline btn-sm w-full lg:w-auto lg:btn-ghost"
                             on:click={() =>
