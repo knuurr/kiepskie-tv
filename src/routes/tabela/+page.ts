@@ -1,7 +1,6 @@
 import type { TableData } from '$lib/types';
+import tableData from '../../../static/table/kiepscy_tabela.json';
 
-export async function load({ fetch }) {
-  const response = await fetch('/table/kiepscy_tabela.json');
-  const data: TableData = await response.json();
-  return { tableData: data };
+export function load() {
+  return { tableData };
 } 
