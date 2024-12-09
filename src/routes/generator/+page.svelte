@@ -148,10 +148,20 @@
     if (event.key === "r" && !isLoading) {
       event.preventDefault();
       randomizeEpisode();
-    } else if (event.key === "ArrowLeft" && !isLoading) {
+    } else if (
+      event.key === "ArrowLeft" &&
+      !isLoading &&
+      !event.ctrlKey &&
+      !event.altKey
+    ) {
       event.preventDefault();
       navigateHistory("prev");
-    } else if (event.key === "ArrowRight" && !isLoading) {
+    } else if (
+      event.key === "ArrowRight" &&
+      !isLoading &&
+      !event.ctrlKey &&
+      !event.altKey
+    ) {
       event.preventDefault();
       navigateHistory("next");
     }
