@@ -13,7 +13,7 @@
       link: "/tiwi",
       // additionalInfo:
       //   "Podziel się wideo ze znajomymi na TikTok, Messenger, WhatsApp i inne, lub zapisz na urządzeniu",
-      imageUrl: "/placeholder-tiwi.png",
+      imageUrl: "/static/home/placeholder-tiwi.png",
     },
     {
       title: "🥃 Toasty",
@@ -22,7 +22,7 @@
       link: "/toasty",
       // additionalInfo:
       //   "Z łatwością skopiuj swój ulubiony wylosowany toast do schowka",
-      imageUrl: "/placeholder-toasty.png",
+      imageUrl: "/static/home/placeholder-toasty.png",
     },
     {
       title: "📊 Tabela",
@@ -31,13 +31,13 @@
       link: "/tabela",
       // additionalInfo:
       //   "Użyj zaawansowanego filtrowania by precyzyjnie wyszukać odcinki",
-      imageUrl: "/placeholder-tabela.png",
+      imageUrl: "/static/home/placeholder-tabela.png",
     },
     {
       title: "🎲 Generator",
       description: "Wylosuj odcinek Świata według Kiepskich do oglądania",
       link: "/generator",
-      imageUrl: "/placeholder-generator.png",
+      imageUrl: "/static/home/placeholder-generator.png",
     },
     {
       title: "🌍 Judup",
@@ -46,7 +46,7 @@
       link: "#",
       additionalInfo: "(coming soon)",
       disabled: true,
-      imageUrl: "/placeholder-judup.png",
+      imageUrl: "/static/home/placeholder-judup.png",
     },
   ];
 </script>
