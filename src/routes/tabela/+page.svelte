@@ -13,6 +13,9 @@
   import { onMount } from "svelte";
   import ClickableFilterValue from "../../components/ClickableFilterValue.svelte";
   import FeedbackSection from "../../components/FeedbackSection.svelte";
+  import EpisodeCard from "../../components/EpisodeCard.svelte";
+  import { viewPreference, type ViewMode } from "$lib/stores/viewPreference";
+  import { isMobile } from "$lib/utils/isMobile";
 
   export let data: PageData;
 
@@ -22,6 +25,7 @@
   let isEpisodeModalOpen = false;
   let selectedEpisode: EpisodeData | null = null;
   let modalMode: "specific" = "specific";
+  let currentView: ViewMode | null = null;
 
   const CHUNK_SIZE_OPTIONS = [
     { value: 10, label: "10 wierszy" },
@@ -104,6 +108,10 @@
       ["title", "description", "director", "writer"].includes(f.type),
     )
     .map((f) => f.value);
+
+  $: {
+    currentView = $viewPreference;
+  }
 
   function handleAddFilter(event: CustomEvent<Filter>) {
     activeFilters = [...activeFilters, event.detail];
@@ -206,6 +214,12 @@
       activeFilters = [...activeFilters, newFilter];
     }
   }
+
+  function handleViewChange(mode: ViewMode | null) {
+    viewPreference.set(mode);
+  }
+
+  $: shouldShowTable = currentView === "table" || (!currentView && !$isMobile);
 </script>
 
 <div class="min-h-screen bg-base-200">
@@ -293,180 +307,267 @@
         </div>
       </div>
 
-      <div class="bg-base-100 rounded-box shadow-lg overflow-x-auto">
+      <div class="bg-base-100 rounded-box shadow-lg">
         {#if filteredEpisodes.length > 0}
           <div
-            class="flex justify-between items-center p-4 border-b border-base-300"
+            class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 border-b border-base-300 gap-4"
           >
-            <div class="flex items-center gap-4">
-              <span class="text-sm opacity-70">Wyświetl po:</span>
-              <select
-                class="select select-bordered select-sm"
-                value={selectedChunkSize}
-                on:change={handleChunkSizeChange}
-                disabled={showAllRows}
-              >
-                {#each CHUNK_SIZE_OPTIONS as option}
-                  <option value={option.value}>{option.label}</option>
-                {/each}
-              </select>
+            <div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+              <div class="flex items-center gap-2">
+                <span class="text-sm opacity-70">Wyświetl po:</span>
+                <select
+                  class="select select-bordered select-sm"
+                  value={selectedChunkSize}
+                  on:change={handleChunkSizeChange}
+                  disabled={showAllRows}
+                >
+                  {#each CHUNK_SIZE_OPTIONS as option}
+                    <option value={option.value}>{option.label}</option>
+                  {/each}
+                </select>
+              </div>
+
+              {#if !showAllRows && filteredEpisodes.length > visibleRows}
+                <button class="btn btn-sm w-full sm:w-auto" on:click={showAll}>
+                  Pokaż wszystkie ({filteredEpisodes.length})
+                </button>
+              {/if}
             </div>
-            {#if !showAllRows && filteredEpisodes.length > visibleRows}
-              <button class="btn btn-sm" on:click={showAll}>
-                Pokaż wszystkie ({filteredEpisodes.length})
+
+            <div class="join w-full sm:w-auto">
+              <button
+                class="join-item btn btn-sm flex-1 sm:flex-none {!currentView
+                  ? 'btn-primary'
+                  : ''}"
+                on:click={() => handleViewChange(null)}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+                  />
+                </svg>
+                Auto
               </button>
-            {/if}
+              <button
+                class="join-item btn btn-sm flex-1 sm:flex-none {currentView ===
+                'table'
+                  ? 'btn-primary'
+                  : ''}"
+                on:click={() => handleViewChange("table")}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M5 4a3 3 0 00-3 3v6a3 3 0 003 3h10a3 3 0 003-3V7a3 3 0 00-3-3H5zm-1 9v-1h5v2H5a1 1 0 01-1-1zm7 1h4a1 1 0 001-1v-1h-5v2zm0-4h5V8h-5v2zM9 8H4v2h5V8z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+                Tabela
+              </button>
+              <button
+                class="join-item btn btn-sm flex-1 sm:flex-none {currentView ===
+                'card'
+                  ? 'btn-primary'
+                  : ''}"
+                on:click={() => handleViewChange("card")}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"
+                  />
+                </svg>
+                Karty
+              </button>
+            </div>
           </div>
         {/if}
 
-        <table class="table table-zebra w-full">
-          <thead>
-            <tr>
-              {#each Object.entries(data.tableData.metadata.header_metadata) as [key, header]}
-                <th
-                  class="{key === 'opis_odcinka'
-                    ? 'min-w-[300px] max-w-[400px] whitespace-normal'
-                    : ''} 
-                         {key === 'tytul'
-                    ? 'max-w-[150px] whitespace-normal'
-                    : ''}
-                         {['rezyseria', 'scenariusz'].includes(key)
-                    ? 'whitespace-normal min-w-[200px]'
-                    : 'whitespace-nowrap'}"
-                >
-                  {header}
-                </th>
-              {/each}
-            </tr>
-          </thead>
-          <tbody>
-            {#each displayedEpisodes as episode}
-              <tr
-                class="hover cursor-pointer"
-                on:click={(e) => {
-                  // Only handle click if it's not on or within the title cell
-                  if (!e.target.closest("td.title-cell")) {
-                    handleEpisodeClick(episode);
-                  }
-                }}
-              >
-                <td class="whitespace-nowrap">{episode.nr}</td>
-                <td class="whitespace-normal max-w-[150px] group title-cell">
-                  <a
-                    href={episode.link_wiki}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="link link-hover hover:text-primary transition-colors"
-                    data-tip="artykuł na wiki"
-                  >
-                    <HighlightText
-                      text={episode.tytul}
-                      highlight={searchTerms.find((term) =>
-                        episode.tytul
-                          .toLowerCase()
-                          .includes(term.toLowerCase()),
-                      )}
-                    />
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke-width="1.5"
-                      stroke="currentColor"
-                      class="w-4 h-4 opacity-50 group-hover:opacity-100"
+        {#if shouldShowTable}
+          <div class="overflow-x-auto">
+            <table class="table table-zebra w-full">
+              <thead>
+                <tr>
+                  {#each Object.entries(data.tableData.metadata.header_metadata) as [key, header]}
+                    <th
+                      class="{key === 'opis_odcinka'
+                        ? 'min-w-[300px] max-w-[400px] whitespace-normal'
+                        : ''} 
+                               {key === 'tytul'
+                        ? 'max-w-[150px] whitespace-normal'
+                        : ''}
+                               {['rezyseria', 'scenariusz'].includes(key)
+                        ? 'whitespace-normal min-w-[200px]'
+                        : 'whitespace-nowrap'}"
                     >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+                      {header}
+                    </th>
+                  {/each}
+                </tr>
+              </thead>
+              <tbody>
+                {#each displayedEpisodes as episode}
+                  <tr
+                    class="hover cursor-pointer"
+                    on:click={(e) => {
+                      // Only handle click if it's not on or within the title cell
+                      if (!e.target.closest("td.title-cell")) {
+                        handleEpisodeClick(episode);
+                      }
+                    }}
+                  >
+                    <td class="whitespace-nowrap">{episode.nr}</td>
+                    <td
+                      class="whitespace-normal max-w-[150px] group title-cell"
+                    >
+                      <a
+                        href={episode.link_wiki}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="link link-hover hover:text-primary transition-colors"
+                        data-tip="artykuł na wiki"
+                      >
+                        <HighlightText
+                          text={episode.tytul}
+                          highlight={searchTerms.find((term) =>
+                            episode.tytul
+                              .toLowerCase()
+                              .includes(term.toLowerCase()),
+                          )}
+                        />
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke-width="1.5"
+                          stroke="currentColor"
+                          class="w-4 h-4 opacity-50 group-hover:opacity-100"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+                          />
+                        </svg>
+                      </a>
+                    </td>
+                    <td class="min-w-[300px] max-w-[400px] whitespace-normal">
+                      <HighlightText
+                        text={episode.opis_odcinka}
+                        highlight={searchTerms.find((term) =>
+                          episode.opis_odcinka
+                            .toLowerCase()
+                            .includes(term.toLowerCase()),
+                        )}
                       />
-                    </svg>
-                  </a>
-                </td>
-                <td class="min-w-[300px] max-w-[400px] whitespace-normal">
-                  <HighlightText
-                    text={episode.opis_odcinka}
-                    highlight={searchTerms.find((term) =>
-                      episode.opis_odcinka
-                        .toLowerCase()
-                        .includes(term.toLowerCase()),
-                    )}
-                  />
-                </td>
-                <td class="whitespace-nowrap">
-                  <ClickableFilterValue
-                    value={episode.data_components.day
-                      .toString()
-                      .padStart(2, "0")}
-                    type="day"
-                    on:filter={handleFilterClick}
-                  /> /
-                  <ClickableFilterValue
-                    value={episode.data_components.month
-                      .toString()
-                      .padStart(2, "0")}
-                    type="month"
-                    on:filter={handleFilterClick}
-                  /> /
-                  <ClickableFilterValue
-                    value={episode.data_components.year.toString()}
-                    type="year"
-                    on:filter={handleFilterClick}
-                  />
-                </td>
-                <td class="whitespace-normal">
-                  {#each episode.rezyseria.split(", ") as director, i}
-                    <div class="flex">
+                    </td>
+                    <td class="whitespace-nowrap">
                       <ClickableFilterValue
-                        value={director}
-                        type="director"
+                        value={episode.data_components.day
+                          .toString()
+                          .padStart(2, "0")}
+                        type="day"
                         on:filter={handleFilterClick}
-                      >
-                        <HighlightText
-                          text={director}
-                          highlight={searchTerms.find((term) =>
-                            director.toLowerCase().includes(term.toLowerCase()),
-                          )}
-                        />
-                      </ClickableFilterValue>
-                      {#if i < episode.rezyseria.split(", ").length - 1}
-                        <span class="text-base-content/50">,</span>
-                      {/if}
-                    </div>
-                  {/each}
-                </td>
-                <td class="whitespace-normal">
-                  {#each episode.scenariusz.split(", ") as writer, i}
-                    <div class="flex">
+                      /> /
                       <ClickableFilterValue
-                        value={writer}
-                        type="writer"
+                        value={episode.data_components.month
+                          .toString()
+                          .padStart(2, "0")}
+                        type="month"
                         on:filter={handleFilterClick}
-                      >
-                        <HighlightText
-                          text={writer}
-                          highlight={searchTerms.find((term) =>
-                            writer.toLowerCase().includes(term.toLowerCase()),
-                          )}
-                        />
-                      </ClickableFilterValue>
-                      {#if i < episode.scenariusz.split(", ").length - 1}
-                        <span class="text-base-content/50">,</span>
-                      {/if}
-                    </div>
-                  {/each}
-                </td>
-                <td class="whitespace-nowrap">
-                  <ClickableFilterValue
-                    value={episode.sezon.toString()}
-                    type="season"
-                    on:filter={handleFilterClick}
-                  />
-                </td>
-              </tr>
+                      /> /
+                      <ClickableFilterValue
+                        value={episode.data_components.year.toString()}
+                        type="year"
+                        on:filter={handleFilterClick}
+                      />
+                    </td>
+                    <td class="whitespace-normal">
+                      {#each episode.rezyseria.split(", ") as director, i}
+                        <div class="flex">
+                          <ClickableFilterValue
+                            value={director}
+                            type="director"
+                            on:filter={handleFilterClick}
+                          >
+                            <HighlightText
+                              text={director}
+                              highlight={searchTerms.find((term) =>
+                                director
+                                  .toLowerCase()
+                                  .includes(term.toLowerCase()),
+                              )}
+                            />
+                          </ClickableFilterValue>
+                          {#if i < episode.rezyseria.split(", ").length - 1}
+                            <span class="text-base-content/50">,</span>
+                          {/if}
+                        </div>
+                      {/each}
+                    </td>
+                    <td class="whitespace-normal">
+                      {#each episode.scenariusz.split(", ") as writer, i}
+                        <div class="flex">
+                          <ClickableFilterValue
+                            value={writer}
+                            type="writer"
+                            on:filter={handleFilterClick}
+                          >
+                            <HighlightText
+                              text={writer}
+                              highlight={searchTerms.find((term) =>
+                                writer
+                                  .toLowerCase()
+                                  .includes(term.toLowerCase()),
+                              )}
+                            />
+                          </ClickableFilterValue>
+                          {#if i < episode.scenariusz.split(", ").length - 1}
+                            <span class="text-base-content/50">,</span>
+                          {/if}
+                        </div>
+                      {/each}
+                    </td>
+                    <td class="whitespace-nowrap">
+                      <ClickableFilterValue
+                        value={episode.sezon.toString()}
+                        type="season"
+                        on:filter={handleFilterClick}
+                      />
+                    </td>
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          </div>
+        {:else}
+          <div
+            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4"
+          >
+            {#each displayedEpisodes as episode}
+              <EpisodeCard
+                {episode}
+                {searchTerms}
+                onEpisodeClick={handleEpisodeClick}
+                onFilterClick={handleFilterClick}
+              />
             {/each}
-          </tbody>
-        </table>
+          </div>
+        {/if}
 
         {#if filteredEpisodes.length > visibleRows && !showAllRows}
           <div

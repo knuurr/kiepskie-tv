@@ -304,13 +304,16 @@
               </svg>
             </button>
           {/if}
-          <input
-            id="search-input"
-            type="text"
-            placeholder="Wyszukaj... (naciśnij / aby fokusować)"
-            class="input input-bordered w-full"
-            bind:value={searchInput}
-          />
+          <label class="input input-bordered flex items-center gap-2 w-full">
+            <input
+              id="search-input"
+              type="text"
+              class="grow"
+              placeholder="Wyszukaj..."
+              bind:value={searchInput}
+            />
+            <kbd class="kbd kbd-sm">/</kbd>
+          </label>
         </div>
 
         {#if searchInput && suggestions.length > 0 && showSuggestions}
