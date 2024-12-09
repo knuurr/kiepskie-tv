@@ -1,6 +1,7 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite';
+import path from 'path';
 
 /** @type {import('vite').Plugin} */
 const viteServerConfig = {
@@ -24,7 +25,8 @@ export default defineConfig({
 	},
 	resolve: {
 		alias: {
-			'@': fileURLToPath(new URL('./src', import.meta.url))
+			'@': fileURLToPath(new URL('./src', import.meta.url)),
+			$components: path.resolve('./src/components')
 		}
 	},
 	optimizeDeps: {
