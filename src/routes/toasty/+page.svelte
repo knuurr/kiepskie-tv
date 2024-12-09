@@ -7,6 +7,7 @@
   import NavBar from "../../components/NavBar.svelte";
   import ResponsiveContainer from "../../components/ResponsiveContainer.svelte";
   import Header from "../Header.svelte";
+  import FeedbackSection from "../../components/FeedbackSection.svelte";
 
   let currentToast: string = "";
   let previousToast: string = "";
@@ -137,7 +138,7 @@
       description="Wylosuj kultowe toasty z popularnego polskiego sitcomu"
     />
 
-    <div class="card bg-base-100 shadow-xl">
+    <div class="mb-8 card bg-base-100 shadow-xl">
       <div class="card-body">
         <div class="flex justify-between items-center mb-4">
           <div class="badge badge-outline badge-lg">Rzutów: {rollCount}</div>
@@ -323,6 +324,6 @@
       </div>
     </div>
   </ResponsiveContainer>
-
+  <FeedbackSection />
   <Footer />
 </CenteredContainer>

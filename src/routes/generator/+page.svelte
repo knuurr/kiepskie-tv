@@ -145,7 +145,7 @@
 
   // Update keyboard handler to include left/right arrow navigation
   function handleKeydown(event: KeyboardEvent) {
-    if (event.key === " " && !isLoading) {
+    if (event.key === "r" && !isLoading) {
       event.preventDefault();
       randomizeEpisode();
     } else if (event.key === "ArrowLeft" && !isLoading) {
@@ -170,7 +170,7 @@
 
   <main class="container mx-auto px-4 py-8 max-w-5xl">
     <div class="prose max-w-none mb-8">
-      <h1>Generator losowego odcinka</h1>
+      <h1 class="text-4xl font-bold">Generator losowego odcinka</h1>
       <p class="text-base-content/70">
         Problem z wyborem odcinka "Kiepskich"? Wylosuj jeden z {data.tableData
           .data.length} odcinków!
@@ -353,7 +353,7 @@
                     <path
                       stroke-linecap="round"
                       stroke-linejoin="round"
-                      d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 0 1-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 0 1-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125m0 0V5.25m0 0h4.5m0 0v13.5"
+                      d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z"
                     />
                   </svg>
                   Zobacz w tabeli
@@ -367,11 +367,11 @@
               >
                 {#if selectedEpisode}
                   Losuj ponownie 🎲 <kbd
-                    class="kbd kbd-sm text-gray-400 hidden md:inline">Space</kbd
+                    class="kbd kbd-sm text-gray-400 hidden md:inline">r</kbd
                   >
                 {:else}
                   Losuj odcinek 🎲 <kbd
-                    class="kbd kbd-sm text-gray-400 hidden md:inline">Space</kbd
+                    class="kbd kbd-sm text-gray-400 hidden md:inline">r</kbd
                   >
                 {/if}
               </button>
@@ -405,7 +405,7 @@
                       }
                     }}
                     on:keydown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
+                      if (e.key === "r") {
                         e.preventDefault();
                         if (index !== currentHistoryIndex && !isLoading) {
                           showDetails = false;
@@ -469,7 +469,7 @@
                             <path
                               stroke-linecap="round"
                               stroke-linejoin="round"
-                              d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 0 1-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 0 1-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125m0 0V5.25m0 0h4.5m0 0v13.5"
+                              d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z"
                             />
                           </svg>
                         </a>
@@ -567,9 +567,8 @@
         </div>
       </div>
     </div>
-    <FeedbackSection />
   </main>
-
+  <FeedbackSection />
   <Footer />
 </div>
 

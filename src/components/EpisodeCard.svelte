@@ -28,7 +28,7 @@
     <div class="flex justify-between items-center">
       <span class="text-sm opacity-70">Odcinek {episode.nr}</span>
       <div class="badge badge-primary">
-        Sezon <ClickableFilterValue
+        Sezon{" "}<ClickableFilterValue
           value={episode.sezon.toString()}
           type="season"
           on:filter={(e) => {

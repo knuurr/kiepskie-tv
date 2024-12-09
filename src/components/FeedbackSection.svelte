@@ -2,7 +2,7 @@
   export let facebookGroupUrl = "https://www.facebook.com/groups/kiepscy";
 </script>
 
-<div class="mt-8 bg-green-100 dark:bg-green-900 rounded-lg p-6 shadow-lg">
+<div class="bg-green-100 dark:bg-green-900 rounded-lg p-6 shadow-lg">
   <div class="flex items-center gap-4">
     <div class="bg-green-200 dark:bg-green-800 p-3 rounded-full">
       <svg

@@ -251,11 +251,19 @@
   <main class="container mx-auto px-4 py-8">
     <div class="space-y-6">
       <div class="prose max-w-none mb-8">
-        <h1>Lista odcinków Świata według Kiepskich</h1>
+        <h1 class="text-2xl font-bold">
+          Lista odcinków Świata według Kiepskich
+        </h1>
         <p class="text-base-content/70">
           Przeglądaj wszystkie odcinki serialu. Użyj filtrów aby znaleźć
           konkretne odcinki po dacie emisji, reżyserze, scenarzyście lub treści.
           Możesz łączyć wiele filtrów i wykluczać niechciane wyniki.
+        </p>
+        <p class="text-base-content/70">
+          Nie wiesz od czego zacząć? Przytłacza Cię ilość odcinków? Sprawdź <a
+            href="/generator"
+            class="link link-primary">generator losowego odcinka 🎲</a
+          >, który pomoże Ci wybrać odcinek do oglądania!
         </p>
       </div>
 
@@ -599,7 +607,7 @@
         <div class="p-4 bg-base-200 text-center space-y-4">
           <p class="text-sm opacity-70">
             Podziękowania dla <a
-              href="https://example.com/source"
+              href="https://kiepscy.fandom.com/wiki/Lista_odcink%C3%B3w_serialu_%E2%80%9E%C5%9Awiat_wed%C5%82ug_Kiepskich%E2%80%9D"
               class="link link-primary"
               target="_blank"
               rel="noopener noreferrer">Kiepscy Wiki</a

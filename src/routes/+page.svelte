@@ -9,10 +9,10 @@
     {
       title: "📺 Tiwi",
       description:
-        'Skonwertuj dowolne "wideło" i wyświetl je na ekranie legendarnego "Okiła". 100% offline!',
+        'Skonwertuj dowolne "wideło" i wyświetl je na ekranie legendarnego "Okiła" a nstępnie zapisz lub podziel się z innymi',
       link: "/tiwi",
-      additionalInfo:
-        "Podziel się wideo ze znajomymi na TikTok, Messenger, WhatsApp i inne, lub zapisz na urządzeniu",
+      // additionalInfo:
+      //   "Podziel się wideo ze znajomymi na TikTok, Messenger, WhatsApp i inne, lub zapisz na urządzeniu",
       imageUrl: "/placeholder-tiwi.png",
     },
     {
@@ -20,17 +20,24 @@
       description:
         'Wylosuj jedne z najpopularniejszych toastów ze "Świata według Kiepskich"',
       link: "/toasty",
-      additionalInfo:
-        "Z łatwością skopiuj swój ulubiony wylosowany toast do schowka",
+      // additionalInfo:
+      //   "Z łatwością skopiuj swój ulubiony wylosowany toast do schowka",
       imageUrl: "/placeholder-toasty.png",
     },
     {
       title: "📊 Tabela",
-      description: "Zobacz tabelę oddzinków Kiepskich",
+      description:
+        "Zobacz tabelę oddzinków Kiepskich, z zaawansowanym filtrowaniem wyników",
       link: "/tabela",
-      additionalInfo:
-        "Użyj zaawansowanego filtrowania by precyzyjnie wyszukać odcinki",
+      // additionalInfo:
+      //   "Użyj zaawansowanego filtrowania by precyzyjnie wyszukać odcinki",
       imageUrl: "/placeholder-tabela.png",
+    },
+    {
+      title: "🎲 Generator",
+      description: "Wylosuj odcinek Świata według Kiepskich do oglądania",
+      link: "/generator",
+      imageUrl: "/placeholder-generator.png",
     },
     {
       title: "🌍 Judup",

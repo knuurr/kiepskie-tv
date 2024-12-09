@@ -15,7 +15,7 @@
   import NavBar from "../../components/NavBar.svelte";
   import Header from "../Header.svelte";
   import Footer from "../../components/Footer.svelte";
-
+  import FeedbackSection from "../../components/FeedbackSection.svelte";
   import * as DATA from "../Constans.svelte"; // reusable constans
 
   import { videoSettings } from "$lib/stores/videoSettingsStore";
@@ -1988,7 +1988,7 @@
 </div>
 <!-- </ResponsiveContainer> -->
 <!-- </CenteredContainer> -->
-
+<FeedbackSection />
 <Footer />
 <BottomNav
   {activeTab}
