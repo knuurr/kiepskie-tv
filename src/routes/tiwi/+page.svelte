@@ -174,7 +174,7 @@
 
   async function convertVideos(files: FileList) {
     console.log("Started batch video converting");
-    toasts.add("Rozpoczęto przetwarzanie plików", "info");
+    toasts.add("Rozpoczęto przetwarzanie plików", "info", 3000, true);
     console.log(files);
     videoDataList = new Array(files.length); // Pre-allocate array
     state = "convert.start";
@@ -201,6 +201,7 @@
       `Zakończono przetwarzanie wszystkich plików (${files.length})`,
       "success",
       5000,
+      true,
     );
     console.log("Finishing batch video converting");
   }
@@ -533,7 +534,12 @@
       });
       state = "loaded";
     } catch (error) {
-      toasts.add("Błąd ładowania FFmpeg: " + error.message, "error", 5000);
+      toasts.add(
+        "Błąd ładowania FFmpeg: " + error.message,
+        "error",
+        5000,
+        true,
+      );
     }
   }
 
@@ -567,6 +573,8 @@
       toasts.add(
         `Dodano ${files.length} ${files.length === 1 ? "plik" : "plików"} do przetworzenia`,
         "success",
+        3000,
+        false, // Regular events don't need OS notifications
       );
     }
   }
