@@ -330,6 +330,25 @@
                                   alt="Podgląd"
                                   class="max-w-full max-h-[400px] w-auto h-auto object-contain mx-auto rounded-lg transition-all group-hover:brightness-75"
                                 />
+                                <!-- Bottom right magnifying glass -->
+                                <div
+                                  class="absolute bottom-2 right-2 bg-black/50 p-2 rounded-full transition-opacity opacity-50 group-hover:opacity-100"
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="h-4 w-4 text-white"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
+                                    <path
+                                      stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      stroke-width="2"
+                                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
+                                    />
+                                  </svg>
+                                </div>
                                 <!-- Zoom icon overlay -->
                                 <div
                                   class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
@@ -615,3 +634,27 @@
     </div>
   {/if}
 </div>
+
+<!-- Preview Modal -->
+{#if showPreviewModal && selectedPreviewUrl}
+  <div
+    class="modal modal-open"
+    on:click|self={() => (showPreviewModal = false)}
+  >
+    <div class="modal-box relative max-w-4xl w-11/12 h-auto">
+      <button
+        class="btn btn-sm btn-circle absolute right-2 top-2"
+        on:click={() => (showPreviewModal = false)}
+      >
+        ✕
+      </button>
+      <figure class="flex items-center justify-center">
+        <img
+          src={selectedPreviewUrl}
+          alt="Podgląd w pełnej rozdzielczości"
+          class="max-h-[80vh] w-auto object-contain rounded-lg"
+        />
+      </figure>
+    </div>
+  </div>
+{/if}
