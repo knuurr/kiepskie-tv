@@ -6,6 +6,7 @@
   import { toasts } from "$lib/stores/toastStore";
   import { videoSettings } from "$lib/stores/videoSettingsStore";
   import AnimatedButton from "./AnimatedButton.svelte";
+  import { onMount } from "svelte";
 
   // Props
   export let state:
@@ -47,6 +48,19 @@
   function isLoading(state: string): boolean {
     return state === "loading";
   }
+
+  function handleKeydown(event: KeyboardEvent) {
+    if (event.key === "Escape" && showPreviewModal) {
+      showPreviewModal = false;
+    }
+  }
+
+  onMount(() => {
+    window.addEventListener("keydown", handleKeydown);
+    return () => {
+      window.removeEventListener("keydown", handleKeydown);
+    };
+  });
 </script>
 
 <div class="" transition:fade={{ duration: 200 }}>
@@ -156,9 +170,42 @@
                           : ''}"
                         on:click={() => (selectedFileIndex = i)}
                       >
-                        <div class="card-body p-4 relative">
-                          <div class="pr-10">
-                            <!-- Add padding-right to make space for the delete button -->
+                        <div class="card-body p-4 grid grid-cols-12 gap-4">
+                          <!-- Thumbnail -->
+                          <div class="col-span-2">
+                            {#await getOrGeneratePreview(file).then((frames) => frames[0])}
+                              <div
+                                class="w-full aspect-video bg-base-300 rounded-lg animate-pulse"
+                              ></div>
+                            {:then frame}
+                              <img
+                                src={frame?.url}
+                                alt="Thumbnail"
+                                class="w-full aspect-video object-cover rounded-lg"
+                              />
+                            {:catch}
+                              <div
+                                class="w-full aspect-video bg-base-300 rounded-lg flex items-center justify-center"
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  class="h-6 w-6 text-base-content/50"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                  />
+                                </svg>
+                              </div>
+                            {/await}
+                          </div>
+                          <!-- File info -->
+                          <div class="col-span-9 pr-10">
                             <h4 class="font-medium break-all text-left">
                               {file.name}
                             </h4>
@@ -166,7 +213,8 @@
                               {(file.size / (1024 * 1024)).toFixed(2)} MB
                             </p>
                           </div>
-                          <div class="absolute right-4 top-4">
+                          <!-- Delete button -->
+                          <div class="col-span-1 flex justify-end">
                             <button
                               class="btn btn-sm btn-square btn-error btn-outline"
                               on:click|stopPropagation={() =>

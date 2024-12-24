@@ -112,6 +112,7 @@
 <style>
   .btm-nav {
     @apply border-t border-base-300;
+    z-index: 50;
   }
 
   .btm-nav-label {
