@@ -944,6 +944,7 @@
         on:filesChange={(e) => {
           files = e.detail.files;
         }}
+        {removeFile}
       />
     {/if}
 

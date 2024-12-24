@@ -5,6 +5,7 @@
   import { writable, type Writable } from "svelte/store";
   import { toasts } from "$lib/stores/toastStore";
   import { videoSettings } from "$lib/stores/videoSettingsStore";
+  import AnimatedButton from "./AnimatedButton.svelte";
 
   // Props
   export let state:
@@ -197,11 +198,11 @@
               <!-- Convert Button - Now at bottom of column -->
               {#if files?.length > 0}
                 <div class="mt-4 pt-4 border-t border-base-300 hidden lg:block">
-                  <button
+                  <AnimatedButton
                     on:click={() => convertVideos(files)}
-                    class="btn btn-primary gap-2 w-full {state === 'loading'
-                      ? 'btn-disabled loading'
-                      : ''}"
+                    disabled={state === "loading"}
+                    loading={state === "loading"}
+                    fullWidth
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -224,7 +225,7 @@
                       />
                     </svg>
                     Okiłizuj
-                  </button>
+                  </AnimatedButton>
                   <p class="text-xs text-center mt-2 text-base-content/70">
                     Wszystkie pliki zostaną przetworzone po kolei
                   </p>
@@ -579,9 +580,10 @@
 
         <!-- Mobile Convert Button -->
         <div class="lg:hidden card-actions justify-end mt-4">
-          <button
+          <AnimatedButton
             on:click={() => convertVideos(files)}
-            class="btn btn-primary gap-2 w-full {!files ? 'btn-disabled' : ''}"
+            disabled={!files}
+            fullWidth
           >
             Okiłizuj
             <svg
@@ -604,7 +606,7 @@
                 d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
-          </button>
+          </AnimatedButton>
         </div>
       </div>
     </div>
