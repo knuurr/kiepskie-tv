@@ -8,6 +8,7 @@
   import ResponsiveContainer from "../../components/ResponsiveContainer.svelte";
   import Header from "../Header.svelte";
   import FeedbackSection from "../../components/FeedbackSection.svelte";
+  import AnimatedButton from "../../components/tiwi/AnimatedButton.svelte";
 
   let currentToast: string = "";
   let previousToast: string = "";
@@ -141,7 +142,7 @@
     <div class="mb-8 card bg-base-100 shadow-xl">
       <div class="card-body">
         <div class="flex justify-between items-center mb-4">
-          <div class="badge badge-outline badge-lg">Rzutów: {rollCount}</div>
+          <div class="badge badge-outline badge-lg">Losowań: {rollCount}</div>
         </div>
 
         <div class="card bg-base-100 border-2 border-base-200">
@@ -203,9 +204,9 @@
             </button>
           {/if}
 
-          <button
-            on:click={getRandomToast}
+          <AnimatedButton
             class="btn btn-warning btn-block"
+            on:click={getRandomToast}
             disabled={isRolling}
           >
             {#if isRolling}
@@ -216,7 +217,7 @@
                 <kbd class="kbd kbd-sm hidden md:inline-flex text-white">r</kbd>
               </span>
             {/if}
-          </button>
+          </AnimatedButton>
         </div>
 
         <!-- History Section -->

@@ -160,7 +160,7 @@
     <!-- View details button - optional now since entire card is clickable -->
     <div class="card-actions justify-end mt-auto pt-2">
       <button
-        class="btn btn-sm btn-primary opacity-50 hover:opacity-100 transition-opacity"
+        class="btn btn-sm btn-primary hover:opacity-100 transition-opacity"
         on:click|stopPropagation={() => onEpisodeClick(episode)}
       >
         Szczegóły

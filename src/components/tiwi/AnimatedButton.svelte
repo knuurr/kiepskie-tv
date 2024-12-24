@@ -6,12 +6,12 @@
 
 <button
   class="animated-button btn {fullWidth ? 'w-full' : ''} {loading
-    ? 'btn-disabled loading'
-    : ''}"
+    ? 'loading'
+    : ''} {disabled ? 'btn-disabled' : ''}"
   {disabled}
   on:click
 >
-  <div class="gradient-container">
+  <div class="gradient-container" class:disabled>
     <div class="gradient"></div>
   </div>
   <div class="flex items-center gap-2">
@@ -21,7 +21,7 @@
 
 <style lang="postcss">
   .animated-button {
-    @apply relative bg-black text-white overflow-hidden;
+    @apply relative overflow-hidden;
     z-index: 1;
     border: none;
     outline: none;
@@ -30,14 +30,18 @@
 
   .animated-button::before {
     content: "";
-    @apply absolute inset-[3px] bg-black rounded-[inherit];
+    @apply absolute inset-[3px] rounded-[inherit] bg-base-100;
     z-index: 2;
   }
 
   .gradient-container {
-    @apply absolute inset-0 overflow-hidden;
+    @apply absolute inset-0 overflow-hidden opacity-100 transition-opacity duration-200;
     border-radius: inherit;
     z-index: 1;
+  }
+
+  .gradient-container.disabled {
+    @apply opacity-30;
   }
 
   .gradient {

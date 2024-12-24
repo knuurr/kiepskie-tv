@@ -309,7 +309,7 @@
               id="search-input"
               type="text"
               class="grow"
-              placeholder="Wyszukaj..."
+              placeholder="Wpisz frazę np. 1999, Okił, browary..."
               bind:value={searchInput}
             />
             <kbd class="kbd kbd-sm">/</kbd>

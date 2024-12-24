@@ -5,6 +5,7 @@
   import Footer from "../../components/Footer.svelte";
   import { onMount } from "svelte";
   import FeedbackSection from "../../components/FeedbackSection.svelte";
+  import AnimatedButton from "../../components/tiwi/AnimatedButton.svelte";
 
   export let data: PageData;
 
@@ -221,7 +222,7 @@
                 />
               </svg>
               Kliknij przycisk "Losuj odcinek" lub wciśnij
-              <kbd class="kbd kbd-sm">Spacja</kbd>
+              <kbd class="kbd kbd-sm">r</kbd>
             </li>
             <li class="flex items-center gap-2">
               <svg
@@ -370,7 +371,7 @@
                 </a>
               </div>
 
-              <button
+              <AnimatedButton
                 class="btn btn-primary gap-2 mx-auto"
                 on:click={randomizeEpisode}
                 disabled={isLoading}
@@ -384,7 +385,7 @@
                     class="kbd kbd-sm text-gray-400 hidden md:inline">r</kbd
                   >
                 {/if}
-              </button>
+              </AnimatedButton>
             </div>
           </div>
         </div>
