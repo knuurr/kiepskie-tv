@@ -177,6 +177,21 @@
   // Add a store to track if processing has started
   const processingStarted = writable(false);
 
+  let backgrounds = [];
+
+  onMount(async () => {
+    loadFfmpeg();
+    // Load backgrounds data
+    try {
+      const response = await fetch(DATA.PATH_BACKGROUNDS_JSON);
+      const data = await response.json();
+      backgrounds = data.backgrounds;
+    } catch (error) {
+      console.error("Error loading backgrounds:", error);
+      toasts.add("Błąd ładowania konfiguracji teł: " + error.message, "error");
+    }
+  });
+
   async function convertVideos(files: FileList) {
     console.log("Started batch video converting");
     toasts.add("Rozpoczęto przetwarzanie plików", "info", 3000, true);
@@ -217,35 +232,59 @@
       $videoSettings.find((s) => s.fileName === file.name)?.settings ||
       DEFAULT_SETTINGS;
 
+    // Find selected background configuration
+    const selectedBackground = backgrounds.find(
+      (bg) => bg.id === fileSettings.selectedBackground,
+    );
+
+    if (!selectedBackground) {
+      console.error(
+        "Selected background not found:",
+        fileSettings.selectedBackground,
+      );
+      toasts.add("Błąd: Nie znaleziono wybranego tła", "error");
+      return;
+    }
+
     let _i = 0;
     let outputs = [];
+
+    console.log("Using background:", selectedBackground.name);
+    console.log("Background config:", selectedBackground.overlayConfig);
+
     await ffmpeg.writeFile(file.name, await fetchFile(file));
-    // await ffmpeg.writeFile("input.webm", videData);
-    // await ffmpeg.exec(["-i", "input.webm", "output.mp4"]);
+
+    // Load selected background image
     await ffmpeg.writeFile(
       DATA.NAME_GREENSCREEN_PNG,
-      await fetchFile(DATA.PATH_GREENSCREEN_PNG),
+      await fetchFile(selectedBackground.imagePath),
     );
+
     transformState = "1/2";
+
+    // Generate FFmpeg filter with selected background's configuration
+    const greenscreenFilter = DATA.generateGreenscreenFilter(
+      selectedBackground.overlayConfig,
+    );
+    console.log("Generated FFmpeg filter:", greenscreenFilter);
+
     await ffmpeg.exec([
       "-i",
       DATA.NAME_GREENSCREEN_PNG,
       "-i",
       file.name,
       "-filter_complex",
-      DATA.FFMPEG_FILTER_ADD_GREENSCREEN,
+      greenscreenFilter,
       "-c:v",
       "libx264",
       "-c:a",
       "copy",
       "-preset",
       "ultrafast",
-      // `${DATA.NAME_TEMP_OUTPUT}-${_i}${DATA.NAME_TEMP_OUTPUT_FORMAT}`,
       `output${_i}.mp4`,
     ]);
     outputs.push(`output${_i}.mp4`);
     _i++;
-    // await ffmpeg.readFile(DATA.NAME_TEMP_OUTPUT);
 
     transformState = "2/2";
 
@@ -748,8 +787,8 @@
 <!-- <ResponsiveContainer> -->
 <Header title={DATA.APP_TITLE} description={DATA.APP_DESC}>
   <!-- <p class="text-lg">
-    Twoje wideo nigdzie nie jest wysłane - obróbka jest 100% offline
-  </p> -->
+      Twoje wideo nigdzie nie jest wysłane - obróbka jest 100% offline
+    </p> -->
   <!-- Add scroll button -->
   <button
     class="btn btn-sm btn-outline gap-2 mt-2"
@@ -1012,11 +1051,11 @@
   }
 
   /* #video-container {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-  } */
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    } */
 
   .btm-nav-label {
     @apply text-sm;

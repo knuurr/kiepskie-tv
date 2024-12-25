@@ -1,0 +1,34 @@
+{
+  "backgrounds": [
+    {
+      "id": "ferdek-fotel",
+      "name": "Klasyczny Okił",
+      "description": "Co więcej, to jest klasyczny Okił",
+      "imagePath": "/greenscreen.png",
+      "previewPath": "/greenscreen.png",
+      "overlayConfig": {
+        "maxWidth": 510,
+        "maxHeight": 382,
+        "padWidth": 512,
+        "padHeight": 382,
+        "offsetX": 140,
+        "offsetY": 94
+      }
+    },
+    {
+      "id": "ferdek-okno",
+      "name": "Klasyczny Okił 2",
+      "description": "Dummy",
+      "imagePath": "/greenscreen.png",
+      "previewPath": "/greenscreen.png",
+      "overlayConfig": {
+        "maxWidth": 510,
+        "maxHeight": 382,
+        "padWidth": 512,
+        "padHeight": 382,
+        "offsetX": 140,
+        "offsetY": 94
+      }
+    }
+  ]
+}

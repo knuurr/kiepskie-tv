@@ -4,5 +4,6 @@ export interface VideoSettings {
   settings: {
     addBoczek: boolean;
     addIntro: boolean;
+    selectedBackground: string;
   };
 } 

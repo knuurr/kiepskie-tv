@@ -7,6 +7,8 @@
   import { videoSettings } from "$lib/stores/videoSettingsStore";
   import AnimatedButton from "./AnimatedButton.svelte";
   import { onMount } from "svelte";
+  import BackgroundSelector from "./BackgroundSelector.svelte";
+  import * as DATA from "../../routes/Constans.svelte";
 
   // Props
   export let state:
@@ -33,6 +35,9 @@
   let selectedPreviewIndex = 0;
   let showPreviewModal = false;
   let selectedPreviewUrl: string | null = null;
+  let showBackgroundDrawer = false;
+  let backgrounds: any[] = [];
+  let isLoadingBackgrounds = true;
 
   // Reset preview index when file changes
   $: if (selectedFileIndex !== undefined) {
@@ -61,6 +66,30 @@
       window.removeEventListener("keydown", handleKeydown);
     };
   });
+
+  onMount(async () => {
+    try {
+      isLoadingBackgrounds = true;
+      const response = await fetch(DATA.PATH_BACKGROUNDS_JSON);
+      const data = await response.json();
+      backgrounds = data.backgrounds;
+    } catch (error) {
+      console.error("Error loading backgrounds:", error);
+      toasts.add("Błąd ładowania konfiguracji teł", "error");
+    } finally {
+      isLoadingBackgrounds = false;
+    }
+  });
+
+  // Function to get background name
+  function getBackgroundName(settingId: string) {
+    if (isLoadingBackgrounds) return null;
+
+    const selectedBackground = $videoSettings.find((s) => s.id === settingId)
+      ?.settings?.selectedBackground;
+    const background = backgrounds.find((bg) => bg.id === selectedBackground);
+    return background?.name || backgrounds[0]?.name;
+  }
 </script>
 
 <div class="" transition:fade={{ duration: 200 }}>
@@ -591,6 +620,56 @@
                           })}
                       />
                     </label>
+
+                    <!-- Background selector button -->
+                    <div class="col-span-full">
+                      <button
+                        class="w-full flex items-center justify-between gap-4 p-4 bg-base-200 rounded-lg hover:bg-base-300 transition-all relative {isLoadingBackgrounds
+                          ? 'cursor-wait'
+                          : ''}"
+                        on:click={() =>
+                          !isLoadingBackgrounds &&
+                          (showBackgroundDrawer = true)}
+                        disabled={isLoadingBackgrounds}
+                      >
+                        <div class="flex items-center gap-4 flex-1">
+                          <span class="lg:text-base text-sm">Wybierz tło</span>
+                          {#if isLoadingBackgrounds}
+                            <div class="flex items-center gap-2">
+                              <span class="loading loading-spinner loading-sm"
+                              ></span>
+                              <span class="text-sm text-base-content/70"
+                                >Ładowanie...</span
+                              >
+                            </div>
+                          {:else if selectedFileIndex !== undefined && $videoSettings[selectedFileIndex]}
+                            {@const backgroundName = getBackgroundName(
+                              $videoSettings[selectedFileIndex]?.id,
+                            )}
+                            {#if backgroundName}
+                              <span class="text-sm text-base-content/70"
+                                >{backgroundName}</span
+                              >
+                            {/if}
+                          {/if}
+                        </div>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          class="h-5 w-5 {isLoadingBackgrounds
+                            ? 'opacity-50'
+                            : ''}"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                          />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
 
                   <!-- Reset button - Only show in settings tab on mobile -->
@@ -707,4 +786,12 @@
       </figure>
     </div>
   </div>
+{/if}
+
+<!-- Add background selector drawer -->
+{#if selectedFileIndex !== undefined && files[selectedFileIndex]}
+  <BackgroundSelector
+    settingId={$videoSettings[selectedFileIndex]?.id}
+    bind:showDrawer={showBackgroundDrawer}
+  />
 {/if}

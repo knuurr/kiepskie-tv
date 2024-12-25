@@ -4,7 +4,7 @@
   export const DEFAULT_SETTINGS = {
     addBoczek: true,
     addIntro: true,
-    // addWatermark: true,
+    selectedBackground: "ferdek-fotel",
   };
   // Names
   export const NAME_GREENSCREEN_PNG = "greenscreen.png";
@@ -21,6 +21,7 @@
   // Paths
   export const PATH_TEMPLATE_VIDEO = "/video.mp4";
   export const PATH_GREENSCREEN_PNG = "/greenscreen.png";
+  export const PATH_BACKGROUNDS_JSON = "/tiwi/backgrounds.json";
   // URLs
   export const GH_BASE_URL = "https://github.com/knuurr";
   export const GH_REPO_URL = "?tab=repositories";
@@ -34,9 +35,21 @@
     "[1:a]adelay=0|0[a1];[0:a][a1]amix=inputs=2";
   export const FFMPEG_FILTER_ADD_BOCZEK =
     "[1:v]scale=768:576 [scaledv]; [0:v][0:a][scaledv][1:a]concat=n=2:v=1:a=1[v][a]";
-  // x, y offets are still hardcoded
-  export const FFMPEG_FILTER_ADD_GREENSCREEN =
-    "[1:v]scale=w='min(iw,510)':h='min(ih,382)':force_original_aspect_ratio=decrease,pad=512:382:((512-iw)/2)+1:((382-ih)/2)+1:color=black[overlay];[0:v][overlay]overlay=x=140:y=94";
+  // Function to generate greenscreen filter based on config
+  export function generateGreenscreenFilter(config) {
+    return `[1:v]scale=w='min(iw,${config.maxWidth})':h='min(ih,${config.maxHeight})':force_original_aspect_ratio=decrease,pad=${config.padWidth}:${config.padHeight}:((${config.padWidth}-iw)/2)+1:((${config.padHeight}-ih)/2)+1:color=black[overlay];[0:v][overlay]overlay=x=${config.offsetX}:y=${config.offsetY}`;
+  }
+
+  // Default greenscreen filter (for backward compatibility)
+  export const FFMPEG_FILTER_ADD_GREENSCREEN = generateGreenscreenFilter({
+    maxWidth: 510,
+    maxHeight: 382,
+    padWidth: 512,
+    padHeight: 382,
+    offsetX: 140,
+    offsetY: 94,
+  });
+
   export const FFMPEG_FILTER_ADD_WATERMARK =
     "[1][0]scale2ref=w=oh*mdar:h=ih*0.1[wm][vid];[vid][wm]overlay=W-w-10:H-h-10";
 </script>

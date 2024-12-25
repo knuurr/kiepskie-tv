@@ -3,7 +3,7 @@
   import { fade, fly } from "svelte/transition";
 </script>
 
-<div class="toast toast-end z-50">
+<div class="toast toast-end z-[100]">
   {#each $toasts as toast (toast.id)}
     <div
       class="alert {toast.type === 'success'
@@ -25,7 +25,7 @@
 <style>
   .toast {
     position: fixed;
-    top: 1rem;
+    top: 4rem;
     right: 1rem;
     display: flex;
     flex-direction: column;

@@ -1,4 +1,5 @@
 export const DEFAULT_SETTINGS = {
   addBoczek: true,
-  addIntro: false
+  addIntro: false,
+  selectedBackground: null
 }; 
