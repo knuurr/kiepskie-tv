@@ -22,7 +22,7 @@
 <style lang="postcss">
   .animated-button {
     @apply relative overflow-hidden;
-    z-index: 1;
+    z-index: 0;
     border: none;
     outline: none;
     transition: all 0.3s;
