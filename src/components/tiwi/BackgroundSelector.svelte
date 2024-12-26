@@ -2,9 +2,14 @@
   import { onMount } from "svelte";
   import { videoSettings } from "$lib/stores/videoSettingsStore";
   import * as DATA from "../../routes/Constans.svelte";
+  import { createEventDispatcher } from "svelte";
 
   export let settingId: string;
   export let showDrawer = false;
+
+  const dispatch = createEventDispatcher<{
+    backgroundSelected: { backgroundId: string };
+  }>();
 
   interface Background {
     id: string;
@@ -52,6 +57,7 @@
     videoSettings.updateSettings(settingId, {
       selectedBackground: backgroundId,
     });
+    dispatch("backgroundSelected", { backgroundId });
     showDrawer = false;
   }
 

@@ -44,14 +44,14 @@
     selectedPreviewIndex = 0;
   }
 
-  function handleRemoveFile(index: number | undefined, settingId: string) {
-    if (index !== undefined) {
+  function safeRemoveFile(index: number | undefined, settingId: string) {
+    if (typeof index === "number") {
       removeFile(index, settingId);
     }
   }
 
-  function isLoading(state: string): boolean {
-    return state === "loading";
+  function isLoading(currentState: typeof state): boolean {
+    return currentState === "loading" || currentState === "convert.start";
   }
 
   function handleKeydown(event: KeyboardEvent) {
@@ -89,6 +89,30 @@
       ?.settings?.selectedBackground;
     const background = backgrounds.find((bg) => bg.id === selectedBackground);
     return background?.name || backgrounds[0]?.name;
+  }
+
+  function handleCheckboxChange(settingId: string, key: string, event: Event) {
+    const target = event.target as HTMLInputElement;
+    if (target && target instanceof HTMLInputElement) {
+      videoSettings.updateSettings(settingId, {
+        [key]: target.checked,
+      });
+    }
+  }
+
+  async function regeneratePreview(file: File) {
+    // Clear existing preview frames
+    $previewFrames = [];
+    // Show loading state
+    previewProgress.set({ stage: "extracting", current: 0 });
+    // Regenerate preview
+    try {
+      $previewFrames = await getOrGeneratePreview(file);
+      toasts.add("Podgląd został zaktualizowany", "success");
+    } catch (error) {
+      console.error("Error regenerating preview:", error);
+      toasts.add("Błąd podczas generowania podglądu", "error");
+    }
   }
 </script>
 
@@ -140,10 +164,8 @@
                       {@const settingId = $videoSettings[selectedFileIndex]?.id}
                       <button
                         class="btn btn-error btn-outline btn-sm gap-2 w-full"
-                        on:click={() => {
-                          const currentIndex = selectedFileIndex;
-                          removeFile(currentIndex, settingId);
-                        }}
+                        on:click={() =>
+                          safeRemoveFile(selectedFileIndex, settingId)}
                       >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -227,7 +249,7 @@
                                     stroke-linecap="round"
                                     stroke-linejoin="round"
                                     stroke-width="2"
-                                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
                                   />
                                 </svg>
                               </div>
@@ -277,8 +299,8 @@
                 <div class="mt-4 pt-4 border-t border-base-300 hidden lg:block">
                   <AnimatedButton
                     on:click={() => convertVideos(files)}
-                    disabled={state === "loading"}
-                    loading={state === "loading"}
+                    disabled={isLoading(state)}
+                    loading={isLoading(state)}
                     fullWidth
                   >
                     <svg
@@ -361,6 +383,18 @@
                   <h3 class="card-title text-lg hidden lg:block">
                     Podgląd i ustawienia
                   </h3>
+
+                  <!-- Background Selector Component -->
+                  <BackgroundSelector
+                    settingId={$videoSettings[selectedFileIndex]?.id}
+                    bind:showDrawer={showBackgroundDrawer}
+                    on:backgroundSelected={async () => {
+                      if (selectedFileIndex !== undefined) {
+                        const file = files[selectedFileIndex];
+                        await regeneratePreview(file);
+                      }
+                    }}
+                  />
 
                   <!-- Preview -->
                   <div
@@ -598,9 +632,7 @@
                         checked={$videoSettings[selectedFileIndex]?.settings
                           .addIntro}
                         on:change={(e) =>
-                          videoSettings.updateSettings(settingId, {
-                            addIntro: e.target.checked,
-                          })}
+                          handleCheckboxChange(settingId, "addIntro", e)}
                       />
                     </label>
                     <label
@@ -615,9 +647,7 @@
                         checked={$videoSettings[selectedFileIndex]?.settings
                           .addBoczek}
                         on:change={(e) =>
-                          videoSettings.updateSettings(settingId, {
-                            addBoczek: e.target.checked,
-                          })}
+                          handleCheckboxChange(settingId, "addBoczek", e)}
                       />
                     </label>
 
@@ -786,12 +816,4 @@
       </figure>
     </div>
   </div>
-{/if}
-
-<!-- Add background selector drawer -->
-{#if selectedFileIndex !== undefined && files[selectedFileIndex]}
-  <BackgroundSelector
-    settingId={$videoSettings[selectedFileIndex]?.id}
-    bind:showDrawer={showBackgroundDrawer}
-  />
 {/if}

@@ -1,10 +1,10 @@
 <!-- Dummy module for importing constans -->
-<script context="module">
+<script context="module" lang="ts">
   // Default settings
   export const DEFAULT_SETTINGS = {
     addBoczek: true,
     addIntro: true,
-    selectedBackground: "ferdek-fotel",
+    selectedBackground: "okil-1",
   };
   // Names
   export const NAME_GREENSCREEN_PNG = "greenscreen.png";
@@ -33,14 +33,23 @@
   //   FFmpeg presets
   export const FFMPEG_FILTER_ADD_INTRO =
     "[1:a]adelay=0|0[a1];[0:a][a1]amix=inputs=2";
-  export const FFMPEG_FILTER_ADD_BOCZEK =
-    "[1:v]scale=768:576 [scaledv]; [0:v][0:a][scaledv][1:a]concat=n=2:v=1:a=1[v][a]";
+
+  export function generateBoczekFilter(
+    imageWidth: number,
+    imageHeight: number,
+  ) {
+    return `[1:v]scale=${imageWidth}:${imageHeight},setsar=1[scaledv]; [0:v][0:a][scaledv][1:a]concat=n=2:v=1:a=1[v][a]`;
+  }
+
+  // export const FFMPEG_FILTER_ADD_BOCZEK = generateBoczekFilter(768, 576);
   // Function to generate greenscreen filter based on config
-  export function generateGreenscreenFilter(config) {
+
+  export function generateGreenscreenFilter(config: any) {
     return `[1:v]scale=w='min(iw,${config.maxWidth})':h='min(ih,${config.maxHeight})':force_original_aspect_ratio=decrease,pad=${config.padWidth}:${config.padHeight}:((${config.padWidth}-iw)/2)+1:((${config.padHeight}-ih)/2)+1:color=black[overlay];[0:v][overlay]overlay=x=${config.offsetX}:y=${config.offsetY}`;
   }
 
   // Default greenscreen filter (for backward compatibility)
+  // TODO: Remove this
   export const FFMPEG_FILTER_ADD_GREENSCREEN = generateGreenscreenFilter({
     maxWidth: 510,
     maxHeight: 382,

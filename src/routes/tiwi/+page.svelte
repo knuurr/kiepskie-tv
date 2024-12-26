@@ -85,6 +85,24 @@
     blob: Blob;
   };
 
+  interface Background {
+    id: string;
+    name: string;
+    description: string;
+    imagePath: string;
+    previewPath: string;
+    overlayConfig: {
+      maxWidth: number;
+      maxHeight: number;
+      padWidth: number;
+      padHeight: number;
+      offsetX: number;
+      offsetY: number;
+    };
+  }
+
+  let backgrounds: Background[] = [];
+
   function getVideoDuration(file: File): Promise<number> {
     const video = document.createElement("video");
     const objectURL = URL.createObjectURL(file);
@@ -113,7 +131,9 @@
     event: Event,
   ) {
     const target = event.target as HTMLInputElement;
-    videoSettings.updateSettings(key, target.checked);
+    videoSettings.updateSettings(settingId, {
+      [key]: target.checked,
+    });
   }
 
   // Re-implementation
@@ -177,8 +197,6 @@
   // Add a store to track if processing has started
   const processingStarted = writable(false);
 
-  let backgrounds = [];
-
   onMount(async () => {
     loadFfmpeg();
     // Load backgrounds data
@@ -186,7 +204,8 @@
       const response = await fetch(DATA.PATH_BACKGROUNDS_JSON);
       const data = await response.json();
       backgrounds = data.backgrounds;
-    } catch (error) {
+    } catch (err) {
+      const error = err as Error;
       console.error("Error loading backgrounds:", error);
       toasts.add("Błąd ładowania konfiguracji teł: " + error.message, "error");
     }
@@ -253,11 +272,16 @@
     console.log("Background config:", selectedBackground.overlayConfig);
 
     await ffmpeg.writeFile(file.name, await fetchFile(file));
+    console.log("[*] Current Virtual FS:", await ffmpeg.listDir("/"));
 
-    // Load selected background image
+    // Load selected background image using the background's imagePath
     await ffmpeg.writeFile(
-      DATA.NAME_GREENSCREEN_PNG,
+      selectedBackground.id + ".png",
       await fetchFile(selectedBackground.imagePath),
+    );
+    console.log(
+      "[*] Current Virtual FS after loading background image:",
+      await ffmpeg.listDir("/"),
     );
 
     transformState = "1/2";
@@ -270,7 +294,7 @@
 
     await ffmpeg.exec([
       "-i",
-      DATA.NAME_GREENSCREEN_PNG,
+      selectedBackground.id + ".png",
       "-i",
       file.name,
       "-filter_complex",
@@ -284,6 +308,10 @@
       `output${_i}.mp4`,
     ]);
     outputs.push(`output${_i}.mp4`);
+    console.log(
+      "[*] Current Virtual FS after first conversion:",
+      await ffmpeg.listDir("/"),
+    );
     _i++;
 
     transformState = "2/2";
@@ -294,27 +322,34 @@
         DATA.NAME_TEMPLATE_VIDEO,
         await fetchFile(DATA.PATH_TEMPLATE_VIDEO),
       );
+
+      // Use background dimensions for Boczek filter
+      const boczekFilter = DATA.generateBoczekFilter(
+        selectedBackground.overlayConfig.imageWidth,
+        selectedBackground.overlayConfig.imageHeight,
+      );
+      console.log("Generated Boczek filter:", boczekFilter);
+
       await ffmpeg.exec([
         "-i",
-        // DATA.NAME_TEMP_OUTPUT,
-        // `${DATA.NAME_TEMP_OUTPUT}-${_i - 1}${DATA.NAME_TEMP_OUTPUT_FORMAT}`,
         outputs[_i - 1],
         "-i",
         DATA.NAME_TEMPLATE_VIDEO,
         "-filter_complex",
-        DATA.FFMPEG_FILTER_ADD_BOCZEK,
+        boczekFilter,
         "-map",
         "[v]",
         "-map",
         "[a]",
         "-preset",
         "ultrafast",
-        // DATA.NAME_TEMP_OUTPUT + _i + DATA.NAME_TEMP_OUTPUT_FORMAT,
-        // `${DATA.NAME_TEMP_OUTPUT}-${_i}${DATA.NAME_TEMP_OUTPUT_FORMAT}`,
         `output${_i}.mp4`,
       ]);
-      // await ffmpeg.readFile(DATA.NAME_TEMP_OUTPUT);
       outputs.push(`output${_i}.mp4`);
+      console.log(
+        "[*] Current Virtual FS after adding Boczek:",
+        await ffmpeg.listDir("/"),
+      );
 
       _i++;
     }
@@ -322,65 +357,34 @@
     if (fileSettings.addIntro) {
       console.log("Adding intro audio sound");
       await ffmpeg.writeFile(
-        // DATA.NAME_TEMPLATE_VIDEO,
         DATA.NAME_INTRO_AUDIO,
         await fetchFile(DATA.NAME_INTRO_AUDIO),
       );
       await ffmpeg.exec([
         "-i",
-        // DATA.NAME_TEMP_OUTPUT, // Input video file
-        // `${DATA.NAME_TEMP_OUTPUT}-${_i - 1}${DATA.NAME_TEMP_OUTPUT_FORMAT}`,
         outputs[_i - 1],
         "-i",
-        DATA.NAME_INTRO_AUDIO, // Input audio file
+        DATA.NAME_INTRO_AUDIO,
         "-filter_complex",
-        DATA.FFMPEG_FILTER_ADD_INTRO, // Filter complex with variable
+        DATA.FFMPEG_FILTER_ADD_INTRO,
         "-c:v",
-        "copy", // Copy video stream without re-encoding
-        // DATA.NAME_TEMP_OUTPUT + _i + DATA.NAME_TEMP_OUTPUT_FORMAT, // Output file name
-        // "output.mp4", // Output file name
-        // `${DATA.NAME_TEMP_OUTPUT}-${_i}${DATA.NAME_TEMP_OUTPUT_FORMAT}`,
+        "copy",
         `output${_i}.mp4`,
       ]);
-      // await ffmpeg.writeFile(DATA.NAME_TEMP_OUTPUT, DATA.NAME_TEMP_OUTPUT);
-      // await ffmpeg.readFile(DATA.NAME_TEMP_OUTPUT);
       outputs.push(`output${_i}.mp4`);
+      console.log(
+        "[*] Current Virtual FS after adding intro:",
+        await ffmpeg.listDir("/"),
+      );
 
       _i++;
     }
 
-    // if (transformSettings.addWatermark) {
-    //   console.log("[*] Adding watermark");
-    //   await ffmpeg.writeFile(
-    //     // DATA.NAME_TEMPLATE_VIDEO,
-    //     DATA.NAME_WATERMARK,
-    //     await fetchFile(DATA.NAME_WATERMARK),
-    //   ),
-    //     await ffmpeg.exec([
-    //       "-i",
-    //       outputs[_i - 1],
-    //       "-i",
-    //       DATA.NAME_WATERMARK, // Watermark file
-    //       "-filter_complex",
-    //       DATA.FFMPEG_FILTER_ADD_WATERMARK, // Filter complex with variable
-    //       "-c:a",
-    //       "copy",
-    //       `output${_i}.mp4`,
-    //     ]);
-
-    //   outputs.push(`output${_i}.mp4`);
-
-    //   _i++;
-    // }
-
-    // const data = await ffmpeg.readFile("output.mp4");
-    // const data = await ffmpeg.readFile(DATA.NAME_TEMP_OUTPUT);
-    const data = await ffmpeg.readFile(
-      // `${DATA.NAME_TEMP_OUTPUT}-${_i}${DATA.NAME_TEMP_OUTPUT_FORMAT}`,
-      `output${_i - 1}.mp4`,
+    const data = await ffmpeg.readFile(`output${_i - 1}.mp4`);
+    const blob = new Blob(
+      [data instanceof Uint8Array ? data : new Uint8Array()],
+      { type: "video/mp4" },
     );
-
-    const blob = new Blob([data.buffer], { type: "video/mp4" });
 
     // Get the current index safely
     const currentIndex = $currentProcessingIndex;
@@ -400,17 +404,15 @@
       });
     }
 
-    // console.log("[*] Attempting cleanup of Virtual FS");
-    // let dirList = await ffmpeg.listDir("/");
-    // console.log("[*] List of Virtual FS (before): ", dirList);
-
+    // Cleanup files
     for (const output of outputs) {
       const _fileDelete = await ffmpeg.deleteFile(output);
       console.log("[*] File cleanup from Virtual FS: ", _fileDelete);
     }
 
-    const _fileDelete = await ffmpeg.deleteFile(file.name);
-    console.log("[*] Cleanup original input file name: ", _fileDelete);
+    await ffmpeg.deleteFile(file.name);
+    await ffmpeg.deleteFile(selectedBackground.id + ".png");
+    console.log("[*] Cleanup original input file name: ", file.name);
 
     const dirList = await ffmpeg.listDir("/");
     console.log("[*] List of Virtual FS (after): ", dirList);
@@ -472,6 +474,24 @@
 
     const previewFrames: PreviewFrame[] = [];
 
+    // Get the file settings and background
+    const fileSettings =
+      $videoSettings.find((s) => s.fileName === file.name)?.settings ||
+      DEFAULT_SETTINGS;
+
+    const selectedBackground = backgrounds.find(
+      (bg) => bg.id === fileSettings.selectedBackground,
+    );
+
+    if (!selectedBackground) {
+      console.error(
+        "Selected background not found:",
+        fileSettings.selectedBackground,
+      );
+      toasts.add("Błąd: Nie znaleziono wybranego tła", "error");
+      return [];
+    }
+
     for (let i = 0; i < frames.length; i++) {
       const frame = frames[i];
       previewProgress.set({ stage: "processing", current: i + 1 });
@@ -480,8 +500,8 @@
       );
       await ffmpeg.writeFile(file.name, await fetchFile(file));
       await ffmpeg.writeFile(
-        DATA.NAME_GREENSCREEN_PNG,
-        await fetchFile(DATA.PATH_GREENSCREEN_PNG),
+        selectedBackground.id + ".png",
+        await fetchFile(selectedBackground.imagePath),
       );
 
       // Create a temporary file from the frame blob
@@ -491,11 +511,11 @@
       // Process the frame with greenscreen effect
       await ffmpeg.exec([
         "-i",
-        DATA.NAME_GREENSCREEN_PNG,
+        selectedBackground.id + ".png",
         "-i",
         frameFileName,
         "-filter_complex",
-        DATA.FFMPEG_FILTER_ADD_GREENSCREEN,
+        DATA.generateGreenscreenFilter(selectedBackground.overlayConfig),
         "-frames:v",
         "1",
         "-preset",
@@ -506,7 +526,10 @@
       const previewData = await ffmpeg.readFile(
         `preview_${frame.timestamp}.png`,
       );
-      const previewBlob = new Blob([previewData.buffer], { type: "image/png" });
+      const previewBlob = new Blob(
+        [previewData instanceof Uint8Array ? previewData : new Uint8Array()],
+        { type: "image/png" },
+      );
       const url = URL.createObjectURL(previewBlob);
 
       previewFrames.push({
@@ -518,6 +541,7 @@
       await ffmpeg.deleteFile(`preview_${frame.timestamp}.png`);
       await ffmpeg.deleteFile(frameFileName);
       await ffmpeg.deleteFile(file.name);
+      await ffmpeg.deleteFile(selectedBackground.id + ".png");
       console.log(
         `[*] Generated preview for timestamp ${frame.timestamp.toFixed(2)}s`,
       );
@@ -528,11 +552,9 @@
   }
 
   // Save on disk individual processed file
-  function downloadVideo(fileBlob, fileName) {
-    // const blob = new Blob([videoData.buffer], { type: "video/mp4" });
+  function downloadVideo(fileBlob: Blob, fileName: string) {
     const downloadFileName = "kiepskietv-" + fileName + ".mp4";
-
-    saveAs(fileBlob, downloadFileName); // Trigger file picker and save
+    saveAs(fileBlob, downloadFileName);
   }
 
   async function shareVideo(blob: Blob, name: string) {
@@ -568,6 +590,10 @@
       await ffmpeg.load({
         coreURL: `${baseUrl}/ffmpeg-core.js`,
         wasmURL: `${baseUrl}/ffmpeg-core.wasm`,
+        log: true,
+      });
+      ffmpeg.on("log", ({ message }) => {
+        console.log("FFmpeg Log:", message);
       });
       ffmpeg.on("progress", ({ progress }) => {
         $currentProcessingIndex !== null &&
@@ -697,10 +723,8 @@
 
   // Function to generate or get cached preview
   async function getOrGeneratePreview(file: File): Promise<PreviewFrame[]> {
-    const cached = getCachedPreview(file);
-    if (cached) {
-      return cached;
-    }
+    // Clear the cache for this file to force regeneration
+    removeCachedPreview(file);
 
     const frames = await extractFrames(file).then((frames) =>
       generatePreview(file, frames),
@@ -709,7 +733,7 @@
     return frames;
   }
 
-  // Update the type definition for activeTab
+  // Add type for activeTab
   let activeTab: "how-it-works" | "select-files" | "upload" | "results" =
     "select-files";
 
@@ -728,7 +752,7 @@
     activeTab = "results";
   }
 
-  // Add this function to handle select change with type safety
+  // Handle select change with type safety
   function handleSelectChange(event: Event) {
     const select = event.target as HTMLSelectElement;
     const value = select.value as
@@ -972,7 +996,7 @@
     <!-- Select Files Section -->
     {#if activeTab === "select-files"}
       <SelectFiles
-        {files}
+        files={Array.from(files || [])}
         {removeCachedPreview}
         on:clearFiles={() => {
           const dataTransfer = new DataTransfer();
@@ -983,7 +1007,12 @@
         on:filesChange={(e) => {
           files = e.detail.files;
         }}
-        {removeFile}
+        removeFile={(index) => {
+          const settingId = $videoSettings[index]?.id;
+          if (settingId) {
+            removeFile(index, settingId);
+          }
+        }}
       />
     {/if}
 
@@ -1027,17 +1056,18 @@
   {activeTab}
   videoCount={videoDataList.length}
   on:click={(e) => {
-    const button = e.target.closest("button");
+    const target = e.target;
+    const button = target.closest("button");
     if (button) {
       if (button.classList.contains("active")) return;
-      if (button.querySelector(".btm-nav-label").textContent === "Info")
-        activeTab = "how-it-works";
-      else if (button.querySelector(".btm-nav-label").textContent === "Pliki")
-        activeTab = "select-files";
-      else if (button.querySelector(".btm-nav-label").textContent === "Edycja")
-        activeTab = "upload";
-      else if (button.querySelector(".btm-nav-label").textContent === "Wideo")
-        activeTab = "results";
+      const label = button.querySelector(".btm-nav-label");
+      if (label) {
+        const text = label.textContent;
+        if (text === "Info") activeTab = "how-it-works";
+        else if (text === "Pliki") activeTab = "select-files";
+        else if (text === "Edycja") activeTab = "upload";
+        else if (text === "Wideo") activeTab = "results";
+      }
     }
   }}
 ></BottomNav>
