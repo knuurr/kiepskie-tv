@@ -651,6 +651,35 @@
                       />
                     </label>
 
+                    <!-- Boczek Fill Type Select -->
+                    {#if $videoSettings[selectedFileIndex]?.settings.addBoczek}
+                      <div
+                        class="col-span-full flex items-center gap-4 p-4 bg-base-200 rounded-lg"
+                      >
+                        <span class="flex-1 lg:text-base text-sm"
+                          >Tryb dopasowania Boczka</span
+                        >
+                        <select
+                          class="select select-bordered select-sm w-48"
+                          value={$videoSettings[selectedFileIndex]?.settings
+                            .boczekFillType}
+                          on:change={(e) => {
+                            if (settingId) {
+                              videoSettings.updateSettings(settingId, {
+                                // boczekFillType: e.currentTarget.value as 'stretch' | 'blur-padding'
+                                boczekFillType: e.currentTarget.value,
+                              });
+                            }
+                          }}
+                        >
+                          <option value="stretch">Rozciągnij</option>
+                          <option value="blur-padding"
+                            >Zachowaj proporcje z rozmyciem</option
+                          >
+                        </select>
+                      </div>
+                    {/if}
+
                     <!-- Background selector button -->
                     <div class="col-span-full">
                       <button

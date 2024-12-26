@@ -325,8 +325,9 @@
 
       // Use background dimensions for Boczek filter
       const boczekFilter = DATA.generateBoczekFilter(
-        selectedBackground.overlayConfig.imageWidth,
-        selectedBackground.overlayConfig.imageHeight,
+        selectedBackground.overlayConfig.maxWidth,
+        selectedBackground.overlayConfig.maxHeight,
+        fileSettings.boczekFillType,
       );
       console.log("Generated Boczek filter:", boczekFilter);
 

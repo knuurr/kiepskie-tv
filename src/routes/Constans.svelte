@@ -6,6 +6,7 @@
     addIntro: true,
     selectedBackground: "okil-1",
   };
+
   // Names
   export const NAME_GREENSCREEN_PNG = "greenscreen.png";
   export const NAME_TEMP_OUTPUT = "output_temp";
@@ -34,15 +35,22 @@
   export const FFMPEG_FILTER_ADD_INTRO =
     "[1:a]adelay=0|0[a1];[0:a][a1]amix=inputs=2";
 
+  // Internal settings
+  const BOCZEK_VERTICAL_SCALE = 0.8; // 80% of the height, adjust between 0-1
+
   export function generateBoczekFilter(
     imageWidth: number,
     imageHeight: number,
+    fillType: "stretch" | "blur-padding" = "stretch",
   ) {
-    return `[1:v]scale=${imageWidth}:${imageHeight},setsar=1[scaledv]; [0:v][0:a][scaledv][1:a]concat=n=2:v=1:a=1[v][a]`;
+    if (fillType === "stretch") {
+      return `[0:v]scale=${imageWidth}:${imageHeight},setsar=1[mainv];[1:v]scale=${imageWidth}:${imageHeight},setsar=1[scaledv];[mainv][0:a][scaledv][1:a]concat=n=2:v=1:a=1[v][a]`;
+    } else {
+      // Calculate scaled height based on BOCZEK_VERTICAL_SCALE
+      const scaledHeight = Math.round(imageHeight * BOCZEK_VERTICAL_SCALE);
+      return `[0:v]scale=${imageWidth}:${imageHeight},setsar=1[mainv];[1:v]split[toScale][toBlur];[toScale]scale=${imageWidth}:${scaledHeight}:force_original_aspect_ratio=decrease,setsar=1[scaled];[toBlur]scale=32:18,gblur=sigma=2,scale=${imageWidth}:${imageHeight},setsar=1[blurred];[blurred][scaled]overlay=(W-w)/2:(H-h)/2,setsar=1[scaledv];[mainv][0:a][scaledv][1:a]concat=n=2:v=1:a=1[v][a]`;
+    }
   }
-
-  // export const FFMPEG_FILTER_ADD_BOCZEK = generateBoczekFilter(768, 576);
-  // Function to generate greenscreen filter based on config
 
   export function generateGreenscreenFilter(config: any) {
     return `[1:v]scale=w='min(iw,${config.maxWidth})':h='min(ih,${config.maxHeight})':force_original_aspect_ratio=decrease,pad=${config.padWidth}:${config.padHeight}:((${config.padWidth}-iw)/2)+1:((${config.padHeight}-ih)/2)+1:color=black[overlay];[0:v][overlay]overlay=x=${config.offsetX}:y=${config.offsetY}`;
