@@ -48,6 +48,7 @@
     } else {
       // Calculate scaled height based on BOCZEK_VERTICAL_SCALE
       const scaledHeight = Math.round(imageHeight * BOCZEK_VERTICAL_SCALE);
+      // Taken from: https://stackoverflow.com/questions/30789367/ffmpeg-how-to-convert-vertical-video-with-black-sides-to-video-169-with-blur
       return `[0:v]scale=${imageWidth}:${imageHeight},setsar=1[mainv];[1:v]split[toScale][toBlur];[toScale]scale=${imageWidth}:${scaledHeight}:force_original_aspect_ratio=decrease,setsar=1[scaled];[toBlur]scale=32:18,gblur=sigma=2,scale=${imageWidth}:${imageHeight},setsar=1[blurred];[blurred][scaled]overlay=(W-w)/2:(H-h)/2,setsar=1[scaledv];[mainv][0:a][scaledv][1:a]concat=n=2:v=1:a=1[v][a]`;
     }
   }
