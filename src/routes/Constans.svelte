@@ -36,20 +36,26 @@
     "[1:a]adelay=0|0[a1];[0:a][a1]amix=inputs=2";
 
   // Internal settings
-  const BOCZEK_VERTICAL_SCALE = 0.8; // 80% of the height, adjust between 0-1
+  const BOCZEK_VERTICAL_SCALE: number = 0.8; // 80% of the height, adjust between 0-1
 
   export function generateBoczekFilter(
     imageWidth: number,
     imageHeight: number,
-    fillType: "stretch" | "blur-padding" = "stretch",
+    fillType: "stretch" | "blur-padding" | "black-padding" = "stretch",
   ) {
     if (fillType === "stretch") {
       return `[0:v]scale=${imageWidth}:${imageHeight},setsar=1[mainv];[1:v]scale=${imageWidth}:${imageHeight},setsar=1[scaledv];[mainv][0:a][scaledv][1:a]concat=n=2:v=1:a=1[v][a]`;
     } else {
       // Calculate scaled height based on BOCZEK_VERTICAL_SCALE
       const scaledHeight = Math.round(imageHeight * BOCZEK_VERTICAL_SCALE);
-      // Taken from: https://stackoverflow.com/questions/30789367/ffmpeg-how-to-convert-vertical-video-with-black-sides-to-video-169-with-blur
-      return `[0:v]scale=${imageWidth}:${imageHeight},setsar=1[mainv];[1:v]split[toScale][toBlur];[toScale]scale=${imageWidth}:${scaledHeight}:force_original_aspect_ratio=decrease,setsar=1[scaled];[toBlur]scale=32:18,gblur=sigma=2,scale=${imageWidth}:${imageHeight},setsar=1[blurred];[blurred][scaled]overlay=(W-w)/2:(H-h)/2,setsar=1[scaledv];[mainv][0:a][scaledv][1:a]concat=n=2:v=1:a=1[v][a]`;
+
+      if (fillType === "blur-padding") {
+        // Taken from: https://stackoverflow.com/questions/30789367/ffmpeg-how-to-convert-vertical-video-with-black-sides-to-video-169-with-blur
+        return `[0:v]scale=${imageWidth}:${imageHeight},setsar=1[mainv];[1:v]split[toScale][toBlur];[toScale]scale=${imageWidth}:${scaledHeight}:force_original_aspect_ratio=decrease,setsar=1[scaled];[toBlur]scale=32:18,gblur=sigma=2,scale=${imageWidth}:${imageHeight},setsar=1[blurred];[blurred][scaled]overlay=(W-w)/2:(H-h)/2,setsar=1[scaledv];[mainv][0:a][scaledv][1:a]concat=n=2:v=1:a=1[v][a]`;
+      } else {
+        // Black padding - scale video and pad with black
+        return `[0:v]scale=${imageWidth}:${imageHeight},setsar=1[mainv];[1:v]scale=${imageWidth}:${scaledHeight}:force_original_aspect_ratio=decrease,pad=${imageWidth}:${imageHeight}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1[scaledv];[mainv][0:a][scaledv][1:a]concat=n=2:v=1:a=1[v][a]`;
+      }
     }
   }
 

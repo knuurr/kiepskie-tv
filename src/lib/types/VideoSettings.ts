@@ -5,6 +5,6 @@ export interface VideoSettings {
     addBoczek: boolean;
     addIntro: boolean;
     selectedBackground: string;
-    boczekFillType: 'stretch' | 'blur-padding';
+    boczekFillType: 'stretch' | 'blur-padding' | 'black-padding';
   };
 } 

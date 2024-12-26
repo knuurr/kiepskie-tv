@@ -666,7 +666,6 @@
                           on:change={(e) => {
                             if (settingId) {
                               videoSettings.updateSettings(settingId, {
-                                // boczekFillType: e.currentTarget.value as 'stretch' | 'blur-padding'
                                 boczekFillType: e.currentTarget.value,
                               });
                             }
@@ -675,6 +674,9 @@
                           <option value="stretch">Rozciągnij</option>
                           <option value="blur-padding"
                             >Zachowaj proporcje z rozmyciem</option
+                          >
+                          <option value="black-padding"
+                            >Zachowaj proporcje z czarnym tłem</option
                           >
                         </select>
                       </div>
