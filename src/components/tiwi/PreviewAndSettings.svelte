@@ -621,34 +621,45 @@
                       : ''}"
                   >
                     <label
-                      class="flex items-center gap-4 p-4 bg-base-200 rounded-lg"
+                      class="flex flex-col gap-2 p-4 bg-base-200 rounded-lg"
                     >
-                      <span class="flex-1 lg:text-base text-sm"
-                        >Dodaj efekt dźwiękowy przejścia</span
-                      >
-                      <input
-                        type="checkbox"
-                        class="toggle toggle-success"
-                        checked={$videoSettings[selectedFileIndex]?.settings
-                          .addIntro}
-                        on:change={(e) =>
-                          handleCheckboxChange(settingId, "addIntro", e)}
-                      />
+                      <div class="flex items-center justify-between">
+                        <span class="flex-1 lg:text-base text-sm"
+                          >Dodaj efekt dźwiękowy przejścia</span
+                        >
+                        <input
+                          type="checkbox"
+                          class="toggle toggle-success"
+                          checked={$videoSettings[selectedFileIndex]?.settings
+                            .addIntro}
+                          on:change={(e) =>
+                            handleCheckboxChange(settingId, "addIntro", e)}
+                        />
+                      </div>
+                      <p class="text-xs text-base-content/70">
+                        Dodaje charakterystyczny dźwięk przejścia z serialu na
+                        początku wideo
+                      </p>
                     </label>
                     <label
-                      class="flex items-center gap-4 p-4 bg-base-200 rounded-lg"
+                      class="flex flex-col gap-2 p-4 bg-base-200 rounded-lg"
                     >
-                      <span class="flex-1 lg:text-base text-sm"
-                        >Dodaj reakcję Boczka</span
-                      >
-                      <input
-                        type="checkbox"
-                        class="toggle toggle-success"
-                        checked={$videoSettings[selectedFileIndex]?.settings
-                          .addBoczek}
-                        on:change={(e) =>
-                          handleCheckboxChange(settingId, "addBoczek", e)}
-                      />
+                      <div class="flex items-center justify-between">
+                        <span class="flex-1 lg:text-base text-sm"
+                          >Dodaj reakcję Boczka</span
+                        >
+                        <input
+                          type="checkbox"
+                          class="toggle toggle-success"
+                          checked={$videoSettings[selectedFileIndex]?.settings
+                            .addBoczek}
+                          on:change={(e) =>
+                            handleCheckboxChange(settingId, "addBoczek", e)}
+                        />
+                      </div>
+                      <p class="text-xs text-base-content/70">
+                        Dodaje reakcję Boczka na końcu Twojego wideo
+                      </p>
                     </label>
 
                     <!-- Scale Controls -->
@@ -672,6 +683,10 @@
                           />
                         </label>
                       </div>
+                      <p class="text-xs text-base-content/70 mb-2">
+                        Synchronizacja skal pozwala na jednoczesną zmianę
+                        rozmiaru obu elementów wideo
+                      </p>
                       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <!-- Boczek Scale -->
                         <div class="p-4 bg-base-200 rounded-lg">
@@ -711,6 +726,9 @@
                               }
                             }}
                           />
+                          <p class="text-xs text-base-content/70 mt-2">
+                            Kontroluje rozmiar reakcji Boczka w końcowej scenie
+                          </p>
                         </div>
 
                         <!-- Greenscreen Scale -->
@@ -751,6 +769,9 @@
                               }
                             }}
                           />
+                          <p class="text-xs text-base-content/70 mt-2">
+                            Kontroluje rozmiar Twojego wideo w oknie telewizora
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -758,33 +779,76 @@
                     <!-- Boczek Fill Type Select -->
                     {#if $videoSettings[selectedFileIndex]?.settings.addBoczek}
                       <div
-                        class="col-span-full flex items-center gap-4 p-4 bg-base-200 rounded-lg"
+                        class="col-span-full flex flex-col gap-2 p-4 bg-base-200 rounded-lg"
                       >
+                        <div class="flex items-center justify-between">
+                          <span class="flex-1 lg:text-base text-sm"
+                            >Tryb dopasowania Boczka</span
+                          >
+                          <select
+                            class="select select-bordered select-sm w-48"
+                            value={$videoSettings[selectedFileIndex]?.settings
+                              .boczekFillType}
+                            on:change={(e) => {
+                              if (settingId) {
+                                videoSettings.updateSettings(settingId, {
+                                  boczekFillType: e.currentTarget.value,
+                                });
+                              }
+                            }}
+                          >
+                            <option value="stretch">Rozciągnij</option>
+                            <option value="blur-padding"
+                              >Zachowaj proporcje z rozmyciem</option
+                            >
+                            <option value="black-padding"
+                              >Zachowaj proporcje z czarnym tłem</option
+                            >
+                          </select>
+                        </div>
+                        <p class="text-xs text-base-content/70">
+                          Określa sposób dopasowania reakcji Boczka do ekranu -
+                          możesz rozciągnąć lub zachować proporcje z wybranym
+                          tłem
+                        </p>
+                      </div>
+                    {/if}
+
+                    <!-- Greenscreen Fill Type Select -->
+                    <div
+                      class="col-span-full flex flex-col gap-2 p-4 bg-base-200 rounded-lg"
+                    >
+                      <div class="flex items-center justify-between">
                         <span class="flex-1 lg:text-base text-sm"
-                          >Tryb dopasowania Boczka</span
+                          >Tryb dopasowania do tła</span
                         >
                         <select
                           class="select select-bordered select-sm w-48"
                           value={$videoSettings[selectedFileIndex]?.settings
-                            .boczekFillType}
+                            .greenscreenFillType}
                           on:change={(e) => {
                             if (settingId) {
                               videoSettings.updateSettings(settingId, {
-                                boczekFillType: e.currentTarget.value,
+                                greenscreenFillType: e.currentTarget.value,
                               });
                             }
                           }}
                         >
+                          <option value="black-padding"
+                            >Zachowaj proporcje z czarnym tłem</option
+                          >
                           <option value="stretch">Rozciągnij</option>
                           <option value="blur-padding"
                             >Zachowaj proporcje z rozmyciem</option
                           >
-                          <option value="black-padding"
-                            >Zachowaj proporcje z czarnym tłem</option
-                          >
                         </select>
                       </div>
-                    {/if}
+                      <p class="text-xs text-base-content/70">
+                        Określa sposób dopasowania Twojego wideo do okna
+                        telewizora - możesz rozciągnąć lub zachować proporcje z
+                        wybranym tłem
+                      </p>
+                    </div>
 
                     <!-- Background selector button -->
                     <div class="col-span-full">
@@ -834,35 +898,9 @@
                           />
                         </svg>
                       </button>
-                    </div>
-
-                    <!-- Greenscreen Fill Type Select -->
-                    <div
-                      class="col-span-full flex items-center gap-4 p-4 bg-base-200 rounded-lg"
-                    >
-                      <span class="flex-1 lg:text-base text-sm"
-                        >Tryb dopasowania do tła</span
-                      >
-                      <select
-                        class="select select-bordered select-sm w-48"
-                        value={$videoSettings[selectedFileIndex]?.settings
-                          .greenscreenFillType}
-                        on:change={(e) => {
-                          if (settingId) {
-                            videoSettings.updateSettings(settingId, {
-                              greenscreenFillType: e.currentTarget.value,
-                            });
-                          }
-                        }}
-                      >
-                        <option value="black-padding"
-                          >Zachowaj proporcje z czarnym tłem</option
-                        >
-                        <option value="stretch">Rozciągnij</option>
-                        <option value="blur-padding"
-                          >Zachowaj proporcje z rozmyciem</option
-                        >
-                      </select>
+                      <p class="text-xs text-base-content/70 mt-2 px-4">
+                        Wybierz scenę z serialu, w której pojawi się Twoje wideo
+                      </p>
                     </div>
 
                     <!-- Reset button - Only show in settings tab on mobile -->
