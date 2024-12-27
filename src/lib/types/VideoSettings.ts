@@ -5,7 +5,10 @@ export interface VideoSettings {
     addBoczek: boolean;
     addIntro: boolean;
     selectedBackground: string;
-    boczekFillType: 'stretch' | 'blur-padding' | 'black-padding';
-    greenscreenFillType: 'stretch' | 'blur-padding' | 'black-padding';
+    boczekFillType: "stretch" | "black-padding" | "blur-padding";
+    greenscreenFillType: "stretch" | "black-padding" | "blur-padding";
+    boczekScale: number;
+    greenscreenScale: number;
+    scalesLocked: boolean;
   };
 } 

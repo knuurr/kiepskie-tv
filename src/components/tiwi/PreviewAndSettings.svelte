@@ -651,6 +651,110 @@
                       />
                     </label>
 
+                    <!-- Scale Controls -->
+                    <div class="col-span-full">
+                      <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium">Skale</span>
+                        <label class="flex items-center gap-2">
+                          <span class="text-sm">Synchronizuj skale</span>
+                          <input
+                            type="checkbox"
+                            class="toggle toggle-sm"
+                            checked={$videoSettings[selectedFileIndex]?.settings
+                              .scalesLocked}
+                            on:change={(e) => {
+                              if (settingId) {
+                                videoSettings.updateSettings(settingId, {
+                                  scalesLocked: e.currentTarget.checked,
+                                });
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Boczek Scale -->
+                        <div class="p-4 bg-base-200 rounded-lg">
+                          <div class="flex justify-between mb-2">
+                            <span class="text-sm">Skala Boczka</span>
+                            <span class="text-sm text-base-content/70">
+                              {(
+                                $videoSettings[selectedFileIndex]?.settings
+                                  .boczekScale * 100
+                              ).toFixed(0)}%
+                            </span>
+                          </div>
+                          <input
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.1"
+                            class="range range-sm"
+                            value={$videoSettings[selectedFileIndex]?.settings
+                              .boczekScale}
+                            on:input={(e) => {
+                              if (settingId) {
+                                const newScale = parseFloat(
+                                  e.currentTarget.value,
+                                );
+                                videoSettings.updateSettings(settingId, {
+                                  boczekScale: newScale,
+                                  ...($videoSettings[selectedFileIndex]
+                                    ?.settings.scalesLocked
+                                    ? { greenscreenScale: newScale }
+                                    : {}),
+                                });
+                                if (selectedFileIndex !== undefined) {
+                                  const file = files[selectedFileIndex];
+                                  regeneratePreview(file);
+                                }
+                              }
+                            }}
+                          />
+                        </div>
+
+                        <!-- Greenscreen Scale -->
+                        <div class="p-4 bg-base-200 rounded-lg">
+                          <div class="flex justify-between mb-2">
+                            <span class="text-sm">Skala Greenscreena</span>
+                            <span class="text-sm text-base-content/70">
+                              {(
+                                $videoSettings[selectedFileIndex]?.settings
+                                  .greenscreenScale * 100
+                              ).toFixed(0)}%
+                            </span>
+                          </div>
+                          <input
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.1"
+                            class="range range-sm"
+                            value={$videoSettings[selectedFileIndex]?.settings
+                              .greenscreenScale}
+                            on:input={(e) => {
+                              if (settingId) {
+                                const newScale = parseFloat(
+                                  e.currentTarget.value,
+                                );
+                                videoSettings.updateSettings(settingId, {
+                                  greenscreenScale: newScale,
+                                  ...($videoSettings[selectedFileIndex]
+                                    ?.settings.scalesLocked
+                                    ? { boczekScale: newScale }
+                                    : {}),
+                                });
+                                if (selectedFileIndex !== undefined) {
+                                  const file = files[selectedFileIndex];
+                                  regeneratePreview(file);
+                                }
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
                     <!-- Boczek Fill Type Select -->
                     {#if $videoSettings[selectedFileIndex]?.settings.addBoczek}
                       <div

@@ -290,6 +290,7 @@
     const greenscreenFilter = DATA.generateGreenscreenFilter(
       selectedBackground.overlayConfig,
       fileSettings.greenscreenFillType,
+      fileSettings.greenscreenScale,
     );
     console.log("Generated FFmpeg filter:", greenscreenFilter);
 
@@ -329,6 +330,7 @@
         selectedBackground.overlayConfig.maxWidth,
         selectedBackground.overlayConfig.maxHeight,
         fileSettings.boczekFillType,
+        fileSettings.boczekScale,
       );
       console.log("Generated Boczek filter:", boczekFilter);
 
@@ -520,6 +522,7 @@
         DATA.generateGreenscreenFilter(
           selectedBackground.overlayConfig,
           fileSettings.greenscreenFillType,
+          fileSettings.greenscreenScale,
         ),
         "-frames:v",
         "1",

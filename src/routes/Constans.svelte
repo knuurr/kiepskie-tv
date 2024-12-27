@@ -5,6 +5,9 @@
     addBoczek: true,
     addIntro: true,
     selectedBackground: "okil-1",
+    boczekScale: 0.8,
+    greenscreenScale: 0.8,
+    scalesLocked: false,
   };
 
   // Names
@@ -35,19 +38,17 @@
   export const FFMPEG_FILTER_ADD_INTRO =
     "[1:a]adelay=0|0[a1];[0:a][a1]amix=inputs=2";
 
-  // Internal settings
-  const BOCZEK_VERTICAL_SCALE: number = 0.8; // 80% of the height, adjust between 0-1
-
   export function generateBoczekFilter(
     imageWidth: number,
     imageHeight: number,
     fillType: "stretch" | "blur-padding" | "black-padding" = "stretch",
+    scale: number = 0.8,
   ) {
     if (fillType === "stretch") {
       return `[0:v]scale=${imageWidth}:${imageHeight},setsar=1[mainv];[1:v]scale=${imageWidth}:${imageHeight},setsar=1[scaledv];[mainv][0:a][scaledv][1:a]concat=n=2:v=1:a=1[v][a]`;
     } else {
-      // Calculate scaled height based on BOCZEK_VERTICAL_SCALE
-      const scaledHeight = Math.round(imageHeight * BOCZEK_VERTICAL_SCALE);
+      // Calculate scaled height based on scale parameter
+      const scaledHeight = Math.round(imageHeight * scale);
 
       if (fillType === "blur-padding") {
         // Taken from: https://stackoverflow.com/questions/30789367/ffmpeg-how-to-convert-vertical-video-with-black-sides-to-video-169-with-blur
@@ -69,16 +70,21 @@
       offsetY: number;
     },
     fillType: "stretch" | "blur-padding" | "black-padding" = "black-padding",
+    scale: number = 0.8,
   ) {
+    // Apply scale to maxWidth and maxHeight
+    const scaledMaxWidth = Math.round(config.maxWidth * scale);
+    const scaledMaxHeight = Math.round(config.maxHeight * scale);
+
     if (fillType === "stretch") {
       // Simple stretch to fit the container
       return `[1:v]scale=${config.padWidth}:${config.padHeight}[overlay];[0:v][overlay]overlay=x=${config.offsetX}:y=${config.offsetY}`;
     } else if (fillType === "blur-padding") {
       // Scale with aspect ratio and fill with blur
-      return `[1:v]split[toScale][toBlur];[toScale]scale=w='min(iw,${config.maxWidth})':h='min(ih,${config.maxHeight})':force_original_aspect_ratio=decrease[scaled];[toBlur]scale=32:18,gblur=sigma=2,scale=${config.padWidth}:${config.padHeight}[blurred];[blurred][scaled]overlay=(W-w)/2:(H-h)/2[overlay];[0:v][overlay]overlay=x=${config.offsetX}:y=${config.offsetY}`;
+      return `[1:v]split[toScale][toBlur];[toScale]scale=w='min(iw,${scaledMaxWidth})':h='min(ih,${scaledMaxHeight})':force_original_aspect_ratio=decrease[scaled];[toBlur]scale=32:18,gblur=sigma=2,scale=${config.padWidth}:${config.padHeight}[blurred];[blurred][scaled]overlay=(W-w)/2:(H-h)/2[overlay];[0:v][overlay]overlay=x=${config.offsetX}:y=${config.offsetY}`;
     } else {
       // Original black padding behavior
-      return `[1:v]scale=w='min(iw,${config.maxWidth})':h='min(ih,${config.maxHeight})':force_original_aspect_ratio=decrease,pad=${config.padWidth}:${config.padHeight}:((${config.padWidth}-iw)/2)+1:((${config.padHeight}-ih)/2)+1:color=black[overlay];[0:v][overlay]overlay=x=${config.offsetX}:y=${config.offsetY}`;
+      return `[1:v]scale=w='min(iw,${scaledMaxWidth})':h='min(ih,${scaledMaxHeight})':force_original_aspect_ratio=decrease,pad=${config.padWidth}:${config.padHeight}:((${config.padWidth}-iw)/2)+1:((${config.padHeight}-ih)/2)+1:color=black[overlay];[0:v][overlay]overlay=x=${config.offsetX}:y=${config.offsetY}`;
     }
   }
 
