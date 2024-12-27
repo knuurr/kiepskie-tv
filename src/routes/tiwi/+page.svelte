@@ -289,6 +289,7 @@
     // Generate FFmpeg filter with selected background's configuration
     const greenscreenFilter = DATA.generateGreenscreenFilter(
       selectedBackground.overlayConfig,
+      fileSettings.greenscreenFillType,
     );
     console.log("Generated FFmpeg filter:", greenscreenFilter);
 
@@ -516,7 +517,10 @@
         "-i",
         frameFileName,
         "-filter_complex",
-        DATA.generateGreenscreenFilter(selectedBackground.overlayConfig),
+        DATA.generateGreenscreenFilter(
+          selectedBackground.overlayConfig,
+          fileSettings.greenscreenFillType,
+        ),
         "-frames:v",
         "1",
         "-preset",

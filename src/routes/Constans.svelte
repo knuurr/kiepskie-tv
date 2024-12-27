@@ -59,8 +59,27 @@
     }
   }
 
-  export function generateGreenscreenFilter(config: any) {
-    return `[1:v]scale=w='min(iw,${config.maxWidth})':h='min(ih,${config.maxHeight})':force_original_aspect_ratio=decrease,pad=${config.padWidth}:${config.padHeight}:((${config.padWidth}-iw)/2)+1:((${config.padHeight}-ih)/2)+1:color=black[overlay];[0:v][overlay]overlay=x=${config.offsetX}:y=${config.offsetY}`;
+  export function generateGreenscreenFilter(
+    config: {
+      maxWidth: number;
+      maxHeight: number;
+      padWidth: number;
+      padHeight: number;
+      offsetX: number;
+      offsetY: number;
+    },
+    fillType: "stretch" | "blur-padding" | "black-padding" = "black-padding",
+  ) {
+    if (fillType === "stretch") {
+      // Simple stretch to fit the container
+      return `[1:v]scale=${config.padWidth}:${config.padHeight}[overlay];[0:v][overlay]overlay=x=${config.offsetX}:y=${config.offsetY}`;
+    } else if (fillType === "blur-padding") {
+      // Scale with aspect ratio and fill with blur
+      return `[1:v]split[toScale][toBlur];[toScale]scale=w='min(iw,${config.maxWidth})':h='min(ih,${config.maxHeight})':force_original_aspect_ratio=decrease[scaled];[toBlur]scale=32:18,gblur=sigma=2,scale=${config.padWidth}:${config.padHeight}[blurred];[blurred][scaled]overlay=(W-w)/2:(H-h)/2[overlay];[0:v][overlay]overlay=x=${config.offsetX}:y=${config.offsetY}`;
+    } else {
+      // Original black padding behavior
+      return `[1:v]scale=w='min(iw,${config.maxWidth})':h='min(ih,${config.maxHeight})':force_original_aspect_ratio=decrease,pad=${config.padWidth}:${config.padHeight}:((${config.padWidth}-iw)/2)+1:((${config.padHeight}-ih)/2)+1:color=black[overlay];[0:v][overlay]overlay=x=${config.offsetX}:y=${config.offsetY}`;
+    }
   }
 
   // Default greenscreen filter (for backward compatibility)

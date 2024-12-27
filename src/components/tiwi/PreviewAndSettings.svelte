@@ -731,34 +731,63 @@
                         </svg>
                       </button>
                     </div>
-                  </div>
 
-                  <!-- Reset button - Only show in settings tab on mobile -->
-                  <div
-                    class="{!showSettings
-                      ? 'hidden lg:block'
-                      : ''} card-actions justify-end mt-4"
-                  >
-                    <button
-                      class="btn btn-outline btn-sm w-full lg:w-auto lg:btn-ghost"
-                      on:click={() => videoSettings.resetToDefault(settingId)}
+                    <!-- Greenscreen Fill Type Select -->
+                    <div
+                      class="col-span-full flex items-center gap-4 p-4 bg-base-200 rounded-lg"
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
+                      <span class="flex-1 lg:text-base text-sm"
+                        >Tryb dopasowania do tła</span
                       >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                        />
-                      </svg>
-                      Reset ustawień
-                    </button>
+                      <select
+                        class="select select-bordered select-sm w-48"
+                        value={$videoSettings[selectedFileIndex]?.settings
+                          .greenscreenFillType}
+                        on:change={(e) => {
+                          if (settingId) {
+                            videoSettings.updateSettings(settingId, {
+                              greenscreenFillType: e.currentTarget.value,
+                            });
+                          }
+                        }}
+                      >
+                        <option value="black-padding"
+                          >Zachowaj proporcje z czarnym tłem</option
+                        >
+                        <option value="stretch">Rozciągnij</option>
+                        <option value="blur-padding"
+                          >Zachowaj proporcje z rozmyciem</option
+                        >
+                      </select>
+                    </div>
+
+                    <!-- Reset button - Only show in settings tab on mobile -->
+                    <div
+                      class="{!showSettings
+                        ? 'hidden lg:block'
+                        : ''} card-actions justify-end mt-4"
+                    >
+                      <button
+                        class="btn btn-outline btn-sm w-full lg:w-auto lg:btn-ghost"
+                        on:click={() => videoSettings.resetToDefault(settingId)}
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          class="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                          />
+                        </svg>
+                        Reset ustawień
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
