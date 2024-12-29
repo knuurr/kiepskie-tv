@@ -1,0 +1,20 @@
+[
+  {
+    "text": "Sto lat!",
+    "episodeNumber": "001",
+    "episodeTimestamp": "12:35",
+    "audioFile": "/audio/toasts/001_sto_lat.mp3"
+  },
+  {
+    "text": "No to cyk!",
+    "episodeNumber": "???",
+    "episodeTimestamp": null,
+    "audioFile": null
+  },
+  {
+    "text": "dummy dummy dummy. 🎵",
+    "episodeNumber": "???",
+    "episodeTimestamp": null,
+    "audioFile": "/toasts/dummy.mp3"
+  }
+]

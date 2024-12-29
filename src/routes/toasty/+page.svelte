@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { TOASTS_PATH, loadAndParseTxtFile, TOASTS } from "../../utils/toasts";
+  import type { Toast } from "$lib/types/Toast";
 
   import CenteredContainer from "../../components/CenteredContainer.svelte";
   import Footer from "../../components/Footer.svelte";
@@ -9,19 +9,22 @@
   import Header from "../Header.svelte";
   import FeedbackSection from "../../components/FeedbackSection.svelte";
   import AnimatedButton from "../../components/tiwi/AnimatedButton.svelte";
+  import AudioPlaybackButton from "../../components/AudioPlaybackButton.svelte";
+  import AudioWavePlayer from "../../components/AudioWavePlayer.svelte";
 
-  let currentToast: string = "";
-  let previousToast: string = "";
+  let currentToast: Toast | null = null;
+  let previousToast: Toast | null = null;
   let isRolling: boolean = false;
   let isSuccess: boolean = false;
   let typewriterText: string = "";
   let typewriterInterval: ReturnType<typeof setInterval>;
 
   let rollCount: number = 0;
-  let toastHistory: { text: string; timestamp: number }[] = [];
+  let toastHistory: { toast: Toast; episodeTimestamp: number }[] = [];
   let copyStates: { [key: number]: boolean } = {};
 
-  let toasts: string[] = [];
+  let toasts: Toast[] = [];
+  let isLoading = true;
 
   // Keyboard shortcuts handler
   function handleKeydown(event: KeyboardEvent) {
@@ -57,8 +60,10 @@
   }
 
   function copyToClipboard() {
+    if (!currentToast) return;
+
     navigator.clipboard
-      .writeText(currentToast)
+      .writeText(currentToast.text)
       .then(() => {
         isSuccess = true;
         setTimeout(() => {
@@ -70,16 +75,18 @@
       });
   }
 
-  function copyHistoryToast(timestamp: number) {
-    const toast = toastHistory.find((t) => t.timestamp === timestamp);
-    if (!toast) return;
+  function copyHistoryToast(episodeTimestamp: number) {
+    const entry = toastHistory.find(
+      (t) => t.episodeTimestamp === episodeTimestamp,
+    );
+    if (!entry) return;
 
     navigator.clipboard
-      .writeText(toast.text)
+      .writeText(entry.toast.text)
       .then(() => {
-        copyStates[timestamp] = true;
+        copyStates[episodeTimestamp] = true;
         setTimeout(() => {
-          copyStates[timestamp] = false;
+          copyStates[episodeTimestamp] = false;
         }, 3000);
       })
       .catch((err) => {
@@ -89,7 +96,7 @@
 
   function getRandomToast() {
     isRolling = true;
-    let newToast: string;
+    let newToast: Toast;
 
     do {
       const randomIndex = Math.floor(Math.random() * toasts.length);
@@ -101,22 +108,24 @@
 
     rollCount++;
     toastHistory = [
-      { text: newToast, timestamp: Date.now() },
+      { toast: newToast, episodeTimestamp: Date.now() },
       ...toastHistory.slice(0, 3),
     ];
 
-    startTypewriter(newToast);
+    startTypewriter(newToast.text);
   }
 
-  onMount(() => {
-    loadAndParseTxtFile(TOASTS_PATH)
-      .then((parsed_content: string[]) => {
-        toasts = parsed_content;
-      })
-      .catch((error) => {
-        console.error("Error:", error);
-        toasts = TOASTS;
-      });
+  onMount(async () => {
+    try {
+      const response = await fetch("/toasts/toasts.json");
+      if (!response.ok) throw new Error("Failed to load toasts data");
+      toasts = await response.json();
+    } catch (error) {
+      console.error("Error loading toasts:", error);
+      toasts = [];
+    } finally {
+      isLoading = false;
+    }
 
     window.addEventListener("keydown", handleKeydown);
     return () => {
@@ -147,9 +156,28 @@
 
         <div class="card bg-base-100 border-2 border-base-200">
           <div class="card-body">
-            {#if currentToast !== ""}
-              <p class="text-xl opacity-70">No to....</p>
-              <p class="text-2xl font-medium min-h-16">{typewriterText}</p>
+            {#if currentToast}
+              <div class="flex-1">
+                <p class="text-xl opacity-70">No to....</p>
+                <p class="text-2xl font-medium min-h-16">{typewriterText}</p>
+
+                {#if currentToast.episodeNumber || currentToast.episodeTimestamp}
+                  <div class="flex gap-2 mt-4">
+                    {#if currentToast.episodeNumber}
+                      <div class="badge badge-neutral">
+                        Odcinek: {currentToast.episodeNumber}
+                      </div>
+                    {/if}
+                    {#if currentToast.episodeTimestamp}
+                      <div class="badge badge-neutral">
+                        Czas: {currentToast.episodeTimestamp}
+                      </div>
+                    {/if}
+                  </div>
+                {/if}
+
+                <AudioWavePlayer audioFile={currentToast.audioFile} />
+              </div>
             {:else}
               <p class="text-xl opacity-50">Panie, na co pan czekasz...?</p>
             {/if}
@@ -157,7 +185,7 @@
         </div>
 
         <div class="flex flex-col gap-2 mt-4">
-          {#if currentToast !== ""}
+          {#if currentToast}
             <button
               on:click={copyToClipboard}
               class="btn btn-block {isSuccess ? 'btn-success' : 'btn-info'}"
@@ -205,18 +233,19 @@
           {/if}
 
           <AnimatedButton
-            class="btn btn-warning btn-block"
             on:click={getRandomToast}
-            disabled={isRolling}
+            disabled={isRolling || isLoading}
+            loading={isRolling || isLoading}
+            fullWidth={true}
           >
-            {#if isRolling}
-              <span class="loading loading-spinner loading-md"></span>
-            {:else}
-              <span class="flex items-center gap-2">
+            <span class="flex items-center gap-2">
+              {#if isLoading}
+                Ładowanie toastów...
+              {:else}
                 No to jedziem! 🍻
                 <kbd class="kbd kbd-sm hidden md:inline-flex text-white">r</kbd>
-              </span>
-            {/if}
+              {/if}
+            </span>
           </AnimatedButton>
         </div>
 
@@ -224,22 +253,43 @@
         <div class="divider mt-6">Historia</div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           {#if toastHistory.length > 1}
-            {#each toastHistory.slice(1) as toast, i (toast.timestamp)}
+            {#each toastHistory.slice(1) as entry, i (entry.episodeTimestamp)}
               <div class="card bg-base-200 h-full">
                 <div class="card-body p-4">
                   <div class="flex flex-col h-full">
                     <div class="badge badge-sm mb-2 opacity-60">
                       #{rollCount - i - 1}
                     </div>
-                    <p class="text-lg flex-1">{toast.text}</p>
-                    <div class="flex justify-end mt-3">
+                    <p class="text-lg flex-1">{entry.toast.text}</p>
+
+                    {#if entry.toast.episodeNumber || entry.toast.episodeTimestamp}
+                      <div class="flex gap-2 mt-2 mb-3">
+                        {#if entry.toast.episodeNumber}
+                          <div class="badge badge-sm">
+                            Odcinek: {entry.toast.episodeNumber}
+                          </div>
+                        {/if}
+                        {#if entry.toast.episodeTimestamp}
+                          <div class="badge badge-sm">
+                            Czas: {entry.toast.episodeTimestamp}
+                          </div>
+                        {/if}
+                      </div>
+                    {/if}
+
+                    <div class="flex flex-col gap-2">
+                      <AudioWavePlayer
+                        audioFile={entry.toast.audioFile}
+                        showText={false}
+                      />
                       <button
-                        on:click={() => copyHistoryToast(toast.timestamp)}
-                        class="btn btn-sm {copyStates[toast.timestamp]
+                        on:click={() =>
+                          copyHistoryToast(entry.episodeTimestamp)}
+                        class="btn btn-sm {copyStates[entry.episodeTimestamp]
                           ? 'btn-success'
                           : 'btn-ghost'}"
                       >
-                        {#if copyStates[toast.timestamp]}
+                        {#if copyStates[entry.episodeTimestamp]}
                           <span class="flex items-center gap-1">
                             Skopiowano
                             <svg
