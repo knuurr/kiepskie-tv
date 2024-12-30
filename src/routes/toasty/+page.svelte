@@ -41,6 +41,36 @@
       copyToClipboard();
     } else if (event.key === "r" && !isRolling) {
       getRandomToast();
+    } else if (toastHistory.length > 1) {
+      // Handle history navigation
+      if (event.key === "ArrowLeft") {
+        navigateHistory("left");
+      } else if (event.key === "ArrowRight") {
+        navigateHistory("right");
+      }
+    }
+  }
+
+  // History navigation function
+  function navigateHistory(direction: "left" | "right") {
+    const historyLength = toastHistory.slice(1).length;
+    if (historyLength <= 1) return; // No navigation needed for single item
+
+    let newIndex = activeHistoryIndex;
+
+    if (direction === "left" && activeHistoryIndex > 0) {
+      newIndex = activeHistoryIndex - 1;
+    } else if (
+      direction === "right" &&
+      activeHistoryIndex < historyLength - 1
+    ) {
+      newIndex = activeHistoryIndex + 1;
+    }
+
+    // Only navigate if index changed
+    if (newIndex !== activeHistoryIndex) {
+      window.location.hash = `#toast-${newIndex}`;
+      activeHistoryIndex = newIndex;
     }
   }
 
@@ -314,6 +344,61 @@
               {#each toastHistory.slice(1) as entry, i (entry.episodeTimestamp)}
                 <div id="toast-{i}" class="carousel-item relative w-full">
                   <div class="card bg-base-200 w-full">
+                    <!-- Navigation arrows -->
+                    <div class="absolute inset-y-0 left-0 flex items-center">
+                      {#if i > 0}
+                        <div class="hidden md:flex items-center gap-2 pl-2">
+                          <kbd class="kbd kbd-sm">←</kbd>
+                        </div>
+                        <button
+                          class="md:hidden btn btn-circle btn-sm btn-ghost opacity-50"
+                          on:click={() => navigateHistory("left")}
+                          aria-label="Previous toast"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke-width="1.5"
+                            stroke="currentColor"
+                            class="w-4 h-4"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              d="M15.75 19.5 8.25 12l7.5-7.5"
+                            />
+                          </svg>
+                        </button>
+                      {/if}
+                    </div>
+                    <div class="absolute inset-y-0 right-0 flex items-center">
+                      {#if i < toastHistory.slice(1).length - 1}
+                        <div class="hidden md:flex items-center gap-2 pr-2">
+                          <kbd class="kbd kbd-sm">→</kbd>
+                        </div>
+                        <button
+                          class="md:hidden btn btn-circle btn-sm btn-ghost opacity-50"
+                          on:click={() => navigateHistory("right")}
+                          aria-label="Next toast"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke-width="1.5"
+                            stroke="currentColor"
+                            class="w-4 h-4"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              d="m8.25 4.5 7.5 7.5-7.5 7.5"
+                            />
+                          </svg>
+                        </button>
+                      {/if}
+                    </div>
                     <div class="card-body p-4">
                       <div class="flex flex-col h-full">
                         <div class="flex flex-row justify-between">
@@ -401,15 +486,17 @@
                 {#if i < toastHistory.slice(1).length}
                   <a
                     href="#toast-{i}"
-                    class="btn btn-xs btn-circle"
+                    class="btn btn-xs transition-all duration-300 ease-in-out"
+                    class:btn-circle={i !== activeHistoryIndex}
                     class:btn-primary={i === activeHistoryIndex}
+                    class:active-dot={i === activeHistoryIndex}
                     aria-label="Navigate to toast {i + 1}"
                   >
                     {i + 1}
                   </a>
                 {:else}
                   <button
-                    class="btn btn-xs btn-circle btn-disabled opacity-50"
+                    class="btn btn-xs btn-circle btn-disabled opacity-50 transition-all duration-300"
                     disabled
                     aria-label="History slot {i + 1} not yet available"
                   >
@@ -418,6 +505,27 @@
                 {/if}
               {/each}
             </div>
+
+            <style lang="postcss">
+              .active-dot {
+                @apply min-w-[3rem] scale-110;
+                border-radius: 1rem;
+                transform-origin: center;
+                animation: inflate 0.3s ease-out;
+              }
+
+              @keyframes inflate {
+                0% {
+                  transform: scale(0.9);
+                }
+                50% {
+                  transform: scale(1.15);
+                }
+                100% {
+                  transform: scale(1.1);
+                }
+              }
+            </style>
 
             <!-- Swipe indicator for mobile -->
             <div
