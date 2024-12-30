@@ -5,22 +5,15 @@
   export let imageUrl: string = "/placeholder.png"; // Default placeholder
   export let additionalInfo: string = "";
   export let disabled: boolean = false;
-
-  function handleClick() {
-    if (!disabled && link !== "#") {
-      window.location.href = link;
-    }
-  }
 </script>
 
-<div
-  class="card w-full bg-base-100 border border-base-300 shadow-xl hover:shadow-2xl transition-all cursor-pointer {disabled
-    ? 'opacity-70'
+<a
+  href={disabled ? "#" : link}
+  class="block card w-full bg-base-100 border border-base-300 shadow-xl hover:shadow-2xl transition-all {disabled
+    ? 'opacity-70 pointer-events-none'
     : 'hover:scale-[1.02]'}"
-  on:click={handleClick}
-  on:keydown={(e) => e.key === "Enter" && handleClick()}
-  role="button"
-  tabindex="0"
+  aria-disabled={disabled}
+  tabindex={disabled ? -1 : 0}
 >
   <figure class="px-6 pt-6">
     <img
@@ -57,11 +50,13 @@
       <p class="text-base font-normal mt-2">{additionalInfo}</p>
     {/if}
   </div>
-</div>
+</a>
 
 <style>
   /* Prevent text selection when clicking the card */
-  div {
+  a {
     user-select: none;
+    text-decoration: none;
+    color: inherit;
   }
 </style>
