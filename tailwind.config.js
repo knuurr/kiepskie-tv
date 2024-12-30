@@ -1,8 +1,13 @@
 /** @type {import('tailwindcss').Config} */
+const { fontFamily } = require("tailwindcss/defaultTheme");
 export default {
   content: ['./src/**/*.{html,js,svelte,ts}'],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        kiepscy: ['Boink LET Plain', ...fontFamily.sans],
+      },
+    },
   },
   plugins: [
     require('daisyui'),

@@ -31,7 +31,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 py-4">
       <!-- Brand section -->
       <div class="flex flex-col items-center md:items-start">
-        <h2 class="font-bold text-lg">Kiepskie TV (TiWi)</h2>
+        <h2 class="font-bold text-lg font-kiepscy">Kiepskie TV (TiWi)</h2>
         <p class="text-sm">© {copyrightYears} Jakub Mikos</p>
         <div class="text-xs mt-2 text-gray-500">
           <p>Build: {isDev ? "Development" : "Production"}</p>
@@ -106,7 +106,7 @@
     </div>
     <!-- Made with love message -->
     <div class="w-full text-center mb-4">
-      <p class="text-lg">
+      <p class="text-lg font-kiepscy">
         Made with <span class="text-yellow-300">💛</span> to Kiepscy
       </p>
     </div>

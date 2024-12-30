@@ -3,13 +3,13 @@
   import type { EpisodeData, Filter } from "$lib/types";
   import NavBar from "../../components/NavBar.svelte";
   import Footer from "../../components/Footer.svelte";
-  import CenteredContainer from "../../components/CenteredContainer.svelte";
-  import ResponsiveContainer from "../../components/ResponsiveContainer.svelte";
+  // import CenteredContainer from "../../components/CenteredContainer.svelte";
+  // import ResponsiveContainer from "../../components/ResponsiveContainer.svelte";
   import EpisodeFilter from "../../components/EpisodeFilter.svelte";
   import HighlightText from "../../components/HighlightText.svelte";
   import EpisodeModal from "../../components/EpisodeModal.svelte";
   import { page } from "$app/stores";
-  import { goto } from "$app/navigation";
+  // import { goto } from "$app/navigation";
   import { onMount } from "svelte";
   import ClickableFilterValue from "../../components/ClickableFilterValue.svelte";
   import FeedbackSection from "../../components/FeedbackSection.svelte";
@@ -21,7 +21,7 @@
 
   let activeFilters: Filter[] = [];
   let filteredEpisodes: EpisodeData[] = [];
-  let isHelpOpen = false;
+  // let isHelpOpen = false;
   let isEpisodeModalOpen = false;
   let selectedEpisode: EpisodeData | null = null;
   let modalMode: "specific" = "specific";

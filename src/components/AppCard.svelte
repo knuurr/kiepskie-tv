@@ -30,7 +30,7 @@
     />
   </figure>
   <div class="card-body items-center text-center">
-    <h2 class="card-title text-2xl font-bold">{title}</h2>
+    <h2 class="card-title text-2xl font-normal font-kiepscy">{title}</h2>
     <p class="text-base font-normal">{description}</p>
     <div class="card-actions justify-end mt-2">
       <button
