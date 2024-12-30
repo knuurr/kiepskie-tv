@@ -9,7 +9,7 @@
   import Header from "../Header.svelte";
   import FeedbackSection from "../../components/FeedbackSection.svelte";
   import AnimatedButton from "../../components/tiwi/AnimatedButton.svelte";
-  import AudioPlaybackButton from "../../components/AudioPlaybackButton.svelte";
+  // import AudioPlaybackButton from "../../components/AudioPlaybackButton.svelte";
   import AudioWavePlayer from "../../components/AudioWavePlayer.svelte";
   import MissingMetadataInfo from "../../components/MissingMetadataInfo.svelte";
 
@@ -162,20 +162,14 @@
                 <p class="text-xl opacity-70">No to....</p>
                 <p class="text-2xl font-medium min-h-16">{typewriterText}</p>
 
-                {#if currentToast.episodeNumber || currentToast.episodeTimestamp}
-                  <div class="flex gap-2 mt-4">
-                    {#if currentToast.episodeNumber}
-                      <div class="badge badge-neutral">
-                        Odcinek: {currentToast.episodeNumber}
-                      </div>
-                    {/if}
-                    {#if currentToast.episodeTimestamp}
-                      <div class="badge badge-neutral">
-                        Czas: {currentToast.episodeTimestamp}
-                      </div>
-                    {/if}
+                <div class="flex gap-2 mt-4">
+                  <div class="badge badge-neutral">
+                    Odcinek: {currentToast.episodeNumber ?? "???"}
                   </div>
-                {/if}
+                  <div class="badge badge-neutral">
+                    Czas: {currentToast.episodeTimestamp ?? "???"}
+                  </div>
+                </div>
 
                 <AudioWavePlayer audioFile={currentToast.audioFile} />
                 <MissingMetadataInfo toast={currentToast} />
@@ -264,20 +258,14 @@
                     </div>
                     <p class="text-lg flex-1">{entry.toast.text}</p>
 
-                    {#if entry.toast.episodeNumber || entry.toast.episodeTimestamp}
-                      <div class="flex gap-2 mt-2 mb-3">
-                        {#if entry.toast.episodeNumber}
-                          <div class="badge badge-sm">
-                            Odcinek: {entry.toast.episodeNumber}
-                          </div>
-                        {/if}
-                        {#if entry.toast.episodeTimestamp}
-                          <div class="badge badge-sm">
-                            Czas: {entry.toast.episodeTimestamp}
-                          </div>
-                        {/if}
+                    <div class="flex gap-2 mt-2 mb-3">
+                      <div class="badge badge-sm">
+                        Odcinek: {entry.toast.episodeNumber ?? "???"}
                       </div>
-                    {/if}
+                      <div class="badge badge-sm">
+                        Czas: {entry.toast.episodeTimestamp ?? "???"}
+                      </div>
+                    </div>
 
                     <div class="flex flex-col gap-2">
                       <AudioWavePlayer

@@ -7,12 +7,12 @@
   $: hasMissingMetadata =
     !toast.audioFile ||
     !toast.episodeNumber ||
-    toast.episodeNumber === "???" ||
+    toast.episodeNumber === null ||
     !toast.episodeTimestamp;
 
   $: missingItems = [
     !toast.audioFile && "dźwięk",
-    (!toast.episodeNumber || toast.episodeNumber === "???") && "numer odcinka",
+    (!toast.episodeNumber || toast.episodeNumber === null) && "numer odcinka",
     !toast.episodeTimestamp && "timestamp",
   ]
     .filter(Boolean)
