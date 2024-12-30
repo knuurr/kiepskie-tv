@@ -8,7 +8,15 @@ export default {
     require('daisyui'),
   ],
   daisyui: {
-    themes: ["dark", "halloween"],
+    themes: [
+      {
+        halloween: {
+          ...require("daisyui/src/theming/themes")["halloween"],
+          "primary": "ffdd00", // mocny full
+        },
+      },
+      "dark"
+    ],
     darkTheme: "halloween"
   },
 }
