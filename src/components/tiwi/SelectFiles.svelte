@@ -166,7 +166,7 @@
         </div>
       {/if}
 
-      <div class="alert alert-info mt-4 sm:alert-lg alert-sm">
+      <div class="alert alert-neutral mt-4 sm:alert-lg alert-sm">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           class="h-4 w-4 sm:h-6 sm:w-6"
