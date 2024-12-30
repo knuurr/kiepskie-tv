@@ -208,7 +208,7 @@
         {#if files?.length > 0}
           Kliknij "Okiłizuj" aby rozpocząć przetwarzanie
         {:else}
-          Wybierz pliki do przetworzenia w zakładce "Wrzuć wideło" an następnie
+          Wybierz pliki do przetworzenia w zakładce "Wrzuć wideło" a następnie
           kliknij "Okiłizuj"
         {/if}
       </p>
