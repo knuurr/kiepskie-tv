@@ -11,6 +11,7 @@
   import AnimatedButton from "../../components/tiwi/AnimatedButton.svelte";
   import AudioPlaybackButton from "../../components/AudioPlaybackButton.svelte";
   import AudioWavePlayer from "../../components/AudioWavePlayer.svelte";
+  import MissingMetadataInfo from "../../components/MissingMetadataInfo.svelte";
 
   let currentToast: Toast | null = null;
   let previousToast: Toast | null = null;
@@ -177,6 +178,7 @@
                 {/if}
 
                 <AudioWavePlayer audioFile={currentToast.audioFile} />
+                <MissingMetadataInfo toast={currentToast} />
               </div>
             {:else}
               <p class="text-xl opacity-50">Panie, na co pan czekasz...?</p>
@@ -282,6 +284,7 @@
                         audioFile={entry.toast.audioFile}
                         showText={false}
                       />
+                      <MissingMetadataInfo toast={entry.toast} compact={true} />
                       <button
                         on:click={() =>
                           copyHistoryToast(entry.episodeTimestamp)}
