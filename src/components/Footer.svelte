@@ -37,7 +37,7 @@
           <p>Build: {isDev ? "Development" : "Production"}</p>
           <p>
             Commit: {#if commitUrl}
-              <a href={commitUrl} class="link link-hover text-yellow-200"
+              <a href={commitUrl} class="link link-hover underline"
                 >{commitHash}</a
               >
             {:else}
