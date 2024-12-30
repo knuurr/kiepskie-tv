@@ -11,6 +11,10 @@
   const isDev = import.meta.env.DEV;
   const buildTime = import.meta.env.VITE_BUILD_TIME || "Development";
   const commitHash = import.meta.env.VITE_GIT_COMMIT_HASH || "Development";
+  const commitUrl =
+    commitHash !== "Development"
+      ? `${GH_BASE_URL}${GH_PROJECT_URL}/commit/${commitHash}`
+      : null;
 
   // Copyright years
   const startYear = 2024;
@@ -31,8 +35,16 @@
         <p class="text-sm">© {copyrightYears} Jakub Mikos</p>
         <div class="text-xs mt-2 text-gray-500">
           <p>Build: {isDev ? "Development" : "Production"}</p>
-          <p>Commit: {commitHash}</p>
-          <p>Built at: {buildTime}</p>
+          <p>
+            Commit: {#if commitUrl}
+              <a href={commitUrl} class="link link-hover text-yellow-200"
+                >{commitHash}</a
+              >
+            {:else}
+              {commitHash}
+            {/if}
+          </p>
+          <p>Build: {buildTime}</p>
         </div>
       </div>
 
