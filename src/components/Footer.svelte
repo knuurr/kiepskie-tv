@@ -6,6 +6,11 @@
     GH_REPO_URL,
     LI_URL,
   } from "../routes/Constans.svelte";
+
+  // Build information
+  const isDev = import.meta.env.DEV;
+  const buildTime = import.meta.env.VITE_BUILD_TIME || "Development";
+  const commitHash = import.meta.env.VITE_GIT_COMMIT_HASH || "Development";
 </script>
 
 <footer class="footer p-4 bg-base-200 text-base-content">
@@ -16,6 +21,11 @@
       <div class="flex flex-col items-center md:items-start">
         <h2 class="font-bold text-lg">Kiepskie TV (TiWi)</h2>
         <p class="text-sm">© Jakub Mikos 2024</p>
+        <div class="text-xs mt-2 text-gray-500">
+          <p>Build: {isDev ? "Development" : "Production"}</p>
+          <p>Commit: {commitHash}</p>
+          <p>Built at: {buildTime}</p>
+        </div>
       </div>
 
       <!-- Links section -->
@@ -73,6 +83,12 @@
           autorstwa ATM GRUPA SPÓŁKA AKCYJNA ani Telewizja Polsat sp. z o.o.
         </p>
       </div>
+    </div>
+    <!-- Made with love message -->
+    <div class="w-full text-center mb-4">
+      <p class="text-lg">
+        Made with <span class="text-yellow-300">💛</span> to Kiepscy
+      </p>
     </div>
   </div>
 </footer>
