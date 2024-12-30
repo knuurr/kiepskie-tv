@@ -11,6 +11,14 @@
   const isDev = import.meta.env.DEV;
   const buildTime = import.meta.env.VITE_BUILD_TIME || "Development";
   const commitHash = import.meta.env.VITE_GIT_COMMIT_HASH || "Development";
+
+  // Copyright years
+  const startYear = 2024;
+  const currentYear = new Date().getFullYear();
+  const copyrightYears =
+    startYear === currentYear
+      ? startYear.toString()
+      : `${startYear} - ${currentYear}`;
 </script>
 
 <footer class="footer p-4 bg-base-200 text-base-content">
@@ -20,7 +28,7 @@
       <!-- Brand section -->
       <div class="flex flex-col items-center md:items-start">
         <h2 class="font-bold text-lg">Kiepskie TV (TiWi)</h2>
-        <p class="text-sm">© Jakub Mikos 2024</p>
+        <p class="text-sm">© {copyrightYears} Jakub Mikos</p>
         <div class="text-xs mt-2 text-gray-500">
           <p>Build: {isDev ? "Development" : "Production"}</p>
           <p>Commit: {commitHash}</p>
