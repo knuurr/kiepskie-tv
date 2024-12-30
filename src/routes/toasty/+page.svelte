@@ -9,7 +9,6 @@
   import Header from "../Header.svelte";
   import FeedbackSection from "../../components/FeedbackSection.svelte";
   import AnimatedButton from "../../components/tiwi/AnimatedButton.svelte";
-  // import AudioPlaybackButton from "../../components/AudioPlaybackButton.svelte";
   import AudioWavePlayer from "../../components/AudioWavePlayer.svelte";
   import MissingMetadataInfo from "../../components/MissingMetadataInfo.svelte";
 
@@ -19,6 +18,7 @@
   let isSuccess: boolean = false;
   let typewriterText: string = "";
   let typewriterInterval: ReturnType<typeof setInterval>;
+  let activeHistoryIndex: number = 0;
 
   let rollCount: number = 0;
   let toastHistory: { toast: Toast; episodeTimestamp: number }[] = [];
@@ -26,6 +26,7 @@
 
   let toasts: Toast[] = [];
   let isLoading = true;
+  let observer: IntersectionObserver;
 
   // Keyboard shortcuts handler
   function handleKeydown(event: KeyboardEvent) {
@@ -116,6 +117,47 @@
     startTypewriter(newToast.text);
   }
 
+  // Setup intersection observer for carousel items
+  function setupCarouselObserver() {
+    if (typeof window === "undefined") return;
+
+    observer?.disconnect();
+
+    observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const id = entry.target.id;
+            const index = parseInt(id.replace("toast-", ""));
+            if (!isNaN(index)) {
+              activeHistoryIndex = index;
+            }
+          }
+        });
+      },
+      {
+        root: null,
+        threshold: 0.5, // Trigger when item is 50% visible
+      },
+    );
+
+    // Observe all carousel items
+    document.querySelectorAll(".carousel-item").forEach((item) => {
+      observer.observe(item);
+    });
+  }
+
+  // Update active history index when hash changes
+  function updateActiveHistoryIndex() {
+    if (typeof window !== "undefined") {
+      const hash = window.location.hash;
+      const match = hash.match(/^#toast-(\d+)$/);
+      if (match) {
+        activeHistoryIndex = parseInt(match[1]);
+      }
+    }
+  }
+
   onMount(async () => {
     try {
       const response = await fetch("/toasts/toasts.json");
@@ -128,12 +170,28 @@
       isLoading = false;
     }
 
+    if (typeof window !== "undefined") {
+      window.addEventListener("hashchange", updateActiveHistoryIndex);
+      updateActiveHistoryIndex();
+      setupCarouselObserver();
+    }
+
     window.addEventListener("keydown", handleKeydown);
     return () => {
       clearInterval(typewriterInterval);
       window.removeEventListener("keydown", handleKeydown);
+      if (typeof window !== "undefined") {
+        window.removeEventListener("hashchange", updateActiveHistoryIndex);
+        observer?.disconnect();
+      }
     };
   });
+
+  // Watch toastHistory changes to re-setup observer when history updates
+  $: if (toastHistory.length > 1) {
+    // Use setTimeout to ensure DOM is updated before setting up observer
+    setTimeout(setupCarouselObserver, 0);
+  }
 </script>
 
 <svelte:head>
@@ -167,7 +225,7 @@
                     Odcinek: {currentToast.episodeNumber ?? "???"}
                   </div>
                   <div class="badge badge-neutral">
-                    Czas: {currentToast.episodeTimestamp ?? "???"}
+                    Czas: {currentToast.episodeTimestamp ?? "??:??"}
                   </div>
                 </div>
 
@@ -184,7 +242,9 @@
           {#if currentToast}
             <button
               on:click={copyToClipboard}
-              class="btn btn-block {isSuccess ? 'btn-success' : 'btn-info'}"
+              class="btn btn-outline btn-block {isSuccess
+                ? 'btn-success'
+                : 'btn-info'}"
               disabled={isRolling}
             >
               {#if isSuccess}
@@ -247,103 +307,121 @@
 
         <!-- History Section -->
         <div class="divider mt-6">Historia</div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {#if toastHistory.length > 1}
-            {#each toastHistory.slice(1) as entry, i (entry.episodeTimestamp)}
-              <div class="card bg-base-200 h-full">
-                <div class="card-body p-4">
-                  <div class="flex flex-col h-full">
-                    <div class="badge badge-sm mb-2 opacity-60">
-                      #{rollCount - i - 1}
-                    </div>
-                    <p class="text-lg flex-1">{entry.toast.text}</p>
 
-                    <div class="flex gap-2 mt-2 mb-3">
-                      <div class="badge badge-sm">
-                        Odcinek: {entry.toast.episodeNumber ?? "???"}
-                      </div>
-                      <div class="badge badge-sm">
-                        Czas: {entry.toast.episodeTimestamp ?? "???"}
-                      </div>
-                    </div>
+        {#if toastHistory.length > 1}
+          <div class="w-full">
+            <div class="carousel w-full">
+              {#each toastHistory.slice(1) as entry, i (entry.episodeTimestamp)}
+                <div id="toast-{i}" class="carousel-item relative w-full">
+                  <div class="card bg-base-200 w-full">
+                    <div class="card-body p-4">
+                      <div class="flex flex-col h-full">
+                        <div class="flex flex-row justify-between">
+                          <div class="badge badge-sm mb-2 opacity-60">
+                            #{rollCount - i - 1}
+                          </div>
+                          <div class="badge badge-sm">
+                            {entry.toast.episodeNumber ?? "???"}
+                          </div>
+                          <div class="badge badge-sm">
+                            {entry.toast.episodeTimestamp ?? "??:??"}
+                          </div>
+                        </div>
 
-                    <div class="flex flex-col gap-2">
-                      <AudioWavePlayer
-                        audioFile={entry.toast.audioFile}
-                        showText={false}
-                      />
-                      <MissingMetadataInfo toast={entry.toast} compact={true} />
-                      <button
-                        on:click={() =>
-                          copyHistoryToast(entry.episodeTimestamp)}
-                        class="btn btn-sm {copyStates[entry.episodeTimestamp]
-                          ? 'btn-success'
-                          : 'btn-ghost'}"
-                      >
-                        {#if copyStates[entry.episodeTimestamp]}
-                          <span class="flex items-center gap-1">
-                            Skopiowano
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke-width="1.5"
-                              stroke="currentColor"
-                              class="w-4 h-4"
-                            >
-                              <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                d="m4.5 12.75 6 6 9-13.5"
-                              />
-                            </svg>
-                          </span>
-                        {:else}
-                          <span class="flex items-center gap-1">
-                            Kopiuj
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke-width="1.5"
-                              stroke="currentColor"
-                              class="w-4 h-4"
-                            >
-                              <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184"
-                              />
-                            </svg>
-                          </span>
-                        {/if}
-                      </button>
+                        <p class="text-lg flex-1">{entry.toast.text}</p>
+
+                        <div class="flex flex-col gap-2">
+                          <AudioWavePlayer
+                            audioFile={entry.toast.audioFile}
+                            showText={false}
+                          />
+
+                          <button
+                            on:click={() =>
+                              copyHistoryToast(entry.episodeTimestamp)}
+                            class="btn btn-sm {copyStates[
+                              entry.episodeTimestamp
+                            ]
+                              ? 'btn-success'
+                              : 'btn-ghost'}"
+                          >
+                            {#if copyStates[entry.episodeTimestamp]}
+                              <span class="flex items-center gap-1">
+                                Skopiowano
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke-width="1.5"
+                                  stroke="currentColor"
+                                  class="w-4 h-4"
+                                >
+                                  <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="m4.5 12.75 6 6 9-13.5"
+                                  />
+                                </svg>
+                              </span>
+                            {:else}
+                              <span class="flex items-center gap-1">
+                                Kopiuj
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke-width="1.5"
+                                  stroke="currentColor"
+                                  class="w-4 h-4"
+                                >
+                                  <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184"
+                                  />
+                                </svg>
+                              </span>
+                            {/if}
+                          </button>
+                          <MissingMetadataInfo
+                            toast={entry.toast}
+                            compact={true}
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            {/each}
-          {:else}
-            {#each Array(2) as _, i}
-              <div class="card bg-base-200 h-full opacity-50">
-                <div class="card-body p-4">
-                  <div class="flex flex-col h-full">
-                    <div
-                      class="badge badge-sm mb-2 opacity-60 skeleton w-8"
-                    ></div>
-                    <div class="flex-1">
-                      <div class="skeleton h-4 w-3/4 mb-2"></div>
-                      <div class="skeleton h-4 w-1/2"></div>
-                    </div>
-                    <div class="flex justify-end mt-3">
-                      <div class="skeleton w-20 h-8 rounded-lg"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            {/each}
+              {/each}
+            </div>
+
+            <!-- Navigation dots -->
+            <div class="flex justify-center w-full py-2 gap-2">
+              {#each Array(3) as _, i}
+                {#if i < toastHistory.slice(1).length}
+                  <a
+                    href="#toast-{i}"
+                    class="btn btn-xs btn-circle"
+                    class:btn-primary={i === activeHistoryIndex}
+                    aria-label="Navigate to toast {i + 1}"
+                  >
+                    {i + 1}
+                  </a>
+                {:else}
+                  <button
+                    class="btn btn-xs btn-circle btn-disabled opacity-50"
+                    disabled
+                    aria-label="History slot {i + 1} not yet available"
+                  >
+                    {i + 1}
+                  </button>
+                {/if}
+              {/each}
+            </div>
+
+            <!-- Swipe indicator for mobile -->
             <div
-              class="card bg-base-200 h-full flex items-center justify-center p-4 text-center opacity-50"
+              class="flex items-center justify-center gap-1 text-sm opacity-50 md:hidden"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -351,18 +429,70 @@
                 viewBox="0 0 24 24"
                 stroke-width="1.5"
                 stroke="currentColor"
-                class="w-12 h-12 mb-2"
+                class="w-4 h-4"
               >
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
-                  d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"
+                  d="M15.75 19.5 8.25 12l7.5-7.5"
                 />
               </svg>
-              <p class="text-sm">Tutaj pojawią się poprzednie toasty</p>
+              <span>Przewiń w lewo/prawo</span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+                class="w-4 h-4"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="m8.25 4.5 7.5 7.5-7.5 7.5"
+                />
+              </svg>
             </div>
-          {/if}
-        </div>
+          </div>
+        {:else}
+          {#each Array(2) as _, i}
+            <div class="card bg-base-200 h-full opacity-50">
+              <div class="card-body p-4">
+                <div class="flex flex-col h-full">
+                  <div
+                    class="badge badge-sm mb-2 opacity-60 skeleton w-8"
+                  ></div>
+                  <div class="flex-1">
+                    <div class="skeleton h-4 w-3/4 mb-2"></div>
+                    <div class="skeleton h-4 w-1/2"></div>
+                  </div>
+                  <div class="flex justify-end mt-3">
+                    <div class="skeleton w-20 h-8 rounded-lg"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {/each}
+          <div
+            class="card bg-base-200 h-full flex items-center justify-center p-4 text-center opacity-50"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              class="w-12 h-12 mb-2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"
+              />
+            </svg>
+            <p class="text-sm">Tutaj pojawią się poprzednie toasty</p>
+          </div>
+        {/if}
       </div>
     </div>
   </ResponsiveContainer>
