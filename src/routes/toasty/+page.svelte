@@ -464,7 +464,7 @@
                 </svg>
               {/if}
               <span class="hidden">Kopiuj do schowka</span>
-              <div class="hidden md:flex items-center gap-1">
+              <div class="hidden md:flex items-center gap-1 text-white">
                 <kbd class="kbd kbd-sm">shift</kbd>
                 <span>+</span>
                 <kbd class="kbd kbd-sm">c</kbd>
@@ -518,7 +518,7 @@
                   </svg>
                 {/if}
                 <span class="hidden">Udostępnij</span>
-                <div class="hidden md:flex items-center gap-1">
+                <div class="hidden md:flex items-center gap-1 text-white">
                   <kbd class="kbd kbd-sm">shift</kbd>
                   <span>+</span>
                   <kbd class="kbd kbd-sm">s</kbd>
