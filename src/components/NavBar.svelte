@@ -1,9 +1,22 @@
 <script>
+  import { GH_BASE_URL, GH_PROJECT_URL } from "../routes/Constans.svelte";
+
   let isOpen = false;
+  let isSocialOpen = false;
+  let isCommunityOpen = false;
 
   const toggleDropdown = () => {
     isOpen = !isOpen;
   };
+
+  // Build information
+  const isDev = import.meta.env.DEV;
+  const buildTime = import.meta.env.VITE_BUILD_TIME || "Development";
+  const commitHash = import.meta.env.VITE_GIT_COMMIT_HASH || "Development";
+  const commitUrl =
+    commitHash !== "Development"
+      ? `${GH_BASE_URL}${GH_PROJECT_URL}/commit/${commitHash}`
+      : null;
 </script>
 
 <div class="navbar bg-base-100">
@@ -21,101 +34,159 @@
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
-          ><path
+        >
+          <path
             stroke-linecap="round"
             stroke-linejoin="round"
             stroke-width="2"
             d="M4 6h16M4 12h8m-8 6h16"
-          /></svg
-        >
+          />
+        </svg>
       </div>
       <ul
         tabindex="0"
-        class="menu menu-lg dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52"
+        class="menu dropdown-content mt-3 z-[1] p-1 shadow bg-base-100 rounded-box w-52"
         class:hidden={!isOpen}
       >
+        <!-- Routes section -->
+        <li><a href="/tiwi">TiWi</a></li>
+        <li><a href="/toasty">Toasty</a></li>
+        <li><a href="/tabela">Tabela</a></li>
+        <li><a href="/generator">Generator</a></li>
+        <div class="divider my-0"></div>
+
+        <!-- Build info section -->
+        <li class="text-xs opacity-50">
+          <p>
+            Commit: {#if commitUrl}
+              <a href={commitUrl} class="link link-hover underline"
+                >{commitHash}</a
+              >
+            {:else}
+              {commitHash}
+            {/if}
+          </p>
+          <p>Build: {buildTime}</p>
+        </li>
+      </ul>
+    </div>
+    <a href="/" class="btn btn-ghost text-2xl font-normal font-kiepscy"
+      >Kiepskie TV</a
+    >
+  </div>
+
+  <!-- Desktop menu -->
+  <div class="navbar-center hidden lg:flex">
+    <ul class="menu menu-horizontal px-1">
+      <li><a href="/tiwi">TiWi</a></li>
+      <li><a href="/toasty">Toasty</a></li>
+      <li><a href="/tabela">Tabela</a></li>
+      <li><a href="/generator">Generator</a></li>
+    </ul>
+  </div>
+
+  <div class="navbar-end">
+    <!-- Community Links -->
+    <div class="dropdown dropdown-end">
+      <div
+        tabindex="0"
+        role="button"
+        class="btn btn-ghost"
+        on:click={() => (isCommunityOpen = !isCommunityOpen)}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+          />
+        </svg>
+        <span class="hidden lg:inline">Społeczność</span>
+      </div>
+      <ul
+        tabindex="0"
+        class="menu dropdown-content z-[1] p-2 shadow bg-base-100 rounded-box w-52 mt-4"
+        class:hidden={!isCommunityOpen}
+      >
         <li>
-          <a href="/"
-            ><svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="1.5"
-              stroke="currentColor"
-              class="w-4 h-4"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M6 20.25h12m-7.5-3v3m3-3v3m-10.125-3h17.25c.621 0 1.125-.504 1.125-1.125V4.875c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125Z"
-              />
-            </svg>TiWi</a
+          <a
+            href="https://forum.kiepscy.org.pl/"
+            target="_blank"
+            rel="noopener noreferrer">Forum kiepscy.org.pl</a
           >
         </li>
         <li>
-          <a href="/toasty"
-            ><svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="1.5"
-              stroke="currentColor"
-              class="w-4 h-4"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18"
-              />
-            </svg>
-            Toasty</a
+          <a
+            href="https://www.facebook.com/groups/227062558151644"
+            target="_blank"
+            rel="noopener noreferrer">"Pośredniawka" na FB</a
+          >
+        </li>
+        <li>
+          <a
+            href="https://kiepscy.fandom.com/wiki/Strona_g%C5%82%C3%B3wna"
+            target="_blank"
+            rel="noopener noreferrer">Kiepscy Wiki</a
           >
         </li>
       </ul>
     </div>
-    <a href="/" class="btn btn-ghost text-xl">Kiepskie TV</a>
-  </div>
-  <div class="navbar-center hidden md:flex">
-    <ul class="menu menu-horizontal px-1">
-      <li>
-        <a href="/"
-          ><svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke-width="1.5"
-            stroke="currentColor"
-            class="w-4 h-4"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M6 20.25h12m-7.5-3v3m3-3v3m-10.125-3h17.25c.621 0 1.125-.504 1.125-1.125V4.875c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125Z"
-            />
-          </svg>
-          TiWi</a
+
+    <!-- Social Links -->
+    <div class="dropdown dropdown-end">
+      <div
+        tabindex="0"
+        role="button"
+        class="btn btn-ghost"
+        on:click={() => (isSocialOpen = !isSocialOpen)}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
         >
-      </li>
-      <li>
-        <a href="/toasty"
-          ><svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke-width="1.5"
-            stroke="currentColor"
-            class="w-4 h-4"
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+          />
+        </svg>
+        <span class="hidden lg:inline">O mnie</span>
+      </div>
+      <ul
+        tabindex="0"
+        class="menu dropdown-content z-[1] p-2 shadow bg-base-100 rounded-box w-52 mt-4"
+        class:hidden={!isSocialOpen}
+      >
+        <li>
+          <a
+            href="https://github.com/knuurr/kiepskie-tv/"
+            target="_blank"
+            rel="noopener noreferrer"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18"
-            />
-          </svg>
-          Toasty</a
-        >
-      </li>
-    </ul>
+            GitHub
+          </a>
+        </li>
+        <li>
+          <a
+            href="https://www.linkedin.com/in/jakub-mikos/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            LinkedIn
+          </a>
+        </li>
+      </ul>
+    </div>
   </div>
-  <div class="navbar-end"></div>
 </div>
