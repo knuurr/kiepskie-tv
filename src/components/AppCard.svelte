@@ -10,7 +10,7 @@
 <a
   href={disabled ? "#" : link}
   class="block card w-full bg-base-100 border border-base-300 shadow-xl hover:shadow-2xl transition-all {disabled
-    ? 'opacity-70 pointer-events-none'
+    ? 'pointer-events-none'
     : 'hover:scale-[1.02]'}"
   aria-disabled={disabled}
   tabindex={disabled ? -1 : 0}
