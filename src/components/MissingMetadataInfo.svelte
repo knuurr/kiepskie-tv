@@ -55,9 +55,9 @@
         <a
           href="https://github.com/qbus-agentur/kiepscy-tv/issues/new"
           target="_blank"
-          class="underline text-blue-600 hover:text-blue-800"
+          class="underline text-blue-400 hover:text-blue-600"
         >
-          Zgłoś problem
+          Napisz na "Pośredniawce"
         </a>
       {/if}
     </span>

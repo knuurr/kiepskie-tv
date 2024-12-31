@@ -23,29 +23,53 @@
   let rollCount: number = 0;
   let toastHistory: { toast: Toast; episodeTimestamp: number }[] = [];
   let copyStates: { [key: number]: boolean } = {};
+  let shareStates: { [key: number]: boolean } = {};
 
   let toasts: Toast[] = [];
   let isLoading = true;
   let observer: IntersectionObserver;
 
+  let isShareSuccess = false;
+  let canShareOnDevice = false;
+
+  // Check if sharing is available on mount
+  function checkSharingCapability() {
+    if (typeof navigator === "undefined") return;
+
+    canShareOnDevice = "share" in navigator;
+    console.log("Share API available:", canShareOnDevice);
+  }
+
   // Keyboard shortcuts handler
   function handleKeydown(event: KeyboardEvent) {
+    // Ignore if user is typing in an input
     if (
       event.target instanceof HTMLInputElement ||
       event.target instanceof HTMLTextAreaElement
     ) {
-      return; // Ignore if user is typing in an input
+      return;
     }
 
-    if (event.key === "c" && currentToast && !isRolling) {
+    // Convert key to lowercase for case-insensitive comparison
+    const key = event.key.toLowerCase();
+
+    // Handle keyboard shortcuts
+    if (event.shiftKey && key === "c" && currentToast && !isRolling) {
+      event.preventDefault(); // Prevent default browser behavior
       copyToClipboard();
-    } else if (event.key === "r" && !isRolling) {
+    } else if (event.shiftKey && key === "s" && currentToast && !isRolling) {
+      event.preventDefault(); // Prevent default browser behavior
+      shareToast();
+    } else if (key === "r" && !isRolling) {
+      event.preventDefault(); // Prevent default browser behavior
       getRandomToast();
     } else if (toastHistory.length > 1) {
       // Handle history navigation
       if (event.key === "ArrowLeft") {
+        event.preventDefault();
         navigateHistory("left");
       } else if (event.key === "ArrowRight") {
+        event.preventDefault();
         navigateHistory("right");
       }
     }
@@ -188,7 +212,73 @@
     }
   }
 
+  // Add share function
+  async function shareToast() {
+    if (!currentToast) return;
+
+    const shareData = {
+      title: "Toast z Kiepskich",
+      text: currentToast.text,
+      url: window.location.href,
+    };
+
+    try {
+      // First check if we can share this data
+      if (!navigator.canShare(shareData)) {
+        console.log("Content cannot be shared:", shareData);
+        return;
+      }
+
+      console.log("Attempting to share:", shareData);
+      await navigator.share(shareData);
+      console.log("Share successful");
+      isShareSuccess = true;
+      setTimeout(() => {
+        isShareSuccess = false;
+      }, 3000);
+    } catch (err: unknown) {
+      console.error("Error sharing:", err);
+      if (err instanceof Error && err.name === "AbortError") {
+        console.log("Share was aborted by user");
+      }
+    }
+  }
+
+  // Add share history toast function
+  async function shareHistoryToast(entry: {
+    toast: Toast;
+    episodeTimestamp: number;
+  }) {
+    const shareData = {
+      title: "Toast z Kiepskich",
+      text: entry.toast.text,
+      url: `${window.location.href}#toast-${toastHistory.slice(1).findIndex((t) => t.episodeTimestamp === entry.episodeTimestamp)}`,
+    };
+
+    try {
+      // First check if we can share this data
+      if (!navigator.canShare(shareData)) {
+        console.log("History content cannot be shared:", shareData);
+        return;
+      }
+
+      console.log("Attempting to share history toast:", shareData);
+      await navigator.share(shareData);
+      console.log("Share successful");
+      shareStates[entry.episodeTimestamp] = true;
+      setTimeout(() => {
+        shareStates[entry.episodeTimestamp] = false;
+      }, 3000);
+    } catch (err: unknown) {
+      console.error("Error sharing:", err);
+      if (err instanceof Error && err.name === "AbortError") {
+        console.log("Share was aborted by user");
+      }
+    }
+  }
+
   onMount(async () => {
+    checkSharingCapability();
     try {
       const response = await fetch("/toasts/toasts.json");
       if (!response.ok) throw new Error("Failed to load toasts data");
@@ -242,82 +332,49 @@
         <div class="flex justify-between items-center mb-4">
           <div class="badge badge-outline badge-lg">Losowań: {rollCount}</div>
         </div>
-
+        {#if currentToast}
+          <MissingMetadataInfo toast={currentToast} />
+        {/if}
         <div class="card bg-base-100 border-2 border-base-200">
           <div class="card-body">
-            {#if currentToast}
-              <div class="flex-1">
-                <p class="text-xl opacity-70">No to....</p>
-                <p class="text-2xl font-medium min-h-16">{typewriterText}</p>
-
-                <div class="flex gap-2 mt-4">
-                  <div class="badge badge-neutral">
-                    Odcinek: {currentToast.episodeNumber ?? "???"}
-                  </div>
-                  <div class="badge badge-neutral">
-                    Czas: {currentToast.episodeTimestamp ?? "??:??"}
-                  </div>
-                </div>
-
-                <AudioWavePlayer audioFile={currentToast.audioFile} />
-                <MissingMetadataInfo toast={currentToast} />
+            <div class="flex gap-2 mb-4">
+              <div
+                class="badge badge-neutral {!currentToast
+                  ? 'badge-ghost opacity-50'
+                  : ''}"
+              >
+                Odcinek: {currentToast?.episodeNumber ?? "???"}
               </div>
-            {:else}
-              <p class="text-xl opacity-50">Panie, na co pan czekasz...?</p>
-            {/if}
+              <div
+                class="badge badge-neutral {!currentToast
+                  ? 'badge-ghost opacity-50'
+                  : ''}"
+              >
+                Czas: {currentToast?.episodeTimestamp ?? "??:??"}
+              </div>
+            </div>
+            <div class="flex-1">
+              <p class="text-xl opacity-70">No to....</p>
+              <p class="text-2xl font-medium min-h-16">
+                {#if currentToast}
+                  {typewriterText}
+                {:else}
+                  <span class="opacity-50">Panie, na co pan czekasz...?</span>
+                {/if}
+              </p>
+
+              <div class="mt-4 {!currentToast ? 'opacity-50' : ''}">
+                <AudioWavePlayer
+                  audioFile={currentToast?.audioFile ?? null}
+                  disabled={!currentToast}
+                  showText={true}
+                />
+              </div>
+            </div>
           </div>
         </div>
 
         <div class="flex flex-col gap-2 mt-4">
-          {#if currentToast}
-            <button
-              on:click={copyToClipboard}
-              class="btn btn-outline btn-block {isSuccess
-                ? 'btn-success'
-                : 'btn-info'}"
-              disabled={isRolling}
-            >
-              {#if isSuccess}
-                <span class="flex items-center gap-2">
-                  Skopiowano!
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke-width="1.5"
-                    stroke="currentColor"
-                    class="w-5 h-5"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="m4.5 12.75 6 6 9-13.5"
-                    />
-                  </svg>
-                </span>
-              {:else}
-                <span class="flex items-center gap-2">
-                  Kopiuj do schowka
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke-width="1.5"
-                    stroke="currentColor"
-                    class="w-5 h-5"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184"
-                    />
-                  </svg>
-                  <kbd class="kbd kbd-sm hidden md:inline-flex">c</kbd>
-                </span>
-              {/if}
-            </button>
-          {/if}
-
           <AnimatedButton
             on:click={getRandomToast}
             disabled={isRolling || isLoading}
@@ -333,6 +390,107 @@
               {/if}
             </span>
           </AnimatedButton>
+          <div class="grid grid-cols-2 gap-2">
+            <button
+              on:click={copyToClipboard}
+              class="btn btn-outline {isSuccess ? 'btn-success' : 'btn-info'}"
+              disabled={isRolling || !currentToast}
+              aria-label="Kopiuj do schowka"
+            >
+              {#if isSuccess}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="w-5 h-5"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M4.5 12.75l6 6 9-13.5"
+                  />
+                </svg>
+              {:else}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="w-5 h-5"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184"
+                  />
+                </svg>
+              {/if}
+              <span class="hidden">Kopiuj do schowka</span>
+              <div class="hidden md:flex items-center gap-1">
+                <kbd class="kbd kbd-sm">shift</kbd>
+                <span>+</span>
+                <kbd class="kbd kbd-sm">c</kbd>
+              </div>
+            </button>
+
+            <!-- Share button -->
+            <div
+              class="tooltip tooltip-bottom"
+              data-tip={!canShareOnDevice
+                ? "Udostępnianie nie jest dostępne w tej przeglądarce"
+                : ""}
+            >
+              <button
+                on:click={shareToast}
+                class="btn btn-outline w-full {isShareSuccess
+                  ? 'btn-success'
+                  : 'btn-accent'}"
+                disabled={isRolling || !currentToast || !canShareOnDevice}
+                aria-label="Udostępnij"
+              >
+                {#if isShareSuccess}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="currentColor"
+                    class="w-5 h-5"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M4.5 12.75l6 6 9-13.5"
+                    />
+                  </svg>
+                {:else}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="currentColor"
+                    class="w-5 h-5"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"
+                    />
+                  </svg>
+                {/if}
+                <span class="hidden">Udostępnij</span>
+                <div class="hidden md:flex items-center gap-1">
+                  <kbd class="kbd kbd-sm">shift</kbd>
+                  <span>+</span>
+                  <kbd class="kbd kbd-sm">s</kbd>
+                </div>
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- History Section -->
@@ -421,53 +579,115 @@
                             showText={false}
                           />
 
-                          <button
-                            on:click={() =>
-                              copyHistoryToast(entry.episodeTimestamp)}
-                            class="btn btn-sm {copyStates[
-                              entry.episodeTimestamp
-                            ]
-                              ? 'btn-success'
-                              : 'btn-ghost'}"
-                          >
-                            {#if copyStates[entry.episodeTimestamp]}
-                              <span class="flex items-center gap-1">
-                                Skopiowano
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke-width="1.5"
-                                  stroke="currentColor"
-                                  class="w-4 h-4"
-                                >
-                                  <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    d="m4.5 12.75 6 6 9-13.5"
-                                  />
-                                </svg>
-                              </span>
-                            {:else}
-                              <span class="flex items-center gap-1">
-                                Kopiuj
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke-width="1.5"
-                                  stroke="currentColor"
-                                  class="w-4 h-4"
-                                >
-                                  <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184"
-                                  />
-                                </svg>
-                              </span>
-                            {/if}
-                          </button>
+                          <div class="grid grid-cols-2 gap-2">
+                            <button
+                              on:click={() =>
+                                copyHistoryToast(entry.episodeTimestamp)}
+                              class="btn btn-sm {copyStates[
+                                entry.episodeTimestamp
+                              ]
+                                ? 'btn-success'
+                                : 'btn-ghost'}"
+                              aria-label="Kopiuj do schowka"
+                            >
+                              {#if copyStates[entry.episodeTimestamp]}
+                                <span class="flex items-center gap-1">
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="1.5"
+                                    stroke="currentColor"
+                                    class="w-4 h-4"
+                                  >
+                                    <path
+                                      stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      d="m4.5 12.75 6 6 9-13.5"
+                                    />
+                                  </svg>
+                                </span>
+                              {:else}
+                                <span class="flex items-center gap-1">
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="1.5"
+                                    stroke="currentColor"
+                                    class="w-4 h-4"
+                                  >
+                                    <path
+                                      stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184"
+                                    />
+                                  </svg>
+                                </span>
+                              {/if}
+                            </button>
+
+                            <div
+                              class="tooltip tooltip-bottom"
+                              data-tip={!canShareOnDevice
+                                ? "Udostępnianie nie jest dostępne w tej przeglądarce"
+                                : ""}
+                            >
+                              <button
+                                on:click={() => shareHistoryToast(entry)}
+                                class="btn btn-sm w-full {shareStates[
+                                  entry.episodeTimestamp
+                                ]
+                                  ? 'btn-success'
+                                  : 'btn-ghost'}"
+                                disabled={!canShareOnDevice}
+                                aria-label="Udostępnij"
+                              >
+                                {#if shareStates[entry.episodeTimestamp]}
+                                  <span class="flex items-center gap-1">
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke-width="1.5"
+                                      stroke="currentColor"
+                                      class="w-4 h-4"
+                                    >
+                                      <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="m4.5 12.75 6 6 9-13.5"
+                                      />
+                                    </svg>
+                                  </span>
+                                {:else}
+                                  <span class="flex items-center gap-1">
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke-width="1.5"
+                                      stroke="currentColor"
+                                      class="w-4 h-4"
+                                    >
+                                      <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"
+                                      />
+                                    </svg>
+                                  </span>
+                                {/if}
+                                <span class="hidden">Udostępnij</span>
+                                <div class="hidden md:flex items-center gap-1">
+                                  <kbd class="kbd kbd-sm">shift</kbd>
+                                  <span>+</span>
+                                  <kbd class="kbd kbd-sm">s</kbd>
+                                </div>
+                              </button>
+                            </div>
+                          </div>
+
                           <MissingMetadataInfo
                             toast={entry.toast}
                             compact={true}
@@ -563,42 +783,10 @@
             </div>
           </div>
         {:else}
-          {#each Array(2) as _, i}
-            <div class="card bg-base-200 h-full opacity-50">
-              <div class="card-body p-4">
-                <div class="flex flex-col h-full">
-                  <div
-                    class="badge badge-sm mb-2 opacity-60 skeleton w-8"
-                  ></div>
-                  <div class="flex-1">
-                    <div class="skeleton h-4 w-3/4 mb-2"></div>
-                    <div class="skeleton h-4 w-1/2"></div>
-                  </div>
-                  <div class="flex justify-end mt-3">
-                    <div class="skeleton w-20 h-8 rounded-lg"></div>
-                  </div>
-                </div>
-              </div>
+          <div class="card bg-base-200 shadow-lg p-4 text-center">
+            <div class="card-body">
+              <h2 class="text-lg font-semibold">Tutaj będzie Twoja historia</h2>
             </div>
-          {/each}
-          <div
-            class="card bg-base-200 h-full flex items-center justify-center p-4 text-center opacity-50"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="1.5"
-              stroke="currentColor"
-              class="w-12 h-12 mb-2"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"
-              />
-            </svg>
-            <p class="text-sm">Tutaj pojawią się poprzednie toasty</p>
           </div>
         {/if}
       </div>

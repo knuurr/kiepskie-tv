@@ -1,11 +1,12 @@
 <script lang="ts">
   export let audioFile: string | null;
   export let showText = true;
+  export let disabled = false;
   let isPlaying = false;
   let audio: HTMLAudioElement;
 
   function togglePlayback() {
-    if (!audioFile) return;
+    if (!audioFile || disabled) return;
 
     if (!audio) {
       audio = new Audio(audioFile);
@@ -29,6 +30,7 @@
   <button
     class="btn btn-block {isPlaying ? 'btn-primary' : 'btn-secondary'} mt-4"
     on:click={togglePlayback}
+    {disabled}
   >
     <div class="flex items-center justify-between w-full gap-4">
       <!-- Play/Pause Icon -->
