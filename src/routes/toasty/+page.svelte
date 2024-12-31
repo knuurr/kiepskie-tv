@@ -11,6 +11,7 @@
   import AnimatedButton from "../../components/tiwi/AnimatedButton.svelte";
   import AudioWavePlayer from "../../components/AudioWavePlayer.svelte";
   import MissingMetadataInfo from "../../components/MissingMetadataInfo.svelte";
+  import HistoryDrawer from "../../components/HistoryDrawer.svelte";
 
   let currentToast: Toast | null = null;
   let previousToast: Toast | null = null;
@@ -31,6 +32,9 @@
 
   let isShareSuccess = false;
   let canShareOnDevice = false;
+
+  // Add showHistoryDrawer state
+  let showHistoryDrawer = false;
 
   // Check if sharing is available on mount
   function checkSharingCapability() {
@@ -165,7 +169,7 @@
     rollCount++;
     toastHistory = [
       { toast: newToast, episodeTimestamp: Date.now() },
-      ...toastHistory.slice(0, 3),
+      ...toastHistory.slice(0, 4),
     ];
 
     startTypewriter(newToast.text);
@@ -277,8 +281,17 @@
     }
   }
 
-  onMount(async () => {
+  // Fix the onMount type issue
+  onMount(() => {
     checkSharingCapability();
+    window.addEventListener("keydown", handleKeydown);
+    return () => {
+      window.removeEventListener("keydown", handleKeydown);
+    };
+  });
+
+  // Separate async initialization
+  onMount(async () => {
     try {
       const response = await fetch("/toasts/toasts.json");
       if (!response.ok) throw new Error("Failed to load toasts data");
@@ -289,23 +302,13 @@
     } finally {
       isLoading = false;
     }
-
-    if (typeof window !== "undefined") {
-      window.addEventListener("hashchange", updateActiveHistoryIndex);
-      updateActiveHistoryIndex();
-      setupCarouselObserver();
-    }
-
-    window.addEventListener("keydown", handleKeydown);
-    return () => {
-      clearInterval(typewriterInterval);
-      window.removeEventListener("keydown", handleKeydown);
-      if (typeof window !== "undefined") {
-        window.removeEventListener("hashchange", updateActiveHistoryIndex);
-        observer?.disconnect();
-      }
-    };
   });
+
+  if (typeof window !== "undefined") {
+    window.addEventListener("hashchange", updateActiveHistoryIndex);
+    updateActiveHistoryIndex();
+    setupCarouselObserver();
+  }
 
   // Watch toastHistory changes to re-setup observer when history updates
   $: if (toastHistory.length > 1) {
@@ -331,6 +334,26 @@
       <div class="card-body">
         <div class="flex justify-between items-center mb-4">
           <div class="badge badge-outline badge-lg">Losowań: {rollCount}</div>
+          <button
+            class="btn btn-ghost btn-sm gap-2"
+            on:click={() => (showHistoryDrawer = true)}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            Historia ->
+          </button>
         </div>
         {#if currentToast}
           <MissingMetadataInfo toast={currentToast} />
@@ -492,306 +515,17 @@
             </div>
           </div>
         </div>
-
-        <!-- History Section -->
-        <div class="divider mt-6">Historia</div>
-
-        {#if toastHistory.length > 1}
-          <div class="w-full">
-            <div class="carousel w-full">
-              {#each toastHistory.slice(1) as entry, i (entry.episodeTimestamp)}
-                <div id="toast-{i}" class="carousel-item relative w-full">
-                  <div class="card bg-base-200 w-full">
-                    <!-- Navigation arrows -->
-                    <div class="absolute inset-y-0 left-0 flex items-center">
-                      {#if i > 0}
-                        <div class="hidden md:flex items-center gap-2 pl-2">
-                          <kbd class="kbd kbd-sm">←</kbd>
-                        </div>
-                        <button
-                          class="md:hidden btn btn-circle btn-sm btn-ghost opacity-50"
-                          on:click={() => navigateHistory("left")}
-                          aria-label="Previous toast"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke-width="1.5"
-                            stroke="currentColor"
-                            class="w-4 h-4"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              d="M15.75 19.5 8.25 12l7.5-7.5"
-                            />
-                          </svg>
-                        </button>
-                      {/if}
-                    </div>
-                    <div class="absolute inset-y-0 right-0 flex items-center">
-                      {#if i < toastHistory.slice(1).length - 1}
-                        <div class="hidden md:flex items-center gap-2 pr-2">
-                          <kbd class="kbd kbd-sm">→</kbd>
-                        </div>
-                        <button
-                          class="md:hidden btn btn-circle btn-sm btn-ghost opacity-50"
-                          on:click={() => navigateHistory("right")}
-                          aria-label="Next toast"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke-width="1.5"
-                            stroke="currentColor"
-                            class="w-4 h-4"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              d="m8.25 4.5 7.5 7.5-7.5 7.5"
-                            />
-                          </svg>
-                        </button>
-                      {/if}
-                    </div>
-                    <div class="card-body p-4">
-                      <div class="flex flex-col h-full">
-                        <div class="flex flex-row justify-between">
-                          <div class="badge badge-sm mb-2 opacity-60">
-                            #{rollCount - i - 1}
-                          </div>
-                          <div class="badge badge-sm">
-                            {entry.toast.episodeNumber ?? "???"}
-                          </div>
-                          <div class="badge badge-sm">
-                            {entry.toast.episodeTimestamp ?? "??:??"}
-                          </div>
-                        </div>
-
-                        <p class="text-lg flex-1">{entry.toast.text}</p>
-
-                        <div class="flex flex-col gap-2">
-                          <AudioWavePlayer
-                            audioFile={entry.toast.audioFile}
-                            showText={false}
-                          />
-
-                          <div class="grid grid-cols-2 gap-2">
-                            <button
-                              on:click={() =>
-                                copyHistoryToast(entry.episodeTimestamp)}
-                              class="btn btn-sm {copyStates[
-                                entry.episodeTimestamp
-                              ]
-                                ? 'btn-success'
-                                : 'btn-ghost'}"
-                              aria-label="Kopiuj do schowka"
-                            >
-                              {#if copyStates[entry.episodeTimestamp]}
-                                <span class="flex items-center gap-1">
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke-width="1.5"
-                                    stroke="currentColor"
-                                    class="w-4 h-4"
-                                  >
-                                    <path
-                                      stroke-linecap="round"
-                                      stroke-linejoin="round"
-                                      d="m4.5 12.75 6 6 9-13.5"
-                                    />
-                                  </svg>
-                                </span>
-                              {:else}
-                                <span class="flex items-center gap-1">
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke-width="1.5"
-                                    stroke="currentColor"
-                                    class="w-4 h-4"
-                                  >
-                                    <path
-                                      stroke-linecap="round"
-                                      stroke-linejoin="round"
-                                      d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184"
-                                    />
-                                  </svg>
-                                </span>
-                              {/if}
-                            </button>
-
-                            <div
-                              class="tooltip tooltip-bottom"
-                              data-tip={!canShareOnDevice
-                                ? "Udostępnianie nie jest dostępne w tej przeglądarce"
-                                : ""}
-                            >
-                              <button
-                                on:click={() => shareHistoryToast(entry)}
-                                class="btn btn-sm w-full {shareStates[
-                                  entry.episodeTimestamp
-                                ]
-                                  ? 'btn-success'
-                                  : 'btn-ghost'}"
-                                disabled={!canShareOnDevice}
-                                aria-label="Udostępnij"
-                              >
-                                {#if shareStates[entry.episodeTimestamp]}
-                                  <span class="flex items-center gap-1">
-                                    <svg
-                                      xmlns="http://www.w3.org/2000/svg"
-                                      fill="none"
-                                      viewBox="0 0 24 24"
-                                      stroke-width="1.5"
-                                      stroke="currentColor"
-                                      class="w-4 h-4"
-                                    >
-                                      <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        d="m4.5 12.75 6 6 9-13.5"
-                                      />
-                                    </svg>
-                                  </span>
-                                {:else}
-                                  <span class="flex items-center gap-1">
-                                    <svg
-                                      xmlns="http://www.w3.org/2000/svg"
-                                      fill="none"
-                                      viewBox="0 0 24 24"
-                                      stroke-width="1.5"
-                                      stroke="currentColor"
-                                      class="w-4 h-4"
-                                    >
-                                      <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"
-                                      />
-                                    </svg>
-                                  </span>
-                                {/if}
-                                <span class="hidden">Udostępnij</span>
-                                <div class="hidden md:flex items-center gap-1">
-                                  <kbd class="kbd kbd-sm">shift</kbd>
-                                  <span>+</span>
-                                  <kbd class="kbd kbd-sm">s</kbd>
-                                </div>
-                              </button>
-                            </div>
-                          </div>
-
-                          <MissingMetadataInfo
-                            toast={entry.toast}
-                            compact={true}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              {/each}
-            </div>
-
-            <!-- Navigation dots -->
-            <div class="flex justify-center w-full py-2 gap-2">
-              {#each Array(3) as _, i}
-                {#if i < toastHistory.slice(1).length}
-                  <a
-                    href="#toast-{i}"
-                    class="btn btn-xs transition-all duration-300 ease-in-out"
-                    class:btn-circle={i !== activeHistoryIndex}
-                    class:btn-primary={i === activeHistoryIndex}
-                    class:active-dot={i === activeHistoryIndex}
-                    aria-label="Navigate to toast {i + 1}"
-                  >
-                    {i + 1}
-                  </a>
-                {:else}
-                  <button
-                    class="btn btn-xs btn-circle btn-disabled opacity-50 transition-all duration-300"
-                    disabled
-                    aria-label="History slot {i + 1} not yet available"
-                  >
-                    {i + 1}
-                  </button>
-                {/if}
-              {/each}
-            </div>
-
-            <style lang="postcss">
-              .active-dot {
-                @apply min-w-[3rem] scale-110;
-                border-radius: 1rem;
-                transform-origin: center;
-                animation: inflate 0.3s ease-out;
-              }
-
-              @keyframes inflate {
-                0% {
-                  transform: scale(0.9);
-                }
-                50% {
-                  transform: scale(1.15);
-                }
-                100% {
-                  transform: scale(1.1);
-                }
-              }
-            </style>
-
-            <!-- Swipe indicator for mobile -->
-            <div
-              class="flex items-center justify-center gap-1 text-sm opacity-50 md:hidden"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke-width="1.5"
-                stroke="currentColor"
-                class="w-4 h-4"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M15.75 19.5 8.25 12l7.5-7.5"
-                />
-              </svg>
-              <span>Przewiń w lewo/prawo</span>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke-width="1.5"
-                stroke="currentColor"
-                class="w-4 h-4"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="m8.25 4.5 7.5 7.5-7.5 7.5"
-                />
-              </svg>
-            </div>
-          </div>
-        {:else}
-          <div class="card bg-base-200 shadow-lg p-4 text-center">
-            <div class="card-body">
-              <h2 class="text-lg font-semibold">Tutaj będzie Twoja historia</h2>
-            </div>
-          </div>
-        {/if}
       </div>
     </div>
   </ResponsiveContainer>
   <FeedbackSection />
   <Footer />
+
+  <HistoryDrawer
+    bind:showDrawer={showHistoryDrawer}
+    toastHistory={toastHistory.slice(1)}
+    bind:copyStates
+    bind:shareStates
+    bind:canShareOnDevice
+  />
 </CenteredContainer>
