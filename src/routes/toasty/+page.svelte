@@ -21,6 +21,7 @@
   let typewriterInterval: ReturnType<typeof setInterval>;
   let activeHistoryIndex: number = 0;
 
+  const MAX_HISTORY_SIZE = 6;
   let rollCount: number = 0;
   let toastHistory: { toast: Toast; episodeTimestamp: number }[] = [];
   let copyStates: { [key: number]: boolean } = {};
@@ -35,6 +36,9 @@
 
   // Add showHistoryDrawer state
   let showHistoryDrawer = false;
+
+  // Compute history count for display
+  $: historyCount = toastHistory.length;
 
   // Check if sharing is available on mount
   function checkSharingCapability() {
@@ -154,6 +158,18 @@
       });
   }
 
+  // Function to add item to history with size limit
+  function addToHistory(toast: Toast) {
+    const newEntry = { toast, episodeTimestamp: Date.now() };
+    if (toastHistory.length >= MAX_HISTORY_SIZE) {
+      // Remove the oldest entry (last one) and add new one at the beginning
+      toastHistory = [newEntry, ...toastHistory.slice(0, -1)];
+    } else {
+      // Just add to the beginning if we haven't reached the limit
+      toastHistory = [newEntry, ...toastHistory];
+    }
+  }
+
   function getRandomToast() {
     isRolling = true;
     let newToast: Toast;
@@ -167,11 +183,7 @@
     currentToast = newToast;
 
     rollCount++;
-    toastHistory = [
-      { toast: newToast, episodeTimestamp: Date.now() },
-      ...toastHistory.slice(0, 4),
-    ];
-
+    addToHistory(newToast);
     startTypewriter(newToast.text);
   }
 
@@ -352,7 +364,10 @@
                 d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
-            Historia ->
+            Historia
+            <div class="badge badge-sm badge-primary">
+              {historyCount}/{MAX_HISTORY_SIZE}
+            </div>
           </button>
         </div>
         {#if currentToast}
@@ -401,17 +416,14 @@
           <AnimatedButton
             on:click={getRandomToast}
             disabled={isRolling || isLoading}
-            loading={isRolling || isLoading}
             fullWidth={true}
           >
-            <span class="flex items-center gap-2">
-              {#if isLoading}
-                Ładowanie toastów...
-              {:else}
-                No to jedziem! 🍻
-                <kbd class="kbd kbd-sm hidden md:inline-flex text-white">r</kbd>
-              {/if}
-            </span>
+            {#if isLoading}
+              Ładowanie toastów...
+            {:else}
+              No to jedziem! 🍻
+              <kbd class="kbd kbd-sm hidden md:inline-flex text-white">r</kbd>
+            {/if}
           </AnimatedButton>
           <div class="grid grid-cols-2 gap-2">
             <button
