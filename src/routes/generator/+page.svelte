@@ -6,6 +6,7 @@
   import { onMount } from "svelte";
   import FeedbackSection from "../../components/FeedbackSection.svelte";
   import AnimatedButton from "../../components/tiwi/AnimatedButton.svelte";
+  import EpisodeHistoryDrawer from "../../components/EpisodeHistoryDrawer.svelte";
 
   export let data: PageData;
 
@@ -24,8 +25,9 @@
   let selectedEpisode: EpisodeData | null = null;
   let isLoading = false;
   let showDetails = false;
+  let showDrawer = false;
 
-  const MAX_HISTORY = 3; // Configure maximum history size
+  const MAX_HISTORY = 6; // Configure maximum history size
   let generationHistory: EpisodeData[] = [];
   let currentHistoryIndex = -1; // -1 means no generation yet
 
@@ -168,6 +170,15 @@
     }
   }
 
+  function handleEpisodeSelect(episode: EpisodeData, index: number) {
+    showDetails = false;
+    setTimeout(() => {
+      currentHistoryIndex = index;
+      selectedEpisode = episode;
+      showDetails = true;
+    }, ANIMATION_TIMING.DELAY.BEFORE_DETAILS);
+  }
+
   onMount(() => {
     document.addEventListener("keydown", handleKeydown);
     return () => {
@@ -180,93 +191,53 @@
   <NavBar />
 
   <main class="container mx-auto px-4 py-8 max-w-5xl">
-    <div class="prose max-w-none mb-8">
-      <h1 class="text-4xl font-bold">Generator losowego odcinka</h1>
+    <div class="prose max-w-none mb-8 text-center">
+      <h1 class="text-4xl font-bold font-kiepscy">
+        Generator losowego odcinka
+      </h1>
       <p class="text-base-content/70">
         Problem z wyborem odcinka "Kiepskich"? Wylosuj jeden z {data.tableData
           .data.length} odcinków!
       </p>
 
       <!-- Replace the alert usage instructions with this accordion version -->
-      <div class="collapse collapse-arrow bg-base-100 mb-6 border rounded-box">
-        <input type="checkbox" />
-        <div class="collapse-title text-xl font-medium flex items-center gap-2">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            class="stroke-info shrink-0 w-6 h-6"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          Jak to działa?
-        </div>
-        <div class="collapse-content">
-          <ul class="mt-2 space-y-3 list-none">
-            <li class="flex items-center gap-2">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5 text-info"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-              Kliknij przycisk "Losuj odcinek" lub wciśnij
-              <kbd class="kbd kbd-sm">r</kbd>
-            </li>
-            <li class="flex items-center gap-2">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5 text-info"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-              Używaj
-              <kbd class="kbd kbd-sm">←</kbd>
-              <kbd class="kbd kbd-sm">→</kbd>
-              lub klikaj karty by przeglądać historię
-            </li>
-            <li class="flex items-center gap-2">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5 text-info"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-              Historia przechowuje {MAX_HISTORY} ostatnio wylosowane odcinki
-            </li>
-          </ul>
-        </div>
-      </div>
     </div>
 
-    <div class="flex flex-col lg:flex-row gap-8">
+    <div class="flex flex-col">
       <!-- Main content area (2/3) -->
-      <div class="lg:w-2/3">
+      <div>
         <div class="card bg-base-100 shadow-xl">
           <div class="card-body">
+            <!-- Mobile history button -->
+            <div class="flex justify-between items-center mb-4">
+              <div class="badge badge-outline badge-lg">
+                Losowań: {generationHistory.length}
+              </div>
+              <button
+                class="btn btn-ghost btn-sm gap-2"
+                on:click={() => (showDrawer = true)}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                Historia
+                <div class="badge badge-sm badge-primary">
+                  {generationHistory.length}/{MAX_HISTORY}
+                </div>
+              </button>
+            </div>
+
             <!-- Episode details section -->
             <div class="space-y-4 mb-6">
               <div class="grid grid-cols-[auto,1fr] gap-x-4 gap-y-2">
@@ -290,6 +261,73 @@
                     <span class="text-base-content/30">—</span>
                   {/if}
                 {/each}
+
+                <!-- Links section after Scenariusz -->
+                <span class="font-semibold flex items-center gap-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="w-4 h-4"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                  Linki:
+                </span>
+                <div class="flex gap-2">
+                  <a
+                    href={selectedEpisode?.link_wiki}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="gap-2 flex items-center underline"
+                    class:btn-disabled={!selectedEpisode || !showDetails}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke-width="1.5"
+                      stroke="currentColor"
+                      class="w-4 h-4"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+                      />
+                    </svg>
+                    Kiepscy Wiki
+                  </a>
+                  <a
+                    href={selectedEpisode
+                      ? `/tabela?episode=${selectedEpisode.nr}`
+                      : "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="gap-2 flex items-center underline"
+                    class:btn-disabled={!selectedEpisode || !showDetails}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke-width="1.5"
+                      stroke="currentColor"
+                      class="w-4 h-4"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z"
+                      />
+                    </svg>
+                    Zobacz w tabeli
+                  </a>
+                </div>
               </div>
 
               <div class="pt-2">
@@ -320,265 +358,40 @@
             <div
               class="card-actions flex justify-center items-center w-full mb-8"
             >
-              <div class="flex gap-2 w-full justify-center mb-4">
-                <a
-                  href={selectedEpisode?.link_wiki}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="btn btn-outline gap-2"
-                  class:btn-disabled={!selectedEpisode || !showDetails}
+              <div class="flex gap-2 items-center w-full">
+                <AnimatedButton
+                  on:click={randomizeEpisode}
+                  disabled={isLoading}
+                  fullWidth={true}
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke-width="1.5"
-                    stroke="currentColor"
-                    class="w-5 h-5"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
-                    />
-                  </svg>
-                  Kiepscy Wiki
-                </a>
-                <a
-                  href={selectedEpisode
-                    ? `/tabela?episode=${selectedEpisode.nr}`
-                    : "#"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="btn btn-outline gap-2"
-                  class:btn-disabled={!selectedEpisode || !showDetails}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke-width="1.5"
-                    stroke="currentColor"
-                    class="w-5 h-5"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z"
-                    />
-                  </svg>
-                  Zobacz w tabeli
-                </a>
+                  {#if selectedEpisode}
+                    Losuj ponownie 🎲 <kbd
+                      class="kbd kbd-sm text-gray-400 hidden md:inline">r</kbd
+                    >
+                  {:else}
+                    Losuj odcinek 🎲 <kbd
+                      class="kbd kbd-sm text-gray-400 hidden md:inline">r</kbd
+                    >
+                  {/if}
+                </AnimatedButton>
               </div>
-
-              <AnimatedButton
-                class="btn btn-primary gap-2 mx-auto"
-                on:click={randomizeEpisode}
-                disabled={isLoading}
-              >
-                {#if selectedEpisode}
-                  Losuj ponownie 🎲 <kbd
-                    class="kbd kbd-sm text-gray-400 hidden md:inline">r</kbd
-                  >
-                {:else}
-                  Losuj odcinek 🎲 <kbd
-                    class="kbd kbd-sm text-gray-400 hidden md:inline">r</kbd
-                  >
-                {/if}
-              </AnimatedButton>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- History section (1/3) -->
-      <div class="lg:w-1/3">
-        <div class="card bg-base-100 shadow-xl">
-          <div class="card-body">
-            <h3 class="card-title text-lg mb-4">Historia losowań</h3>
-
-            {#if generationHistory.length > 0}
-              <div class="flex flex-col gap-4">
-                {#each generationHistory as episode, index}
-                  <div
-                    class="card bg-base-200 shadow-sm transition-all duration-200 hover:shadow-md cursor-pointer {index ===
-                    currentHistoryIndex
-                      ? 'ring-2 ring-primary shadow-lg scale-[1.02]'
-                      : 'opacity-70 hover:opacity-100'}"
-                    on:click={() => {
-                      if (index !== currentHistoryIndex && !isLoading) {
-                        showDetails = false;
-                        setTimeout(() => {
-                          currentHistoryIndex = index;
-                          selectedEpisode = generationHistory[index];
-                          showDetails = true;
-                        }, ANIMATION_TIMING.DELAY.BEFORE_DETAILS);
-                      }
-                    }}
-                    on:keydown={(e) => {
-                      if (e.key === "r") {
-                        e.preventDefault();
-                        if (index !== currentHistoryIndex && !isLoading) {
-                          showDetails = false;
-                          setTimeout(() => {
-                            currentHistoryIndex = index;
-                            selectedEpisode = generationHistory[index];
-                            showDetails = true;
-                          }, ANIMATION_TIMING.DELAY.BEFORE_DETAILS);
-                        }
-                      }
-                    }}
-                    role="button"
-                    tabindex="0"
-                  >
-                    <div class="card-body p-4">
-                      <div class="flex justify-between items-start gap-2">
-                        <span class="badge badge-primary">#{episode.nr}</span>
-                        <span class="badge badge-ghost">S{episode.sezon}</span>
-                      </div>
-                      <h3 class="card-title text-sm mt-2 line-clamp-2">
-                        {episode.tytul}
-                      </h3>
-                      <div class="card-actions justify-end mt-2">
-                        <a
-                          href={episode.link_wiki}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          class="btn btn-ghost btn-xs"
-                          on:click|stopPropagation
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke-width="1.5"
-                            stroke="currentColor"
-                            class="w-4 h-4"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
-                            />
-                          </svg>
-                        </a>
-                        <a
-                          href={`/tabela?episode=${episode.nr}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          class="btn btn-ghost btn-xs"
-                          on:click|stopPropagation
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke-width="1.5"
-                            stroke="currentColor"
-                            class="w-4 h-4"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z"
-                            />
-                          </svg>
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                {/each}
-                {#if generationHistory.length < MAX_HISTORY}
-                  {#each Array(MAX_HISTORY - generationHistory.length) as _}
-                    <div class="card bg-base-200 shadow-sm opacity-30">
-                      <div class="card-body p-4">
-                        <div class="flex justify-between items-start gap-2">
-                          <span class="badge badge-ghost">#---</span>
-                          <span class="badge badge-ghost">S-</span>
-                        </div>
-                        <div
-                          class="card-title text-sm mt-2 h-10 bg-base-content/10 rounded animate-pulse"
-                        />
-                      </div>
-                    </div>
-                  {/each}
-                {/if}
-              </div>
-
-              <!-- History navigation -->
-              <div class="flex justify-between items-center mt-4">
-                <button
-                  class="btn btn-ghost btn-sm gap-2"
-                  on:click={() => navigateHistory("prev")}
-                  disabled={currentHistoryIndex <= 0 || isLoading}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-5 w-5"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fill-rule="evenodd"
-                      d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                      clip-rule="evenodd"
-                    />
-                  </svg>
-                  <kbd class="kbd kbd-sm">←</kbd>
-                </button>
-                <span class="text-sm opacity-70">
-                  Historia {currentHistoryIndex + 1}/{generationHistory.length}
-                </span>
-                <button
-                  class="btn btn-ghost btn-sm gap-2"
-                  on:click={() => navigateHistory("next")}
-                  disabled={currentHistoryIndex >=
-                    generationHistory.length - 1 || isLoading}
-                >
-                  <kbd class="kbd kbd-sm">→</kbd>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-5 w-5"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fill-rule="evenodd"
-                      d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                      clip-rule="evenodd"
-                    />
-                  </svg>
-                </button>
-              </div>
-            {:else}
-              <div
-                class="border-2 border-dashed border-base-300 rounded-box p-8 text-center text-base-content/50"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-12 w-12 mx-auto mb-4 opacity-50"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                  />
-                </svg>
-                <p class="font-medium">Brak historii losowań</p>
-                <p class="text-sm mt-1">
-                  Wylosuj pierwszy odcinek aby rozpocząć
-                </p>
-              </div>
-            {/if}
           </div>
         </div>
       </div>
     </div>
   </main>
+
+  <EpisodeHistoryDrawer
+    bind:showDrawer
+    {generationHistory}
+    {currentHistoryIndex}
+    {isLoading}
+    {MAX_HISTORY}
+    onEpisodeSelect={handleEpisodeSelect}
+    onRandomize={randomizeEpisode}
+  />
+
   <FeedbackSection />
   <Footer />
 </div>
