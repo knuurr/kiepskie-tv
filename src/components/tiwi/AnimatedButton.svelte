@@ -1,11 +1,12 @@
 <script lang="ts">
   export let disabled = false;
-  // export let loading = false;
+  export let loading = false;
   export let fullWidth = false;
 </script>
 
 <button
-  class="animated-button btn {fullWidth ? 'w-full' : ''} 
+  class="animated-button btn {fullWidth ? 'w-full' : ''} {loading
+    ? 'loading'
     : ''} {disabled ? 'btn-disabled' : ''}"
   {disabled}
   on:click

@@ -424,139 +424,189 @@
   }
 
   async function extractFrames(file: File): Promise<VideoFrame[]> {
-    console.log("[*] Starting frame extraction");
-    previewProgress.set({ stage: "extracting", current: 0 });
-    const duration = await getVideoDuration(file);
-    const timestamps = [duration * 0.25, duration * 0.5, duration * 0.75];
+    try {
+      console.log("[*] Starting frame extraction");
+      previewProgress.set({ stage: "extracting", current: 0 });
+      const duration = await getVideoDuration(file);
+      const timestamps = [duration * 0.25, duration * 0.5, duration * 0.75];
 
-    const frames: VideoFrame[] = [];
+      const frames: VideoFrame[] = [];
 
-    for (let i = 0; i < timestamps.length; i++) {
-      const timestamp = timestamps[i];
-      previewProgress.set({ stage: "extracting", current: i + 1 });
-      console.log(`[*] Extracting frame at ${timestamp.toFixed(2)}s`);
-      await ffmpeg.writeFile(file.name, await fetchFile(file));
+      for (let i = 0; i < timestamps.length; i++) {
+        const timestamp = timestamps[i];
+        previewProgress.set({ stage: "extracting", current: i + 1 });
+        console.log(`[*] Extracting frame at ${timestamp.toFixed(2)}s`);
+        await ffmpeg.writeFile(file.name, await fetchFile(file));
 
-      // Extract frame at timestamp
-      await ffmpeg.exec([
-        "-ss",
-        timestamp.toString(),
-        "-i",
-        file.name,
-        "-frames:v",
-        "1",
-        "-f",
-        "image2",
-        "-c:v",
-        "png",
-        `frame_${timestamp}.png`,
-      ]);
+        // Extract frame at timestamp
+        await ffmpeg.exec([
+          "-ss",
+          timestamp.toString(),
+          "-i",
+          file.name,
+          "-frames:v",
+          "1",
+          "-f",
+          "image2",
+          "-c:v",
+          "png",
+          `frame_${timestamp}.png`,
+        ]);
 
-      const frameData = await ffmpeg.readFile(`frame_${timestamp}.png`);
-      const blob = new Blob([frameData.buffer], { type: "image/png" });
+        const frameData = await ffmpeg.readFile(`frame_${timestamp}.png`);
+        if (!frameData) {
+          throw new Error(
+            `Failed to read frame data at timestamp ${timestamp}s`,
+          );
+        }
+        const blob = new Blob([frameData.buffer], { type: "image/png" });
 
-      frames.push({
-        timestamp,
-        blob,
-      });
+        frames.push({
+          timestamp,
+          blob,
+        });
 
-      // Cleanup
-      await ffmpeg.deleteFile(`frame_${timestamp}.png`);
-      await ffmpeg.deleteFile(file.name);
+        // Cleanup
+        await ffmpeg.deleteFile(`frame_${timestamp}.png`);
+        await ffmpeg.deleteFile(file.name);
+      }
+
+      console.log(`[*] Extracted ${frames.length} frames`);
+      return frames;
+    } catch (error) {
+      console.error("Error during frame extraction:", error);
+      throw new Error(
+        error instanceof Error
+          ? error.message
+          : "Failed to extract video frames",
+      );
     }
-
-    console.log(`[*] Extracted ${frames.length} frames`);
-    return frames;
   }
 
   async function generatePreview(
     file: File,
     frames: VideoFrame[],
   ): Promise<PreviewFrame[]> {
-    console.log(`[*] Starting preview generation for ${frames.length} frames`);
-    previewProgress.set({ stage: "processing", current: 0 });
-
-    const previewFrames: PreviewFrame[] = [];
-
-    // Get the file settings and background
-    const fileSettings =
-      $videoSettings.find((s) => s.fileName === file.name)?.settings ||
-      DEFAULT_SETTINGS;
-
-    const selectedBackground = backgrounds.find(
-      (bg) => bg.id === fileSettings.selectedBackground,
-    );
-
-    if (!selectedBackground) {
-      console.error(
-        "Selected background not found:",
-        fileSettings.selectedBackground,
-      );
-      toasts.add("Błąd: Nie znaleziono wybranego tła", "error");
-      return [];
-    }
-
-    for (let i = 0; i < frames.length; i++) {
-      const frame = frames[i];
-      previewProgress.set({ stage: "processing", current: i + 1 });
+    try {
       console.log(
-        `[*] Processing preview for timestamp ${frame.timestamp.toFixed(2)}s`,
+        `[*] Starting preview generation for ${frames.length} frames`,
       );
-      await ffmpeg.writeFile(file.name, await fetchFile(file));
-      await ffmpeg.writeFile(
-        selectedBackground.id + ".png",
-        await fetchFile(selectedBackground.imagePath),
+      previewProgress.set({ stage: "processing", current: 0 });
+
+      const previewFrames: PreviewFrame[] = [];
+
+      // Get the file settings and background
+      const fileSettings =
+        $videoSettings.find((s) => s.fileName === file.name)?.settings ||
+        DEFAULT_SETTINGS;
+
+      const selectedBackground = backgrounds.find(
+        (bg) => bg.id === fileSettings.selectedBackground,
       );
 
-      // Create a temporary file from the frame blob
-      const frameFileName = `input_frame_${frame.timestamp}.png`;
-      await ffmpeg.writeFile(frameFileName, await fetchFile(frame.blob));
+      if (!selectedBackground) {
+        throw new Error(
+          `Background not found: ${fileSettings.selectedBackground}`,
+        );
+      }
 
-      // Process the frame with greenscreen effect
-      await ffmpeg.exec([
-        "-i",
-        selectedBackground.id + ".png",
-        "-i",
-        frameFileName,
-        "-filter_complex",
-        DATA.generateGreenscreenFilter(
-          selectedBackground.overlayConfig,
-          fileSettings.greenscreenFillType,
-          fileSettings.greenscreenScale,
-        ),
-        "-frames:v",
-        "1",
-        "-preset",
-        "ultrafast",
-        `preview_${frame.timestamp}.png`,
-      ]);
+      for (let i = 0; i < frames.length; i++) {
+        const frame = frames[i];
+        previewProgress.set({ stage: "processing", current: i + 1 });
+        console.log(
+          `[*] Processing preview for timestamp ${frame.timestamp.toFixed(2)}s`,
+        );
 
-      const previewData = await ffmpeg.readFile(
-        `preview_${frame.timestamp}.png`,
-      );
-      const previewBlob = new Blob(
-        [previewData instanceof Uint8Array ? previewData : new Uint8Array()],
-        { type: "image/png" },
-      );
-      const url = URL.createObjectURL(previewBlob);
+        try {
+          await ffmpeg.writeFile(file.name, await fetchFile(file));
+          await ffmpeg.writeFile(
+            selectedBackground.id + ".png",
+            await fetchFile(selectedBackground.imagePath),
+          );
 
-      previewFrames.push({
-        timestamp: frame.timestamp,
-        url,
-      });
+          // Create a temporary file from the frame blob
+          const frameFileName = `input_frame_${frame.timestamp}.png`;
+          await ffmpeg.writeFile(frameFileName, await fetchFile(frame.blob));
 
-      // Cleanup
-      await ffmpeg.deleteFile(`preview_${frame.timestamp}.png`);
-      await ffmpeg.deleteFile(frameFileName);
-      await ffmpeg.deleteFile(file.name);
-      await ffmpeg.deleteFile(selectedBackground.id + ".png");
-      console.log(
-        `[*] Generated preview for timestamp ${frame.timestamp.toFixed(2)}s`,
+          // Process the frame with greenscreen effect
+          await ffmpeg.exec([
+            "-i",
+            selectedBackground.id + ".png",
+            "-i",
+            frameFileName,
+            "-filter_complex",
+            DATA.generateGreenscreenFilter(
+              selectedBackground.overlayConfig,
+              fileSettings.greenscreenFillType,
+              fileSettings.greenscreenScale,
+            ),
+            "-frames:v",
+            "1",
+            "-preset",
+            "ultrafast",
+            `preview_${frame.timestamp}.png`,
+          ]);
+
+          const previewData = await ffmpeg.readFile(
+            `preview_${frame.timestamp}.png`,
+          );
+          if (!previewData) {
+            throw new Error(
+              `Failed to read preview data for frame at ${frame.timestamp}s`,
+            );
+          }
+
+          const previewBlob = new Blob(
+            [
+              previewData instanceof Uint8Array
+                ? previewData
+                : new Uint8Array(),
+            ],
+            { type: "image/png" },
+          );
+          const url = URL.createObjectURL(previewBlob);
+
+          previewFrames.push({
+            timestamp: frame.timestamp,
+            url,
+          });
+
+          // Cleanup
+          await ffmpeg.deleteFile(`preview_${frame.timestamp}.png`);
+          await ffmpeg.deleteFile(frameFileName);
+          await ffmpeg.deleteFile(file.name);
+          await ffmpeg.deleteFile(selectedBackground.id + ".png");
+          console.log(
+            `[*] Generated preview for timestamp ${frame.timestamp.toFixed(2)}s`,
+          );
+        } catch (frameError) {
+          console.error(
+            `Error processing frame at ${frame.timestamp}s:`,
+            frameError,
+          );
+          // Clean up any remaining files
+          try {
+            await ffmpeg.deleteFile(`preview_${frame.timestamp}.png`);
+            await ffmpeg.deleteFile(`input_frame_${frame.timestamp}.png`);
+            await ffmpeg.deleteFile(file.name);
+            await ffmpeg.deleteFile(selectedBackground.id + ".png");
+          } catch (cleanupError) {
+            console.error("Error during cleanup:", cleanupError);
+          }
+          throw frameError;
+        }
+      }
+
+      console.log("[*] Preview generation complete");
+      return previewFrames;
+    } catch (error) {
+      console.error("Error during preview generation:", error);
+      throw new Error(
+        error instanceof Error
+          ? error.message
+          : "Failed to generate preview frames",
       );
     }
-
-    console.log("[*] Preview generation complete");
-    return previewFrames;
   }
 
   // Save on disk individual processed file
@@ -716,8 +766,15 @@
   function cachePreview(file: File, frames: PreviewFrame[]): void {
     const cacheKey = getPreviewCacheKey(file);
     console.log("[*] Caching preview for", file.name);
+
+    // Create new URLs for the cached frames to avoid sharing blob URLs
+    const cachedFrames = frames.map((frame) => ({
+      timestamp: frame.timestamp,
+      url: frame.url, // The original URL will be kept alive as long as it's in the previewFrames store
+    }));
+
     previewCache.set(cacheKey, {
-      frames,
+      frames: cachedFrames,
       timestamp: Date.now(),
     });
   }
@@ -726,14 +783,47 @@
   function removeCachedPreview(file: File): void {
     const cacheKey = getPreviewCacheKey(file);
     console.log("[*] Removing cached preview for", file.name);
-    previewCache.delete(cacheKey);
+
+    // Get cached frames before deleting
+    const cached = previewCache.get(cacheKey);
+    if (cached) {
+      // Don't revoke URLs here as they might be shared with previewFrames
+      previewCache.delete(cacheKey);
+    }
   }
 
   // Function to generate or get cached preview
   async function getOrGeneratePreview(file: File): Promise<PreviewFrame[]> {
-    // Clear the cache for this file to force regeneration
-    removeCachedPreview(file);
+    // First check if we have a cached version
+    const cached = getCachedPreview(file);
+    if (cached) {
+      console.log("[*] Using cached preview for", file.name);
+      // Create new blob URLs for the cached frames
+      const frames = await Promise.all(
+        cached.map(async (frame) => {
+          // If the URL is still valid, reuse it
+          try {
+            await fetch(frame.url);
+            return frame;
+          } catch {
+            // If the URL is invalid (revoked), regenerate it
+            console.log("[*] Regenerating invalid preview URL");
+            return null;
+          }
+        }),
+      );
 
+      // If any frame URLs were invalid, regenerate all previews
+      if (frames.some((frame) => frame === null)) {
+        console.log("[*] Some cached frames were invalid, regenerating all");
+        removeCachedPreview(file);
+        return getOrGeneratePreview(file);
+      }
+
+      return frames as PreviewFrame[];
+    }
+
+    console.log("[*] Generating new preview for", file.name);
     const frames = await extractFrames(file).then((frames) =>
       generatePreview(file, frames),
     );

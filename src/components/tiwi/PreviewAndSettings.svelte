@@ -10,6 +10,12 @@
   import BackgroundSelector from "./BackgroundSelector.svelte";
   import * as DATA from "../../routes/Constans.svelte";
 
+  interface AnimatedButtonProps {
+    disabled?: boolean;
+    fullWidth?: boolean;
+    loading?: boolean;
+  }
+
   // Props
   export let state:
     | "loading"
@@ -40,6 +46,7 @@
   let isLoadingBackgrounds = true;
   let hasUnsavedChanges = false;
   let pendingSettings: any = {};
+  let currentPreviewPromise: Promise<PreviewFrame[]> | null = null;
 
   // Reset preview index when file changes
   $: if (selectedFileIndex !== undefined) {
@@ -47,6 +54,11 @@
     hasUnsavedChanges = false;
     if ($videoSettings[selectedFileIndex]) {
       pendingSettings = { ...$videoSettings[selectedFileIndex].settings };
+    }
+    // Only generate preview if we don't have frames yet
+    const file = files[selectedFileIndex];
+    if (file && $previewFrames.length === 0) {
+      currentPreviewPromise = getOrGeneratePreview(file);
     }
   }
 
@@ -124,20 +136,52 @@
     }
   }
 
-  async function regeneratePreview(file: File) {
+  function cleanupPreviews() {
     // Clear existing preview frames
+    $previewFrames.forEach((frame) => URL.revokeObjectURL(frame.url));
     $previewFrames = [];
+    currentPreviewPromise = null;
+  }
+
+  async function regeneratePreview(file: File) {
     // Show loading state
     previewProgress.set({ stage: "extracting", current: 0 });
-    // Regenerate preview
+
     try {
-      $previewFrames = await getOrGeneratePreview(file);
+      // Generate new previews before cleaning up old ones
+      currentPreviewPromise = getOrGeneratePreview(file);
+      const newFrames = await currentPreviewPromise;
+
+      // Only clean up old previews after we have new ones
+      cleanupPreviews();
+
+      // Set new frames
+      $previewFrames = newFrames;
       toasts.add("Podgląd został zaktualizowany", "success");
     } catch (error) {
       console.error("Error regenerating preview:", error);
       toasts.add("Błąd podczas generowania podglądu", "error");
     }
   }
+
+  function resetSettings() {
+    const currentSettings =
+      selectedFileIndex !== undefined && $videoSettings[selectedFileIndex]
+        ? $videoSettings[selectedFileIndex].settings
+        : undefined;
+
+    if (currentSettings) {
+      pendingSettings = { ...currentSettings };
+      hasUnsavedChanges = false;
+    }
+  }
+
+  // Cleanup on unmount
+  onMount(() => {
+    return () => {
+      cleanupPreviews();
+    };
+  });
 </script>
 
 <div class="" transition:fade={{ duration: 200 }}>
@@ -248,36 +292,38 @@
                         <div class="card-body p-4 grid grid-cols-12 gap-4">
                           <!-- Thumbnail -->
                           <div class="col-span-2">
-                            {#await getOrGeneratePreview(file).then((frames) => frames[0])}
-                              <div
-                                class="w-full aspect-video bg-base-300 rounded-lg animate-pulse"
-                              ></div>
-                            {:then frame}
-                              <img
-                                src={frame?.url}
-                                alt="Thumbnail"
-                                class="w-full aspect-video object-cover rounded-lg"
-                              />
-                            {:catch}
-                              <div
-                                class="w-full aspect-video bg-base-300 rounded-lg flex items-center justify-center"
-                              >
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  class="h-6 w-6 text-base-content/50"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
+                            {#if currentPreviewPromise}
+                              {#await currentPreviewPromise.then((frames) => frames[0])}
+                                <div
+                                  class="w-full aspect-video bg-base-300 rounded-lg animate-pulse"
+                                ></div>
+                              {:then frame}
+                                <img
+                                  src={frame?.url}
+                                  alt="Thumbnail"
+                                  class="w-full aspect-video object-cover rounded-lg"
+                                />
+                              {:catch}
+                                <div
+                                  class="w-full aspect-video bg-base-300 rounded-lg flex items-center justify-center"
                                 >
-                                  <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
-                                  />
-                                </svg>
-                              </div>
-                            {/await}
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="h-6 w-6 text-base-content/50"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
+                                    <path
+                                      stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      stroke-width="2"
+                                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
+                                    />
+                                  </svg>
+                                </div>
+                              {/await}
+                            {/if}
                           </div>
                           <!-- File info -->
                           <div class="col-span-9 pr-10">
@@ -427,72 +473,53 @@
                     <div
                       class="bg-base-300 rounded-lg overflow-hidden lg:min-h-[400px]"
                     >
-                      {#await getOrGeneratePreview(file)}
-                        <div
-                          class="w-full h-[400px] flex flex-col items-center justify-center gap-4"
-                        >
-                          <div class="flex flex-col items-center gap-2">
-                            <span class="loading loading-spinner loading-lg"
-                            ></span>
-                            <div class="text-sm text-gray-500 text-center">
-                              <p>Generowanie podglądu...</p>
-                              <p class="text-xs mt-1">
-                                {#if $previewProgress.stage === "extracting"}
-                                  Wyciąganie klatki {$previewProgress.current}/3
-                                {:else if $previewProgress.stage === "processing"}
-                                  Przetwarzanie klatki {$previewProgress.current}/3
-                                {/if}
-                              </p>
+                      {#if currentPreviewPromise}
+                        {#await currentPreviewPromise}
+                          <div
+                            class="w-full h-[400px] flex flex-col items-center justify-center gap-4"
+                          >
+                            <div class="flex flex-col items-center gap-2">
+                              <span class="loading loading-spinner loading-lg"
+                              ></span>
+                              <div class="text-sm text-gray-500 text-center">
+                                <p>Generowanie podglądu...</p>
+                                <p class="text-xs mt-1">
+                                  {#if $previewProgress.stage === "extracting"}
+                                    Wyciąganie klatki {$previewProgress.current}/3
+                                  {:else if $previewProgress.stage === "processing"}
+                                    Przetwarzanie klatki {$previewProgress.current}/3
+                                  {/if}
+                                </p>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      {:then frames}
-                        {#if frames.length > 0}
-                          <!-- Main preview image -->
-                          <div
-                            class="relative flex flex-col lg:flex-row items-center lg:items-start gap-4 p-4"
-                          >
-                            <div class="flex-1">
-                              <button
-                                class="w-full group relative"
-                                on:click={() => {
-                                  selectedPreviewUrl =
-                                    frames[selectedPreviewIndex].url;
-                                  showPreviewModal = true;
-                                }}
-                              >
-                                <img
-                                  src={frames[selectedPreviewIndex].url}
-                                  alt="Podgląd"
-                                  class="max-w-full max-h-[400px] w-auto h-auto object-contain mx-auto rounded-lg transition-all group-hover:brightness-75"
-                                />
-                                <!-- Bottom right magnifying glass -->
-                                <div
-                                  class="absolute bottom-2 right-2 bg-black/50 p-2 rounded-full transition-opacity opacity-50 group-hover:opacity-100"
+                        {:then frames}
+                          {#if frames.length > 0}
+                            <!-- Main preview image -->
+                            <div
+                              class="relative flex flex-col lg:flex-row items-center lg:items-start gap-4 p-4"
+                            >
+                              <div class="flex-1">
+                                <button
+                                  class="w-full group relative"
+                                  on:click={() => {
+                                    selectedPreviewUrl =
+                                      frames[selectedPreviewIndex].url;
+                                    showPreviewModal = true;
+                                  }}
                                 >
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    class="h-4 w-4 text-white"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
+                                  <img
+                                    src={frames[selectedPreviewIndex].url}
+                                    alt="Podgląd"
+                                    class="max-w-full max-h-[400px] w-auto h-auto object-contain mx-auto rounded-lg transition-all group-hover:brightness-75"
+                                  />
+                                  <!-- Bottom right magnifying glass -->
+                                  <div
+                                    class="absolute bottom-2 right-2 bg-black/50 p-2 rounded-full transition-opacity opacity-50 group-hover:opacity-100"
                                   >
-                                    <path
-                                      stroke-linecap="round"
-                                      stroke-linejoin="round"
-                                      stroke-width="2"
-                                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
-                                    />
-                                  </svg>
-                                </div>
-                                <!-- Zoom icon overlay -->
-                                <div
-                                  class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                >
-                                  <div class="bg-black/50 p-2 rounded-full">
                                     <svg
                                       xmlns="http://www.w3.org/2000/svg"
-                                      class="h-6 w-6 text-white"
+                                      class="h-4 w-4 text-white"
                                       fill="none"
                                       viewBox="0 0 24 24"
                                       stroke="currentColor"
@@ -505,135 +532,136 @@
                                       />
                                     </svg>
                                   </div>
-                                </div>
-                              </button>
-                              <!-- Timestamp indicator -->
-                              <div class="text-center text-sm mt-2">
-                                <div class="text-gray-500">
-                                  Klatka z {frames[
-                                    selectedPreviewIndex
-                                  ].timestamp.toFixed(1)}s
-                                </div>
-                                <div class="text-gray-500 text-xs mt-0.5">
-                                  Kliknij na obrazek aby powiększyć
-                                </div>
-                              </div>
-                            </div>
-                            <!-- Frame picker thumbnails -->
-                            <div class="w-full lg:w-32 flex-none">
-                              <div
-                                class="text-sm text-gray-500 mb-2 text-center"
-                              >
-                                {#if frames.length > 0}
-                                  <span class="hidden lg:inline"
-                                    >Podgląd klatek</span
+                                  <!-- Zoom icon overlay -->
+                                  <div
+                                    class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                                   >
-                                {/if}
-                              </div>
-                              <!-- Desktop thumbnails -->
-                              <div
-                                class="hidden lg:flex lg:flex-col gap-2 justify-center"
-                              >
-                                {#each frames as frame, i}
-                                  <button
-                                    class="relative w-24 lg:w-full aspect-video group"
-                                    on:click={() => {
-                                      console.log(
-                                        `[*] Selecting preview frame ${i} (${frame.timestamp.toFixed(2)}s)`,
-                                      );
-                                      selectedPreviewIndex = i;
-                                    }}
-                                  >
-                                    <div
-                                      class="absolute inset-0 rounded-lg border-2 transition-all {selectedPreviewIndex ===
-                                      i
-                                        ? 'border-primary bg-primary/10 shadow-lg'
-                                        : 'border-base-100 group-hover:border-primary/50'}"
-                                    />
-                                    <img
-                                      src={frame.url}
-                                      alt="Podgląd klatki {i + 1}"
-                                      class="w-full h-full object-cover rounded-lg"
-                                    />
-                                    {#if selectedPreviewIndex === i}
-                                      <div
-                                        class="absolute -left-2 top-1/2 -translate-y-1/2"
+                                    <div class="bg-black/50 p-2 rounded-full">
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        class="h-6 w-6 text-white"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
                                       >
-                                        <svg
-                                          xmlns="http://www.w3.org/2000/svg"
-                                          class="h-4 w-4 text-primary"
-                                          viewBox="0 0 20 20"
-                                          fill="currentColor"
-                                        >
-                                          <path
-                                            fill-rule="evenodd"
-                                            d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                                            clip-rule="evenodd"
-                                          />
-                                        </svg>
-                                      </div>
-                                    {/if}
-                                    <div
-                                      class="absolute bottom-1 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-black/50 rounded text-[10px] text-white"
-                                    >
-                                      {frame.timestamp.toFixed(1)}s
+                                        <path
+                                          stroke-linecap="round"
+                                          stroke-linejoin="round"
+                                          stroke-width="2"
+                                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
+                                        />
+                                      </svg>
                                     </div>
-                                  </button>
-                                {/each}
+                                  </div>
+                                </button>
+                                <!-- Timestamp indicator -->
+                                <div class="text-center text-sm mt-2">
+                                  <div class="text-gray-500">
+                                    Klatka z {frames[
+                                      selectedPreviewIndex
+                                    ].timestamp.toFixed(1)}s
+                                  </div>
+                                  <div class="text-gray-500 text-xs mt-0.5">
+                                    Kliknij na obrazek aby powiększyć
+                                  </div>
+                                </div>
                               </div>
+                              <!-- Frame picker thumbnails -->
+                              <div class="w-full lg:w-32 flex-none">
+                                <div
+                                  class="text-sm text-gray-500 mb-2 text-center"
+                                >
+                                  {#if frames.length > 0}
+                                    <span class="hidden lg:inline"
+                                      >Podgląd klatek</span
+                                    >
+                                  {/if}
+                                </div>
+                                <!-- Desktop thumbnails -->
+                                <div
+                                  class="hidden lg:flex lg:flex-col gap-2 justify-center"
+                                >
+                                  {#each frames as frame, i}
+                                    <button
+                                      class="relative w-24 lg:w-full aspect-video group"
+                                      on:click={() => {
+                                        console.log(
+                                          `[*] Selecting preview frame ${i} (${frame.timestamp.toFixed(2)}s)`,
+                                        );
+                                        selectedPreviewIndex = i;
+                                      }}
+                                    >
+                                      <div
+                                        class="absolute inset-0 rounded-lg border-2 transition-all {selectedPreviewIndex ===
+                                        i
+                                          ? 'border-primary bg-primary/10 shadow-lg'
+                                          : 'border-base-100 group-hover:border-primary/50'}"
+                                      />
+                                      <img
+                                        src={frame.url}
+                                        alt="Podgląd klatki {i + 1}"
+                                        class="w-full h-full object-cover rounded-lg"
+                                      />
+                                      {#if selectedPreviewIndex === i}
+                                        <div
+                                          class="absolute -left-2 top-1/2 -translate-y-1/2"
+                                        >
+                                          <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            class="h-4 w-4 text-primary"
+                                            viewBox="0 0 20 20"
+                                            fill="currentColor"
+                                          >
+                                            <path
+                                              fill-rule="evenodd"
+                                              d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                                              clip-rule="evenodd"
+                                            />
+                                          </svg>
+                                        </div>
+                                      {/if}
+                                      <div
+                                        class="absolute bottom-1 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-black/50 rounded text-[10px] text-white"
+                                      >
+                                        {frame.timestamp.toFixed(1)}s
+                                      </div>
+                                    </button>
+                                  {/each}
+                                </div>
 
-                              <!-- Mobile navigation buttons -->
-                              <div
-                                class="flex lg:hidden justify-center items-center gap-2"
-                              >
-                                {#each frames as _, i}
-                                  <button
-                                    class="btn btn-circle btn-sm {selectedPreviewIndex ===
-                                    i
-                                      ? 'btn-primary'
-                                      : 'btn-ghost'}"
-                                    on:click={() => (selectedPreviewIndex = i)}
-                                    aria-label="Podgląd klatki {i + 1}"
-                                  >
-                                    {i + 1}
-                                  </button>
-                                {/each}
-                              </div>
+                                <!-- Mobile navigation buttons -->
+                                <div
+                                  class="flex lg:hidden justify-center items-center gap-2"
+                                >
+                                  {#each frames as _, i}
+                                    <button
+                                      class="btn btn-circle btn-sm {selectedPreviewIndex ===
+                                      i
+                                        ? 'btn-primary'
+                                        : 'btn-ghost'}"
+                                      on:click={() =>
+                                        (selectedPreviewIndex = i)}
+                                      aria-label="Podgląd klatki {i + 1}"
+                                    >
+                                      {i + 1}
+                                    </button>
+                                  {/each}
+                                </div>
 
-                              <!-- Add preview info below pagination -->
-                              <div
-                                class="text-center text-sm text-gray-500 mt-2 lg:hidden"
-                              >
-                                Klatka {selectedPreviewIndex +
-                                  1}/{frames.length} ({frames[
-                                  selectedPreviewIndex
-                                ].timestamp.toFixed(1)}s)
+                                <!-- Add preview info below pagination -->
+                                <div
+                                  class="text-center text-sm text-gray-500 mt-2 lg:hidden"
+                                >
+                                  Klatka {selectedPreviewIndex +
+                                    1}/{frames.length} ({frames[
+                                    selectedPreviewIndex
+                                  ].timestamp.toFixed(1)}s)
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        {/if}
-                      {:catch error}
-                        <div
-                          class="w-full h-full flex items-center justify-center"
-                        >
-                          <div class="alert alert-error">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              class="stroke-current shrink-0 h-6 w-6"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-                              />
-                            </svg>
-                            <span>Error: {error.message}</span>
-                          </div>
-                        </div>
-                      {/await}
+                          {/if}
+                        {/await}
+                      {/if}
                     </div>
                   </div>
 
@@ -915,7 +943,10 @@
                       <button
                         class="btn btn-outline btn-sm lg:btn-ghost"
                         on:click={() => {
-                          if (settingId) {
+                          if (
+                            selectedFileIndex !== undefined &&
+                            $videoSettings[selectedFileIndex]
+                          ) {
                             pendingSettings = {
                               ...$videoSettings[selectedFileIndex].settings,
                             };
