@@ -9,6 +9,7 @@
   import { onMount } from "svelte";
   import BackgroundSelector from "./BackgroundSelector.svelte";
   import * as DATA from "../../routes/Constans.svelte";
+  import SettingsDrawer from "./SettingsDrawer.svelte";
 
   interface AnimatedButtonProps {
     disabled?: boolean;
@@ -41,7 +42,7 @@
   let selectedPreviewIndex = 0;
   let showPreviewModal = false;
   let selectedPreviewUrl: string | null = null;
-  let showBackgroundDrawer = false;
+  let showSettingsDrawer = false;
   let backgrounds: any[] = [];
   let isLoadingBackgrounds = true;
   let hasUnsavedChanges = false;
@@ -443,33 +444,45 @@
                     </button>
                     <button
                       class="tab flex-1 {showSettings ? 'tab-active' : ''}"
-                      on:click={() => (showSettings = true)}
+                      on:click={() => (showSettingsDrawer = true)}
                     >
                       Ustawienia
                     </button>
                   </div>
 
                   <!-- Desktop title -->
-                  <h3 class="card-title text-lg hidden lg:block">
-                    Podgląd i ustawienia
-                  </h3>
-
-                  <!-- Background Selector Component -->
-                  <BackgroundSelector
-                    settingId={$videoSettings[selectedFileIndex]?.id}
-                    bind:showDrawer={showBackgroundDrawer}
-                    on:backgroundSelected={async () => {
-                      if (selectedFileIndex !== undefined) {
-                        const file = files[selectedFileIndex];
-                        await regeneratePreview(file);
-                      }
-                    }}
-                  />
+                  <div class="hidden lg:flex justify-between items-center mb-4">
+                    <h3 class="card-title text-lg">Podgląd</h3>
+                    <button
+                      class="btn btn-ghost btn-sm gap-2"
+                      on:click={() => (showSettingsDrawer = true)}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                        />
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                      </svg>
+                      Ustawienia
+                    </button>
+                  </div>
 
                   <!-- Preview -->
-                  <div
-                    class="space-y-4 {showSettings ? 'hidden lg:block' : ''}"
-                  >
+                  <div class="space-y-4">
                     <div
                       class="bg-base-300 rounded-lg overflow-hidden lg:min-h-[400px]"
                     >
@@ -664,335 +677,6 @@
                       {/if}
                     </div>
                   </div>
-
-                  <!-- Settings -->
-                  <div class="divider hidden lg:flex">Ustawienia</div>
-                  <div
-                    class="grid grid-cols-1 md:grid-cols-2 gap-4 {!showSettings
-                      ? 'hidden lg:grid'
-                      : ''}"
-                  >
-                    <label
-                      class="flex flex-col gap-2 p-4 bg-base-200 rounded-lg"
-                    >
-                      <div class="flex items-center justify-between">
-                        <span class="flex-1 lg:text-base text-sm"
-                          >Dodaj efekt dźwiękowy przejścia</span
-                        >
-                        <input
-                          type="checkbox"
-                          class="toggle toggle-success"
-                          checked={pendingSettings.addIntro}
-                          on:change={(e) =>
-                            handleCheckboxChange(settingId, "addIntro", e)}
-                        />
-                      </div>
-                      <p class="text-xs text-base-content/70">
-                        Dodaje charakterystyczny dźwięk przejścia z serialu na
-                        początku wideo
-                      </p>
-                    </label>
-                    <label
-                      class="flex flex-col gap-2 p-4 bg-base-200 rounded-lg"
-                    >
-                      <div class="flex items-center justify-between">
-                        <span class="flex-1 lg:text-base text-sm"
-                          >Dodaj reakcję Boczka</span
-                        >
-                        <input
-                          type="checkbox"
-                          class="toggle toggle-success"
-                          checked={pendingSettings.addBoczek}
-                          on:change={(e) =>
-                            handleCheckboxChange(settingId, "addBoczek", e)}
-                        />
-                      </div>
-                      <p class="text-xs text-base-content/70">
-                        Dodaje reakcję Boczka na końcu Twojego wideo
-                      </p>
-                    </label>
-
-                    <!-- Scale Controls -->
-                    <div class="col-span-full">
-                      <div class="flex items-center justify-between mb-2">
-                        <span class="text-sm font-medium">Skale</span>
-                        <label class="flex items-center gap-2">
-                          <span class="text-sm">Synchronizuj skale</span>
-                          <input
-                            type="checkbox"
-                            class="toggle toggle-sm"
-                            checked={pendingSettings.scalesLocked}
-                            on:change={(e) => {
-                              if (settingId) {
-                                handleSettingChange(settingId, {
-                                  scalesLocked: e.currentTarget.checked,
-                                });
-                              }
-                            }}
-                          />
-                        </label>
-                      </div>
-                      <p class="text-xs text-base-content/70 mb-2">
-                        Synchronizacja skal pozwala na jednoczesną zmianę
-                        rozmiaru obu elementów wideo
-                      </p>
-                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- Boczek Scale -->
-                        <div class="p-4 bg-base-200 rounded-lg">
-                          <div class="flex justify-between mb-2">
-                            <span class="text-sm">Skala Boczka</span>
-                            <span class="text-sm text-base-content/70">
-                              {(pendingSettings.boczekScale * 100).toFixed(0)}%
-                            </span>
-                          </div>
-                          <input
-                            type="range"
-                            min="0"
-                            max="1"
-                            step="0.1"
-                            class="range range-sm"
-                            value={pendingSettings.boczekScale}
-                            on:input={(e) => {
-                              if (settingId) {
-                                const newScale = parseFloat(
-                                  e.currentTarget.value,
-                                );
-                                handleSettingChange(settingId, {
-                                  boczekScale: newScale,
-                                  ...(pendingSettings.scalesLocked
-                                    ? { greenscreenScale: newScale }
-                                    : {}),
-                                });
-                              }
-                            }}
-                          />
-                          <p class="text-xs text-base-content/70 mt-2">
-                            Kontroluje rozmiar reakcji Boczka w końcowej scenie
-                          </p>
-                        </div>
-
-                        <!-- Greenscreen Scale -->
-                        <div class="p-4 bg-base-200 rounded-lg">
-                          <div class="flex justify-between mb-2">
-                            <span class="text-sm">Skala Greenscreena</span>
-                            <span class="text-sm text-base-content/70">
-                              {(pendingSettings.greenscreenScale * 100).toFixed(
-                                0,
-                              )}%
-                            </span>
-                          </div>
-                          <input
-                            type="range"
-                            min="0"
-                            max="1"
-                            step="0.1"
-                            class="range range-sm"
-                            value={pendingSettings.greenscreenScale}
-                            on:input={(e) => {
-                              if (settingId) {
-                                const newScale = parseFloat(
-                                  e.currentTarget.value,
-                                );
-                                handleSettingChange(settingId, {
-                                  greenscreenScale: newScale,
-                                  ...(pendingSettings.scalesLocked
-                                    ? { boczekScale: newScale }
-                                    : {}),
-                                });
-                              }
-                            }}
-                          />
-                          <p class="text-xs text-base-content/70 mt-2">
-                            Kontroluje rozmiar Twojego wideo w oknie telewizora
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Boczek Fill Type Select -->
-                    {#if pendingSettings.addBoczek}
-                      <div
-                        class="col-span-full flex flex-col gap-2 p-4 bg-base-200 rounded-lg"
-                      >
-                        <div class="flex items-center justify-between">
-                          <span class="flex-1 lg:text-base text-sm"
-                            >Tryb dopasowania Boczka</span
-                          >
-                          <select
-                            class="select select-bordered select-sm w-48"
-                            value={pendingSettings.boczekFillType}
-                            on:change={(e) => {
-                              if (settingId) {
-                                handleSettingChange(settingId, {
-                                  boczekFillType: e.currentTarget.value,
-                                });
-                              }
-                            }}
-                          >
-                            <option value="stretch">Rozciągnij</option>
-                            <option value="blur-padding"
-                              >Zachowaj proporcje z rozmyciem</option
-                            >
-                            <option value="black-padding"
-                              >Zachowaj proporcje z czarnym tłem</option
-                            >
-                          </select>
-                        </div>
-                        <p class="text-xs text-base-content/70">
-                          Określa sposób dopasowania reakcji Boczka do ekranu -
-                          możesz rozciągnąć lub zachować proporcje z wybranym
-                          tłem
-                        </p>
-                      </div>
-                    {/if}
-
-                    <!-- Greenscreen Fill Type Select -->
-                    <div
-                      class="col-span-full flex flex-col gap-2 p-4 bg-base-200 rounded-lg"
-                    >
-                      <div class="flex items-center justify-between">
-                        <span class="flex-1 lg:text-base text-sm"
-                          >Tryb dopasowania do tła</span
-                        >
-                        <select
-                          class="select select-bordered select-sm w-48"
-                          value={pendingSettings.greenscreenFillType}
-                          on:change={(e) => {
-                            if (settingId) {
-                              handleSettingChange(settingId, {
-                                greenscreenFillType: e.currentTarget.value,
-                              });
-                            }
-                          }}
-                        >
-                          <option value="black-padding"
-                            >Zachowaj proporcje z czarnym tłem</option
-                          >
-                          <option value="stretch">Rozciągnij</option>
-                          <option value="blur-padding"
-                            >Zachowaj proporcje z rozmyciem</option
-                          >
-                        </select>
-                      </div>
-                      <p class="text-xs text-base-content/70">
-                        Określa sposób dopasowania Twojego wideo do okna
-                        telewizora - możesz rozciągnąć lub zachować proporcje z
-                        wybranym tłem
-                      </p>
-                    </div>
-
-                    <!-- Background selector button -->
-                    <div class="col-span-full">
-                      <button
-                        class="w-full flex items-center justify-between gap-4 p-4 bg-base-200 rounded-lg hover:bg-base-300 transition-all relative {isLoadingBackgrounds
-                          ? 'cursor-wait'
-                          : ''}"
-                        on:click={() =>
-                          !isLoadingBackgrounds &&
-                          (showBackgroundDrawer = true)}
-                        disabled={isLoadingBackgrounds}
-                      >
-                        <div class="flex items-center gap-4 flex-1">
-                          <span class="lg:text-base text-sm">Wybierz tło</span>
-                          {#if isLoadingBackgrounds}
-                            <div class="flex items-center gap-2">
-                              <span class="loading loading-spinner loading-sm"
-                              ></span>
-                              <span class="text-sm text-base-content/70"
-                                >Ładowanie...</span
-                              >
-                            </div>
-                          {:else if selectedFileIndex !== undefined && $videoSettings[selectedFileIndex]}
-                            {@const backgroundName = getBackgroundName(
-                              $videoSettings[selectedFileIndex]?.id,
-                            )}
-                            {#if backgroundName}
-                              <span class="text-sm text-base-content/70"
-                                >{backgroundName}</span
-                              >
-                            {/if}
-                          {/if}
-                        </div>
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          class="h-5 w-5 {isLoadingBackgrounds
-                            ? 'opacity-50'
-                            : ''}"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                          />
-                        </svg>
-                      </button>
-                      <p class="text-xs text-base-content/70 mt-2 px-4">
-                        Wybierz scenę z serialu, w której pojawi się Twoje wideo
-                      </p>
-                    </div>
-
-                    <!-- Save and Reset Buttons -->
-                    <div
-                      class="{!showSettings
-                        ? 'hidden lg:flex'
-                        : ''} card-actions justify-end mt-4 gap-2"
-                    >
-                      <button
-                        class="btn btn-outline btn-sm lg:btn-ghost"
-                        on:click={() => {
-                          if (
-                            selectedFileIndex !== undefined &&
-                            $videoSettings[selectedFileIndex]
-                          ) {
-                            pendingSettings = {
-                              ...$videoSettings[selectedFileIndex].settings,
-                            };
-                            hasUnsavedChanges = false;
-                          }
-                        }}
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          class="h-4 w-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                          />
-                        </svg>
-                        Reset ustawień
-                      </button>
-                      <button
-                        class="btn btn-primary btn-sm"
-                        disabled={!hasUnsavedChanges}
-                        on:click={() => settingId && saveSettings(settingId)}
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          class="h-4 w-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
-                        Zapisz ustawienia
-                      </button>
-                    </div>
-                  </div>
                 </div>
               </div>
             {/if}
@@ -1080,4 +764,15 @@
       </figure>
     </div>
   </div>
+{/if}
+
+<!-- Settings Drawer -->
+{#if selectedFileIndex !== undefined}
+  <SettingsDrawer
+    bind:showDrawer={showSettingsDrawer}
+    {selectedFileIndex}
+    settingId={$videoSettings[selectedFileIndex]?.id}
+    {regeneratePreview}
+    {files}
+  />
 {/if}
