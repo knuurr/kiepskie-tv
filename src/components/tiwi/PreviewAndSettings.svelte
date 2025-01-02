@@ -38,10 +38,16 @@
   let showBackgroundDrawer = false;
   let backgrounds: any[] = [];
   let isLoadingBackgrounds = true;
+  let hasUnsavedChanges = false;
+  let pendingSettings: any = {};
 
   // Reset preview index when file changes
   $: if (selectedFileIndex !== undefined) {
     selectedPreviewIndex = 0;
+    hasUnsavedChanges = false;
+    if ($videoSettings[selectedFileIndex]) {
+      pendingSettings = { ...$videoSettings[selectedFileIndex].settings };
+    }
   }
 
   function safeRemoveFile(index: number | undefined, settingId: string) {
@@ -91,10 +97,28 @@
     return background?.name || backgrounds[0]?.name;
   }
 
+  function handleSettingChange(settingId: string, changes: any) {
+    hasUnsavedChanges = true;
+    pendingSettings = { ...pendingSettings, ...changes };
+  }
+
+  async function saveSettings(settingId: string) {
+    if (!hasUnsavedChanges) return;
+
+    videoSettings.updateSettings(settingId, pendingSettings);
+    hasUnsavedChanges = false;
+
+    if (selectedFileIndex !== undefined) {
+      const file = files[selectedFileIndex];
+      await regeneratePreview(file);
+      toasts.add("Ustawienia zostały zapisane", "success");
+    }
+  }
+
   function handleCheckboxChange(settingId: string, key: string, event: Event) {
     const target = event.target as HTMLInputElement;
     if (target && target instanceof HTMLInputElement) {
-      videoSettings.updateSettings(settingId, {
+      handleSettingChange(settingId, {
         [key]: target.checked,
       });
     }
@@ -630,8 +654,7 @@
                         <input
                           type="checkbox"
                           class="toggle toggle-success"
-                          checked={$videoSettings[selectedFileIndex]?.settings
-                            .addIntro}
+                          checked={pendingSettings.addIntro}
                           on:change={(e) =>
                             handleCheckboxChange(settingId, "addIntro", e)}
                         />
@@ -651,8 +674,7 @@
                         <input
                           type="checkbox"
                           class="toggle toggle-success"
-                          checked={$videoSettings[selectedFileIndex]?.settings
-                            .addBoczek}
+                          checked={pendingSettings.addBoczek}
                           on:change={(e) =>
                             handleCheckboxChange(settingId, "addBoczek", e)}
                         />
@@ -671,11 +693,10 @@
                           <input
                             type="checkbox"
                             class="toggle toggle-sm"
-                            checked={$videoSettings[selectedFileIndex]?.settings
-                              .scalesLocked}
+                            checked={pendingSettings.scalesLocked}
                             on:change={(e) => {
                               if (settingId) {
-                                videoSettings.updateSettings(settingId, {
+                                handleSettingChange(settingId, {
                                   scalesLocked: e.currentTarget.checked,
                                 });
                               }
@@ -693,10 +714,7 @@
                           <div class="flex justify-between mb-2">
                             <span class="text-sm">Skala Boczka</span>
                             <span class="text-sm text-base-content/70">
-                              {(
-                                $videoSettings[selectedFileIndex]?.settings
-                                  .boczekScale * 100
-                              ).toFixed(0)}%
+                              {(pendingSettings.boczekScale * 100).toFixed(0)}%
                             </span>
                           </div>
                           <input
@@ -705,24 +723,18 @@
                             max="1"
                             step="0.1"
                             class="range range-sm"
-                            value={$videoSettings[selectedFileIndex]?.settings
-                              .boczekScale}
+                            value={pendingSettings.boczekScale}
                             on:input={(e) => {
                               if (settingId) {
                                 const newScale = parseFloat(
                                   e.currentTarget.value,
                                 );
-                                videoSettings.updateSettings(settingId, {
+                                handleSettingChange(settingId, {
                                   boczekScale: newScale,
-                                  ...($videoSettings[selectedFileIndex]
-                                    ?.settings.scalesLocked
+                                  ...(pendingSettings.scalesLocked
                                     ? { greenscreenScale: newScale }
                                     : {}),
                                 });
-                                if (selectedFileIndex !== undefined) {
-                                  const file = files[selectedFileIndex];
-                                  regeneratePreview(file);
-                                }
                               }
                             }}
                           />
@@ -736,10 +748,9 @@
                           <div class="flex justify-between mb-2">
                             <span class="text-sm">Skala Greenscreena</span>
                             <span class="text-sm text-base-content/70">
-                              {(
-                                $videoSettings[selectedFileIndex]?.settings
-                                  .greenscreenScale * 100
-                              ).toFixed(0)}%
+                              {(pendingSettings.greenscreenScale * 100).toFixed(
+                                0,
+                              )}%
                             </span>
                           </div>
                           <input
@@ -748,24 +759,18 @@
                             max="1"
                             step="0.1"
                             class="range range-sm"
-                            value={$videoSettings[selectedFileIndex]?.settings
-                              .greenscreenScale}
+                            value={pendingSettings.greenscreenScale}
                             on:input={(e) => {
                               if (settingId) {
                                 const newScale = parseFloat(
                                   e.currentTarget.value,
                                 );
-                                videoSettings.updateSettings(settingId, {
+                                handleSettingChange(settingId, {
                                   greenscreenScale: newScale,
-                                  ...($videoSettings[selectedFileIndex]
-                                    ?.settings.scalesLocked
+                                  ...(pendingSettings.scalesLocked
                                     ? { boczekScale: newScale }
                                     : {}),
                                 });
-                                if (selectedFileIndex !== undefined) {
-                                  const file = files[selectedFileIndex];
-                                  regeneratePreview(file);
-                                }
                               }
                             }}
                           />
@@ -777,7 +782,7 @@
                     </div>
 
                     <!-- Boczek Fill Type Select -->
-                    {#if $videoSettings[selectedFileIndex]?.settings.addBoczek}
+                    {#if pendingSettings.addBoczek}
                       <div
                         class="col-span-full flex flex-col gap-2 p-4 bg-base-200 rounded-lg"
                       >
@@ -787,11 +792,10 @@
                           >
                           <select
                             class="select select-bordered select-sm w-48"
-                            value={$videoSettings[selectedFileIndex]?.settings
-                              .boczekFillType}
+                            value={pendingSettings.boczekFillType}
                             on:change={(e) => {
                               if (settingId) {
-                                videoSettings.updateSettings(settingId, {
+                                handleSettingChange(settingId, {
                                   boczekFillType: e.currentTarget.value,
                                 });
                               }
@@ -824,11 +828,10 @@
                         >
                         <select
                           class="select select-bordered select-sm w-48"
-                          value={$videoSettings[selectedFileIndex]?.settings
-                            .greenscreenFillType}
+                          value={pendingSettings.greenscreenFillType}
                           on:change={(e) => {
                             if (settingId) {
-                              videoSettings.updateSettings(settingId, {
+                              handleSettingChange(settingId, {
                                 greenscreenFillType: e.currentTarget.value,
                               });
                             }
@@ -903,15 +906,22 @@
                       </p>
                     </div>
 
-                    <!-- Reset button - Only show in settings tab on mobile -->
+                    <!-- Save and Reset Buttons -->
                     <div
                       class="{!showSettings
-                        ? 'hidden lg:block'
-                        : ''} card-actions justify-end mt-4"
+                        ? 'hidden lg:flex'
+                        : ''} card-actions justify-end mt-4 gap-2"
                     >
                       <button
-                        class="btn btn-outline btn-sm w-full lg:w-auto lg:btn-ghost"
-                        on:click={() => videoSettings.resetToDefault(settingId)}
+                        class="btn btn-outline btn-sm lg:btn-ghost"
+                        on:click={() => {
+                          if (settingId) {
+                            pendingSettings = {
+                              ...$videoSettings[selectedFileIndex].settings,
+                            };
+                            hasUnsavedChanges = false;
+                          }
+                        }}
                       >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -928,6 +938,27 @@
                           />
                         </svg>
                         Reset ustawień
+                      </button>
+                      <button
+                        class="btn btn-primary btn-sm"
+                        disabled={!hasUnsavedChanges}
+                        on:click={() => settingId && saveSettings(settingId)}
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          class="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                        Zapisz ustawienia
                       </button>
                     </div>
                   </div>
