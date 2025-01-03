@@ -2,12 +2,27 @@
   import type { Toast } from "$lib/types/Toast";
   import MissingMetadataInfo from "./MissingMetadataInfo.svelte";
   import AudioWavePlayer from "./AudioWavePlayer.svelte";
+  import { onMount } from "svelte";
 
   export let showDrawer = false;
   export let toastHistory: { toast: Toast; episodeTimestamp: number }[] = [];
   export let copyStates: { [key: number]: boolean } = {};
   export let shareStates: { [key: number]: boolean } = {};
   export let canShareOnDevice = false;
+
+  // Handle escape key press
+  function handleKeydown(event: KeyboardEvent) {
+    if (event.key === "Escape" && showDrawer) {
+      showDrawer = false;
+    }
+  }
+
+  onMount(() => {
+    window.addEventListener("keydown", handleKeydown);
+    return () => {
+      window.removeEventListener("keydown", handleKeydown);
+    };
+  });
 
   // Function to copy toast to clipboard
   function copyHistoryToast(episodeTimestamp: number) {
