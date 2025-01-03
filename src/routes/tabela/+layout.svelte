@@ -4,7 +4,7 @@
 </script>
 
 <svelte:head>
-  <title>Tabela | {APP_TITLE2}</title>
+  <title>Generator | {APP_TITLE2}</title>
 </svelte:head>
 <slot />
 

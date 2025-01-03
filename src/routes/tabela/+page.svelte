@@ -222,7 +222,7 @@
   $: shouldShowTable = currentView === "table" || (!currentView && !$isMobile);
 </script>
 
-<div class="min-h-screen bg-base-200">
+<div class="min-h-screen">
   <NavBar />
 
   {#if showScrollTop}
@@ -251,8 +251,8 @@
   <main class="container mx-auto px-4 py-8">
     <div class="space-y-6">
       <div class="prose max-w-none mb-8">
-        <h1 class="text-2xl font-bold">
-          Lista odcinków Świata według Kiepskich
+        <h1 class="text-2xl font-bold font-kiepscy">
+          Tabela odcinków "Kiepskich"
         </h1>
         <p class="text-base-content/70">
           Przeglądaj wszystkie odcinki serialu. Użyj filtrów aby znaleźć
