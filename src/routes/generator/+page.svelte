@@ -195,12 +195,12 @@
   });
 </script>
 
-<div class="min-h-screen bg-base-200">
+<div class="min-h-screen">
   <NavBar />
 
   <main class="container mx-auto px-4 py-8 max-w-5xl">
     <div class="prose max-w-none mb-8 text-center">
-      <h1 class="text-4xl font-bold font-kiepscy">
+      <h1 class="text-2xl md:text-4xl font-bold font-kiepscy">
         Generator losowego odcinka
       </h1>
       <p class="text-base-content/70">
