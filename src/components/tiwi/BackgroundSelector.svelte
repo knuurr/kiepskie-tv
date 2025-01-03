@@ -6,6 +6,7 @@
 
   export let settingId: string;
   export let showDrawer = false;
+  export let selectedBackgroundId: string | undefined = undefined;
 
   const dispatch = createEventDispatcher<{
     backgroundSelected: { backgroundId: string };
@@ -36,16 +37,6 @@
       const response = await fetch(DATA.PATH_BACKGROUNDS_JSON);
       const data = await response.json();
       backgrounds = data.backgrounds;
-
-      // Set the first background as default if no background is selected
-      if (backgrounds.length > 0) {
-        const currentSetting = $videoSettings.find((s) => s.id === settingId);
-        if (!currentSetting?.settings?.selectedBackground) {
-          videoSettings.updateSettings(settingId, {
-            selectedBackground: backgrounds[0].id,
-          });
-        }
-      }
     } catch (e) {
       error = e instanceof Error ? e.message : "Unknown error";
     } finally {
@@ -54,19 +45,13 @@
   });
 
   function selectBackground(backgroundId: string) {
-    videoSettings.updateSettings(settingId, {
-      selectedBackground: backgroundId,
-    });
     dispatch("backgroundSelected", { backgroundId });
     showDrawer = false;
   }
 
   // Get current background
   $: currentBackground = backgrounds.find(
-    (bg) =>
-      bg.id ===
-      $videoSettings.find((s) => s.id === settingId)?.settings
-        ?.selectedBackground,
+    (bg) => bg.id === selectedBackgroundId,
   );
 </script>
 
@@ -132,7 +117,7 @@
               d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-          <span>Bł��d: {error}</span>
+          <span>Błd: {error}</span>
         </div>
       {/if}
 

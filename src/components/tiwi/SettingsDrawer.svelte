@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { videoSettings } from "$lib/stores/videoSettingsStore";
+  import { DEFAULT_SETTINGS } from "$lib/constants";
   import { toasts } from "$lib/stores/toastStore";
   import BackgroundSelector from "./BackgroundSelector.svelte";
   import * as DATA from "../../routes/Constans.svelte";
@@ -15,25 +16,41 @@
   let backgrounds: any[] = [];
   let hasUnsavedChanges = false;
   let pendingSettings: any = {};
+  let lastSavedSettings: any = {};
   let showBackgroundDrawer = false;
+  let showCloseConfirmModal = false;
 
+  // Reset to last saved state whenever file changes or drawer opens
   $: if (selectedFileIndex !== undefined) {
-    hasUnsavedChanges = false;
     if ($videoSettings[selectedFileIndex]) {
-      pendingSettings = { ...$videoSettings[selectedFileIndex].settings };
+      lastSavedSettings = { ...$videoSettings[selectedFileIndex].settings };
+      pendingSettings = { ...lastSavedSettings };
     }
+    hasUnsavedChanges = false;
+  }
+
+  // Also reset when drawer opens
+  $: if (showDrawer) {
+    if (selectedFileIndex !== undefined && $videoSettings[selectedFileIndex]) {
+      lastSavedSettings = { ...$videoSettings[selectedFileIndex].settings };
+      pendingSettings = { ...lastSavedSettings };
+    }
+    hasUnsavedChanges = false;
   }
 
   function handleSettingChange(settingId: string | undefined, changes: any) {
     if (!settingId) return;
-    hasUnsavedChanges = true;
     pendingSettings = { ...pendingSettings, ...changes };
+    // Compare with last saved state to determine if there are changes
+    hasUnsavedChanges =
+      JSON.stringify(pendingSettings) !== JSON.stringify(lastSavedSettings);
   }
 
   async function saveSettings(settingId: string | undefined) {
     if (!settingId || !hasUnsavedChanges) return;
 
     videoSettings.updateSettings(settingId, pendingSettings);
+    lastSavedSettings = { ...pendingSettings };
     hasUnsavedChanges = false;
 
     if (selectedFileIndex !== undefined) {
@@ -58,25 +75,54 @@
   }
 
   function resetSettings() {
-    const currentSettings =
-      selectedFileIndex !== undefined && $videoSettings[selectedFileIndex]
-        ? $videoSettings[selectedFileIndex].settings
-        : undefined;
+    pendingSettings = { ...lastSavedSettings };
+    hasUnsavedChanges = false;
+  }
 
-    if (currentSettings) {
-      pendingSettings = { ...currentSettings };
-      hasUnsavedChanges = false;
-    }
+  function resetToDefault() {
+    pendingSettings = { ...DEFAULT_SETTINGS };
+    hasUnsavedChanges =
+      JSON.stringify(pendingSettings) !== JSON.stringify(lastSavedSettings);
   }
 
   // Function to get background name
-  function getBackgroundName(settingId: string | undefined) {
+  function getBackgroundName(
+    settingId: string | undefined,
+    backgroundId?: string,
+  ) {
     if (isLoadingBackgrounds || !settingId) return null;
 
-    const selectedBackground = $videoSettings.find((s) => s.id === settingId)
-      ?.settings?.selectedBackground;
+    const selectedBackground =
+      backgroundId ||
+      $videoSettings.find((s) => s.id === settingId)?.settings
+        ?.selectedBackground;
     const background = backgrounds.find((bg) => bg.id === selectedBackground);
     return background?.name || backgrounds[0]?.name;
+  }
+
+  function handleBackgroundSelected(
+    event: CustomEvent<{ backgroundId: string }>,
+  ) {
+    if (settingId) {
+      handleSettingChange(settingId, {
+        selectedBackground: event.detail.backgroundId,
+      });
+      showBackgroundDrawer = false;
+    }
+  }
+
+  function handleCloseAttempt() {
+    if (hasUnsavedChanges) {
+      showCloseConfirmModal = true;
+    } else {
+      showDrawer = false;
+    }
+  }
+
+  function handleConfirmedClose() {
+    resetSettings();
+    showCloseConfirmModal = false;
+    showDrawer = false;
   }
 
   onMount(async () => {
@@ -100,6 +146,12 @@
     id="settings-drawer"
     class="drawer-toggle"
     bind:checked={showDrawer}
+    on:change={(e) => {
+      if (!e.currentTarget.checked && hasUnsavedChanges) {
+        e.currentTarget.checked = true;
+        showCloseConfirmModal = true;
+      }
+    }}
   />
 
   <div class="drawer-side">
@@ -107,6 +159,7 @@
       for="settings-drawer"
       aria-label="close sidebar"
       class="drawer-overlay"
+      on:click|preventDefault={() => handleCloseAttempt()}
     ></label>
     <div
       class="p-4 w-96 min-h-full bg-base-200 text-base-content flex flex-col"
@@ -119,11 +172,29 @@
             <p class="text-xs opacity-50">
               Dostosuj ustawienia dla wybranego pliku
             </p>
+            {#if hasUnsavedChanges}
+              <div class="mt-2">
+                <span class="badge badge-warning gap-1">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-3 w-3"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                  Niezapisane zmiany
+                </span>
+              </div>
+            {/if}
           </div>
-          <button
-            class="btn btn-square btn-sm"
-            on:click={() => (showDrawer = false)}
-          >
+          <button class="btn btn-square btn-sm" on:click={handleCloseAttempt}>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               class="h-6 w-6"
@@ -347,10 +418,12 @@
                   <span class="text-base-content/70">Ładowanie...</span>
                 </div>
               {:else if selectedFileIndex !== undefined && $videoSettings[selectedFileIndex] && $videoSettings[selectedFileIndex].id}
-                {@const currentSettingId = $videoSettings[selectedFileIndex].id}
-                <span class="text-base-content/70"
-                  >{getBackgroundName(currentSettingId)}</span
-                >
+                <span class="text-base-content/70">
+                  {getBackgroundName(
+                    settingId,
+                    pendingSettings.selectedBackground,
+                  )}
+                </span>
               {/if}
             </div>
             <svg
@@ -375,27 +448,46 @@
         class="sticky bottom-0 bg-base-200 pt-4 mt-4 border-t border-base-300"
       >
         <div class="flex justify-between gap-2">
-          <button
-            class="btn btn-ghost btn-sm"
-            on:click={resetSettings}
-            disabled={!hasUnsavedChanges}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+          <div class="flex gap-2">
+            <button class="btn btn-ghost btn-sm" on:click={resetToDefault}>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
+                />
+              </svg>
+              Domyślne
+            </button>
+            <button
+              class="btn btn-ghost btn-sm"
+              on:click={resetSettings}
+              disabled={!hasUnsavedChanges}
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-            Reset
-          </button>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+              Cofnij zmiany
+            </button>
+          </div>
           <button
             class="btn btn-primary btn-sm"
             disabled={!hasUnsavedChanges}
@@ -428,11 +520,35 @@
   <BackgroundSelector
     settingId={currentSettingId}
     bind:showDrawer={showBackgroundDrawer}
-    on:backgroundSelected={async () => {
-      if (selectedFileIndex !== undefined) {
-        const file = files[selectedFileIndex];
-        await regeneratePreview(file);
-      }
-    }}
+    selectedBackgroundId={pendingSettings.selectedBackground}
+    on:backgroundSelected={handleBackgroundSelected}
   />
+{/if}
+
+<!-- Close confirmation modal -->
+{#if showCloseConfirmModal}
+  <div class="modal modal-open">
+    <div class="modal-box">
+      <h3 class="font-bold text-lg">Niezapisane zmiany</h3>
+      <p class="py-4">
+        Masz niezapisane zmiany. Czy na pewno chcesz zamknąć ustawienia?
+        Wszystkie niezapisane zmiany zostaną utracone.
+      </p>
+      <div class="modal-action">
+        <button
+          class="btn btn-ghost"
+          on:click={() => (showCloseConfirmModal = false)}
+        >
+          Anuluj
+        </button>
+        <button class="btn btn-error" on:click={handleConfirmedClose}>
+          Zamknij bez zapisywania
+        </button>
+      </div>
+    </div>
+    <div
+      class="modal-backdrop"
+      on:click={() => (showCloseConfirmModal = false)}
+    />
+  </div>
 {/if}
