@@ -22,6 +22,7 @@
   let activeHistoryIndex: number = 0;
 
   const MAX_HISTORY_SIZE = 6;
+  const TOAST_LOADING_DELAY_MS = 800; // Configurable delay before starting typewriter effect
   let rollCount: number = 0;
   let toastHistory: { toast: Toast; episodeTimestamp: number }[] = [];
   let copyStates: { [key: number]: boolean } = {};
@@ -112,15 +113,18 @@
     clearInterval(typewriterInterval);
     typewriterText = "";
 
-    typewriterInterval = setInterval(() => {
-      if (index < text.length) {
-        typewriterText += text[index];
-        index++;
-      } else {
-        clearInterval(typewriterInterval);
-        isRolling = false;
-      }
-    }, 50);
+    // Add delay before starting the typewriter effect
+    setTimeout(() => {
+      typewriterInterval = setInterval(() => {
+        if (index < text.length) {
+          typewriterText += text[index];
+          index++;
+        } else {
+          clearInterval(typewriterInterval);
+          isRolling = false;
+        }
+      }, 50);
+    }, TOAST_LOADING_DELAY_MS);
   }
 
   function copyToClipboard() {
@@ -395,7 +399,15 @@
               <p class="text-xl opacity-70">No to....</p>
               <p class="text-2xl font-medium min-h-16">
                 {#if currentToast}
-                  {typewriterText}
+                  {#if typewriterText === ""}
+                    <div class="flex flex-col gap-3">
+                      <div
+                        class="h-8 bg-base-300 rounded animate-pulse mt-1"
+                      ></div>
+                    </div>
+                  {:else}
+                    {typewriterText}
+                  {/if}
                 {:else}
                   <span class="opacity-50">Panie, na co pan czekasz...?</span>
                 {/if}
