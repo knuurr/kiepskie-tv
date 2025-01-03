@@ -53,7 +53,7 @@
       {:else}
         Pomóż uzupełnić brakujące dane ({missingItems}).
         <a
-          href="https://github.com/qbus-agentur/kiepscy-tv/issues/new"
+          href="https://www.facebook.com/groups/227062558151644"
           target="_blank"
           class="underline text-blue-400 hover:text-blue-600"
         >
