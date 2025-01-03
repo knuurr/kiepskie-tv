@@ -167,6 +167,14 @@
     ) {
       event.preventDefault();
       navigateHistory("next");
+    } else if (
+      event.key === "H" &&
+      event.shiftKey &&
+      !event.ctrlKey &&
+      !event.altKey
+    ) {
+      event.preventDefault();
+      showDrawer = true;
     }
   }
 
@@ -235,6 +243,7 @@
                 <div class="badge badge-sm badge-primary">
                   {generationHistory.length}/{MAX_HISTORY}
                 </div>
+                <kbd class="kbd kbd-sm text-gray-400 hidden md:inline">⇧ H</kbd>
               </button>
             </div>
 

@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { EpisodeData } from "$lib/types";
+  import { onMount, onDestroy } from "svelte";
 
   export let showDrawer = false;
   export let generationHistory: EpisodeData[] = [];
@@ -14,6 +15,20 @@
       BEFORE_DETAILS: 150,
     },
   };
+
+  function handleKeydown(event: KeyboardEvent) {
+    if (event.key === "Escape" && showDrawer) {
+      showDrawer = false;
+    }
+  }
+
+  onMount(() => {
+    document.addEventListener("keydown", handleKeydown);
+  });
+
+  onDestroy(() => {
+    document.removeEventListener("keydown", handleKeydown);
+  });
 </script>
 
 <div class="drawer drawer-end z-[100]">
@@ -98,6 +113,9 @@
                   <h3 class="card-title text-sm mt-2 line-clamp-2">
                     {episode.tytul}
                   </h3>
+                  <p class="text-xs text-base-content/70 line-clamp-1 mt-1">
+                    {episode.opis_odcinka}
+                  </p>
                   <div class="card-actions justify-end mt-2">
                     <a
                       href={episode.link_wiki}
