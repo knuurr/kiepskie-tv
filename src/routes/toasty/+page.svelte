@@ -375,7 +375,7 @@
             <div class="badge badge-sm badge-primary">
               {historyCount}/{MAX_HISTORY_SIZE}
             </div>
-            <kbd class="kbd kbd-sm hidden md:inline-flex text-white">H</kbd>
+            <kbd class="kbd kbd-sm hidden md:inline-flex text-white">⇧ H</kbd>
           </button>
         </div>
         {#if currentToast}
@@ -480,7 +480,7 @@
                 </svg>
               {/if}
               <span class="hidden">Kopiuj do schowka</span>
-              <kbd class="kbd kbd-sm hidden md:inline-flex text-white">C</kbd>
+              <kbd class="kbd kbd-sm hidden md:inline-flex text-white">⇧ C</kbd>
             </button>
 
             <!-- Share button -->
@@ -530,7 +530,9 @@
                   </svg>
                 {/if}
                 <span class="hidden">Udostępnij</span>
-                <kbd class="kbd kbd-sm hidden md:inline-flex text-white">S</kbd>
+                <kbd class="kbd kbd-sm hidden md:inline-flex text-white"
+                  >⇧ S</kbd
+                >
               </button>
             </div>
           </div>
