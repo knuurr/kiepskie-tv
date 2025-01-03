@@ -72,6 +72,9 @@
     } else if (key === "r" && !isRolling) {
       event.preventDefault(); // Prevent default browser behavior
       getRandomToast();
+    } else if (event.shiftKey && key === "h") {
+      event.preventDefault();
+      showHistoryDrawer = true;
     } else if (toastHistory.length > 1) {
       // Handle history navigation
       if (event.key === "ArrowLeft") {
@@ -372,6 +375,7 @@
             <div class="badge badge-sm badge-primary">
               {historyCount}/{MAX_HISTORY_SIZE}
             </div>
+            <kbd class="kbd kbd-sm hidden md:inline-flex text-white">H</kbd>
           </button>
         </div>
         {#if currentToast}
@@ -476,11 +480,7 @@
                 </svg>
               {/if}
               <span class="hidden">Kopiuj do schowka</span>
-              <div class="hidden md:flex items-center gap-1 text-white">
-                <kbd class="kbd kbd-sm">shift</kbd>
-                <span>+</span>
-                <kbd class="kbd kbd-sm">c</kbd>
-              </div>
+              <kbd class="kbd kbd-sm hidden md:inline-flex text-white">C</kbd>
             </button>
 
             <!-- Share button -->
@@ -530,11 +530,7 @@
                   </svg>
                 {/if}
                 <span class="hidden">Udostępnij</span>
-                <div class="hidden md:flex items-center gap-1 text-white">
-                  <kbd class="kbd kbd-sm">shift</kbd>
-                  <span>+</span>
-                  <kbd class="kbd kbd-sm">s</kbd>
-                </div>
+                <kbd class="kbd kbd-sm hidden md:inline-flex text-white">S</kbd>
               </button>
             </div>
           </div>
