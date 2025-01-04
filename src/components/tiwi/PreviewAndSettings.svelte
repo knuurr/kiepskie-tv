@@ -489,20 +489,78 @@
                       {#if currentPreviewPromise}
                         {#await currentPreviewPromise}
                           <div
-                            class="w-full h-[400px] flex flex-col items-center justify-center gap-4"
+                            class="w-full flex flex-col lg:flex-row items-center lg:items-start gap-4 p-4"
                           >
-                            <div class="flex flex-col items-center gap-2">
-                              <span class="loading loading-spinner loading-lg"
-                              ></span>
-                              <div class="text-sm text-gray-500 text-center">
-                                <p>Generowanie podglądu...</p>
-                                <p class="text-xs mt-1">
-                                  {#if $previewProgress.stage === "extracting"}
-                                    Wyciąganie klatki {$previewProgress.current}/3
-                                  {:else if $previewProgress.stage === "processing"}
-                                    Przetwarzanie klatki {$previewProgress.current}/3
-                                  {/if}
-                                </p>
+                            <!-- Main preview placeholder -->
+                            <div class="flex-1 w-full">
+                              <div class="relative">
+                                <div
+                                  class="w-full aspect-video bg-base-100 rounded-lg animate-pulse flex items-center justify-center"
+                                >
+                                  <!-- Loading state text -->
+                                  <div class="text-center">
+                                    <div
+                                      class="flex flex-col items-center gap-2"
+                                    >
+                                      <span
+                                        class="loading loading-spinner loading-lg"
+                                      ></span>
+                                      <div
+                                        class="text-sm text-gray-500 text-center"
+                                      >
+                                        <p>Generowanie podglądu...</p>
+                                        <p class="text-xs mt-1">
+                                          {#if $previewProgress.stage === "extracting"}
+                                            Wyciąganie klatki {$previewProgress.current}/3
+                                          {:else if $previewProgress.stage === "processing"}
+                                            Przetwarzanie klatki {$previewProgress.current}/3
+                                          {/if}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <!-- Timestamp and instruction placeholders -->
+                                <div class="text-center mt-2">
+                                  <div
+                                    class="h-5 w-32 bg-base-100 rounded animate-pulse mx-auto"
+                                  ></div>
+                                  <div
+                                    class="h-4 w-48 bg-base-100 rounded animate-pulse mx-auto mt-0.5"
+                                  ></div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <!-- Thumbnails placeholder -->
+                            <div class="w-full lg:w-32 flex-none">
+                              <div
+                                class="text-sm text-gray-500 mb-2 text-center"
+                              >
+                                <span class="hidden lg:inline"
+                                  >Podgląd klatek</span
+                                >
+                              </div>
+                              <!-- Desktop thumbnails placeholders -->
+                              <div
+                                class="hidden lg:flex lg:flex-col gap-2 justify-center"
+                              >
+                                {#each Array(3) as _, i}
+                                  <div
+                                    class="w-full aspect-video bg-base-100 rounded-lg animate-pulse"
+                                  ></div>
+                                {/each}
+                              </div>
+
+                              <!-- Mobile navigation buttons placeholders -->
+                              <div
+                                class="flex lg:hidden justify-center items-center gap-2"
+                              >
+                                {#each Array(3) as _, i}
+                                  <div
+                                    class="w-8 h-8 rounded-full bg-base-100 animate-pulse"
+                                  ></div>
+                                {/each}
                               </div>
                             </div>
                           </div>
