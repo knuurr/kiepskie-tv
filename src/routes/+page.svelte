@@ -63,7 +63,25 @@
           Odkryj świat Ferdka Kiepskiego w zupełnie nowy sposób! Kolekcja
           interaktywnych aplikacji inspirowanych kultowym serialem.
         </p>
-        <a href="#apps" class="btn btn-primary btn-lg">Zobacz Aplikacje</a>
+        <a
+          href="#apps"
+          class="btn btn-circle btn-primary btn-lg animate-bounce group"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="2.5"
+            stroke="currentColor"
+            class="w-8 h-8 transition-transform group-hover:translate-y-1"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3"
+            />
+          </svg>
+        </a>
       </div>
     </div>
   </div>
@@ -136,7 +154,7 @@
         </div>
         <div class="stat">
           <div class="stat-figure text-primary text-4xl">🎬</div>
-          <div class="stat-title">Interaktywne</div>
+          <div class="stat-title">Zabawa</div>
           <div class="stat-value">100%</div>
         </div>
         <div class="stat">
