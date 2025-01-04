@@ -11,6 +11,8 @@
   import * as DATA from "../../routes/Constans.svelte";
   import SettingsDrawer from "./SettingsDrawer.svelte";
 
+  const PLACEHOLDER_MIN_LOADING_TIME = 300; // milliseconds
+
   interface AnimatedButtonProps {
     disabled?: boolean;
     fullWidth?: boolean;
@@ -294,13 +296,13 @@
                           <!-- Thumbnail -->
                           <div class="col-span-2">
                             {#if currentPreviewPromise}
-                              {#await currentPreviewPromise.then((frames) => frames[0])}
+                              {#await Promise.all( [currentPreviewPromise, new Promise( (resolve) => setTimeout(resolve, PLACEHOLDER_MIN_LOADING_TIME), )], )}
                                 <div
                                   class="w-full aspect-video bg-base-300 rounded-lg animate-pulse"
                                 ></div>
-                              {:then frame}
+                              {:then [frames]}
                                 <img
-                                  src={frame?.url}
+                                  src={frames[0]?.url}
                                   alt="Thumbnail"
                                   class="w-full aspect-video object-cover rounded-lg"
                                 />
@@ -487,7 +489,7 @@
                       class="bg-base-300 rounded-lg overflow-hidden lg:min-h-[400px]"
                     >
                       {#if currentPreviewPromise}
-                        {#await currentPreviewPromise}
+                        {#await Promise.all( [currentPreviewPromise, new Promise( (resolve) => setTimeout(resolve, PLACEHOLDER_MIN_LOADING_TIME), )], )}
                           <div
                             class="w-full flex flex-col lg:flex-row items-center lg:items-start gap-4 p-4"
                           >
@@ -564,7 +566,7 @@
                               </div>
                             </div>
                           </div>
-                        {:then frames}
+                        {:then [frames]}
                           {#if frames.length > 0}
                             <!-- Main preview image -->
                             <div
