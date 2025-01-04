@@ -1127,6 +1127,7 @@
         {convertVideos}
         {removeFile}
         {resetFfmpeg}
+        {activeTab}
       />
     {/if}
 

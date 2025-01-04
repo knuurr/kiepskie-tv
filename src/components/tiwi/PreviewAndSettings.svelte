@@ -39,6 +39,7 @@
   export let convertVideos: (files: FileList) => Promise<void>;
   export let removeFile: (index: number, settingId: string) => void;
   export let resetFfmpeg: () => void;
+  export let activeTab: "how-it-works" | "select-files" | "upload" | "results";
 
   let showSettings = false;
   let selectedPreviewIndex = 0;
@@ -78,6 +79,40 @@
   function handleKeydown(event: KeyboardEvent) {
     if (event.key === "Escape" && showPreviewModal) {
       showPreviewModal = false;
+    }
+
+    // Only handle keyboard shortcuts when in "upload" tab
+    if (activeTab !== "upload") return;
+
+    // Arrow keys for cycling through files
+    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+      if (files && files.length > 0) {
+        if (selectedFileIndex === undefined) {
+          selectedFileIndex = 0;
+        } else {
+          if (event.key === "ArrowLeft") {
+            selectedFileIndex =
+              selectedFileIndex === 0
+                ? files.length - 1
+                : selectedFileIndex - 1;
+          } else {
+            selectedFileIndex =
+              selectedFileIndex === files.length - 1
+                ? 0
+                : selectedFileIndex + 1;
+          }
+        }
+      }
+    }
+
+    // Shift+S to open settings
+    if (event.shiftKey && event.key === "S") {
+      showSettingsDrawer = true;
+    }
+
+    // Shift+O to trigger conversion
+    if (event.shiftKey && event.key === "O" && files?.length > 0) {
+      convertVideos(files);
     }
   }
 
@@ -397,6 +432,12 @@
                       />
                     </svg>
                     Okiłizuj
+                    <div
+                      class="flex items-center gap-1 ml-2 text-base-content/70"
+                    >
+                      <kbd class="kbd kbd-sm">⇧</kbd>
+                      <kbd class="kbd kbd-sm">o</kbd>
+                    </div>
                   </AnimatedButton>
                   <p class="text-xs text-center mt-2 text-base-content/70">
                     Wszystkie pliki zostaną przetworzone po kolei
@@ -454,7 +495,19 @@
 
                   <!-- Desktop title -->
                   <div class="hidden lg:flex justify-between items-center mb-4">
-                    <h3 class="card-title text-lg">Podgląd</h3>
+                    <div class="flex items-center gap-4">
+                      <h3 class="card-title text-lg">Podgląd</h3>
+                      <!-- Keyboard shortcuts info -->
+                      <div
+                        class="flex items-center gap-2 text-sm text-base-content/70"
+                      >
+                        <span class="flex items-center gap-1">
+                          <kbd class="kbd kbd-sm">←</kbd>
+                          <kbd class="kbd kbd-sm">→</kbd>
+                          przełączaj pliki
+                        </span>
+                      </div>
+                    </div>
                     <button
                       class="btn btn-ghost btn-sm gap-2"
                       on:click={() => (showSettingsDrawer = true)}
@@ -480,14 +533,18 @@
                         />
                       </svg>
                       Ustawienia
+                      <div
+                        class="flex items-center gap-1 ml-1 text-base-content/70"
+                      >
+                        <kbd class="kbd kbd-sm">⇧</kbd>
+                        <kbd class="kbd kbd-sm">s</kbd>
+                      </div>
                     </button>
                   </div>
 
                   <!-- Preview -->
                   <div class="space-y-4">
-                    <div
-                      class="bg-base-300 rounded-lg overflow-hidden lg:min-h-[400px]"
-                    >
+                    <div class="bg-base-300 rounded-lg overflow-hidden">
                       {#if currentPreviewPromise}
                         {#await Promise.all( [currentPreviewPromise, new Promise( (resolve) => setTimeout(resolve, PLACEHOLDER_MIN_LOADING_TIME), )], )}
                           <div
@@ -497,7 +554,7 @@
                             <div class="flex-1 w-full">
                               <div class="relative">
                                 <div
-                                  class="w-full aspect-video bg-base-100 rounded-lg animate-pulse flex items-center justify-center"
+                                  class="w-full h-[133px] lg:h-[400px] bg-base-100 rounded-lg animate-pulse flex items-center justify-center"
                                 >
                                   <!-- Loading state text -->
                                   <div class="text-center">
@@ -581,11 +638,15 @@
                                     showPreviewModal = true;
                                   }}
                                 >
-                                  <img
-                                    src={frames[selectedPreviewIndex].url}
-                                    alt="Podgląd"
-                                    class="max-w-full max-h-[400px] w-auto h-auto object-contain mx-auto rounded-lg transition-all group-hover:brightness-75"
-                                  />
+                                  <div
+                                    class="relative w-full h-auto lg:h-[400px] flex items-center justify-center bg-base-100/50 rounded-lg"
+                                  >
+                                    <img
+                                      src={frames[selectedPreviewIndex].url}
+                                      alt="Podgląd"
+                                      class="w-full lg:max-w-full lg:max-h-full lg:w-auto lg:h-auto object-contain rounded-lg transition-all group-hover:brightness-75"
+                                    />
+                                  </div>
                                   <!-- Bottom right magnifying glass -->
                                   <div
                                     class="absolute bottom-2 right-2 bg-black/50 p-2 rounded-full transition-opacity opacity-50 group-hover:opacity-100"
@@ -604,27 +665,6 @@
                                         d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
                                       />
                                     </svg>
-                                  </div>
-                                  <!-- Zoom icon overlay -->
-                                  <div
-                                    class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                  >
-                                    <div class="bg-black/50 p-2 rounded-full">
-                                      <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        class="h-6 w-6 text-white"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                      >
-                                        <path
-                                          stroke-linecap="round"
-                                          stroke-linejoin="round"
-                                          stroke-width="2"
-                                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
-                                        />
-                                      </svg>
-                                    </div>
                                   </div>
                                 </button>
                                 <!-- Timestamp indicator -->
