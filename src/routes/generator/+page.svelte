@@ -243,7 +243,8 @@
                 <div class="badge badge-sm badge-primary">
                   {generationHistory.length}/{MAX_HISTORY}
                 </div>
-                <kbd class="kbd kbd-sm text-gray-400 hidden md:inline">⇧ H</kbd>
+                <kbd class="kbd kbd-sm text-gray-400 hidden md:inline">⇧</kbd>
+                <kbd class="kbd kbd-sm text-gray-400 hidden md:inline">h</kbd>
               </button>
             </div>
 
