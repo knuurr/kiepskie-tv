@@ -31,6 +31,16 @@
   import PreviewAndSettings from "../../components/tiwi/PreviewAndSettings.svelte";
   import Results from "../../components/tiwi/Results.svelte";
 
+  import { browser } from "$app/environment";
+
+  // Debug logging utility
+  const isDev = import.meta.env.DEV;
+  const debug = (...args: unknown[]) => {
+    if (isDev) {
+      console.log("[DEBUG]", ...args);
+    }
+  };
+
   const previewUrl = writable("");
   let selectedFileIndex: number | undefined;
 
@@ -212,9 +222,9 @@
   });
 
   async function convertVideos(files: FileList) {
-    console.log("Started batch video converting");
+    debug("Started batch video converting");
     toasts.add("Rozpoczęto przetwarzanie plików", "info", 3000, true);
-    console.log(files);
+    debug(files);
     videoDataList = new Array(files.length); // Pre-allocate array
     state = "convert.start";
     processedFiles.set(new Set()); // Reset processed files
@@ -224,15 +234,15 @@
     for (let i = 0; i < files.length; i++) {
       currentProcessingIndex.set(i);
       const file = files[i];
-      console.log("About to convert: " + file.name);
+      debug("About to convert: " + file.name);
       toasts.add(`Przetwarzanie: ${file.name}`, "info");
       const duration = await getVideoDuration(file);
-      console.log("Video duration:", duration);
+      debug("Video duration:", duration);
       await convertVideo(file, duration);
       toasts.add(`Zakończono przetwarzanie: ${file.name}`, "success");
     }
 
-    console.log("Converts done. Setting state.");
+    debug("Converts done. Setting state.");
     transformState = "0/2";
     state = "convert.done";
     currentProcessingIndex.set(null);
@@ -242,7 +252,7 @@
       5000,
       true,
     );
-    console.log("Finishing batch video converting");
+    debug("Finishing batch video converting");
   }
 
   // Apply ffmpeg logic to individual input file
@@ -268,18 +278,18 @@
     let _i = 0;
     let outputs = [];
 
-    console.log("Using background:", selectedBackground.name);
-    console.log("Background config:", selectedBackground.overlayConfig);
+    debug("Using background:", selectedBackground.name);
+    debug("Background config:", selectedBackground.overlayConfig);
 
     await ffmpeg.writeFile(file.name, await fetchFile(file));
-    console.log("[*] Current Virtual FS:", await ffmpeg.listDir("/"));
+    debug("[*] Current Virtual FS:", await ffmpeg.listDir("/"));
 
     // Load selected background image using the background's imagePath
     await ffmpeg.writeFile(
       selectedBackground.id + ".png",
       await fetchFile(selectedBackground.imagePath),
     );
-    console.log(
+    debug(
       "[*] Current Virtual FS after loading background image:",
       await ffmpeg.listDir("/"),
     );
@@ -292,7 +302,7 @@
       fileSettings.greenscreenFillType,
       fileSettings.greenscreenScale,
     );
-    console.log("Generated FFmpeg filter:", greenscreenFilter);
+    debug("Generated FFmpeg filter:", greenscreenFilter);
 
     await ffmpeg.exec([
       "-i",
@@ -310,7 +320,7 @@
       `output${_i}.mp4`,
     ]);
     outputs.push(`output${_i}.mp4`);
-    console.log(
+    debug(
       "[*] Current Virtual FS after first conversion:",
       await ffmpeg.listDir("/"),
     );
@@ -319,7 +329,7 @@
     transformState = "2/2";
 
     if (fileSettings.addBoczek) {
-      console.log("Appending Boczek reaction");
+      debug("Appending Boczek reaction");
       await ffmpeg.writeFile(
         DATA.NAME_TEMPLATE_VIDEO,
         await fetchFile(DATA.PATH_TEMPLATE_VIDEO),
@@ -332,7 +342,7 @@
         fileSettings.boczekFillType,
         fileSettings.boczekScale,
       );
-      console.log("Generated Boczek filter:", boczekFilter);
+      debug("Generated Boczek filter:", boczekFilter);
 
       await ffmpeg.exec([
         "-i",
@@ -350,7 +360,7 @@
         `output${_i}.mp4`,
       ]);
       outputs.push(`output${_i}.mp4`);
-      console.log(
+      debug(
         "[*] Current Virtual FS after adding Boczek:",
         await ffmpeg.listDir("/"),
       );
@@ -359,7 +369,7 @@
     }
     // Add intro sound
     if (fileSettings.addIntro) {
-      console.log("Adding intro audio sound");
+      debug("Adding intro audio sound");
       await ffmpeg.writeFile(
         DATA.NAME_INTRO_AUDIO,
         await fetchFile(DATA.NAME_INTRO_AUDIO),
@@ -376,7 +386,7 @@
         `output${_i}.mp4`,
       ]);
       outputs.push(`output${_i}.mp4`);
-      console.log(
+      debug(
         "[*] Current Virtual FS after adding intro:",
         await ffmpeg.listDir("/"),
       );
@@ -411,21 +421,21 @@
     // Cleanup files
     for (const output of outputs) {
       const _fileDelete = await ffmpeg.deleteFile(output);
-      console.log("[*] File cleanup from Virtual FS: ", _fileDelete);
+      debug("[*] File cleanup from Virtual FS: ", _fileDelete);
     }
 
     await ffmpeg.deleteFile(file.name);
     await ffmpeg.deleteFile(selectedBackground.id + ".png");
-    console.log("[*] Cleanup original input file name: ", file.name);
+    debug("[*] Cleanup original input file name: ", file.name);
 
     const dirList = await ffmpeg.listDir("/");
-    console.log("[*] List of Virtual FS (after): ", dirList);
-    console.log("[*] FFmpeg Virtual FS cleaned up.");
+    debug("[*] List of Virtual FS (after): ", dirList);
+    debug("[*] FFmpeg Virtual FS cleaned up.");
   }
 
   async function extractFrames(file: File): Promise<VideoFrame[]> {
     try {
-      console.log("[*] Starting frame extraction");
+      debug("[*] Starting frame extraction");
       previewProgress.set({ stage: "extracting", current: 0 });
       const duration = await getVideoDuration(file);
       const timestamps = [duration * 0.25, duration * 0.5, duration * 0.75];
@@ -435,7 +445,7 @@
       for (let i = 0; i < timestamps.length; i++) {
         const timestamp = timestamps[i];
         previewProgress.set({ stage: "extracting", current: i + 1 });
-        console.log(`[*] Extracting frame at ${timestamp.toFixed(2)}s`);
+        debug(`[*] Extracting frame at ${timestamp.toFixed(2)}s`);
         await ffmpeg.writeFile(file.name, await fetchFile(file));
 
         // Extract frame at timestamp
@@ -471,7 +481,7 @@
         await ffmpeg.deleteFile(file.name);
       }
 
-      console.log(`[*] Extracted ${frames.length} frames`);
+      debug(`[*] Extracted ${frames.length} frames`);
       return frames;
     } catch (error) {
       console.error("Error during frame extraction:", error);
@@ -488,9 +498,7 @@
     frames: VideoFrame[],
   ): Promise<PreviewFrame[]> {
     try {
-      console.log(
-        `[*] Starting preview generation for ${frames.length} frames`,
-      );
+      debug(`[*] Starting preview generation for ${frames.length} frames`);
       previewProgress.set({ stage: "processing", current: 0 });
 
       const previewFrames: PreviewFrame[] = [];
@@ -513,7 +521,7 @@
       for (let i = 0; i < frames.length; i++) {
         const frame = frames[i];
         previewProgress.set({ stage: "processing", current: i + 1 });
-        console.log(
+        debug(
           `[*] Processing preview for timestamp ${frame.timestamp.toFixed(2)}s`,
         );
 
@@ -576,7 +584,7 @@
           await ffmpeg.deleteFile(frameFileName);
           await ffmpeg.deleteFile(file.name);
           await ffmpeg.deleteFile(selectedBackground.id + ".png");
-          console.log(
+          debug(
             `[*] Generated preview for timestamp ${frame.timestamp.toFixed(2)}s`,
           );
         } catch (frameError) {
@@ -597,7 +605,7 @@
         }
       }
 
-      console.log("[*] Preview generation complete");
+      debug("[*] Preview generation complete");
       return previewFrames;
     } catch (error) {
       console.error("Error during preview generation:", error);
@@ -648,11 +656,15 @@
       await ffmpeg.load({
         coreURL: `${baseUrl}/ffmpeg-core.js`,
         wasmURL: `${baseUrl}/ffmpeg-core.wasm`,
-        log: true,
       });
-      ffmpeg.on("log", ({ message }) => {
-        console.log("FFmpeg Log:", message);
-      });
+
+      // Only attach log listener in development mode
+      if (isDev) {
+        ffmpeg.on("log", ({ message }) => {
+          debug("FFmpeg:", message);
+        });
+      }
+
       ffmpeg.on("progress", ({ progress }) => {
         $currentProcessingIndex !== null &&
           fileProgress.update((map) => {
@@ -661,7 +673,8 @@
           });
       });
       state = "loaded";
-    } catch (error) {
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
       toasts.add(
         "Błąd ładowania FFmpeg: " + error.message,
         "error",
