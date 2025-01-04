@@ -97,9 +97,9 @@
       {#each apps as app}
         <a
           href={app.disabled ? "#" : app.link}
-          class="block card bg-base-200 shadow-xl transition-all duration-300 hover:shadow-2xl {app.disabled
+          class="block card bg-base-200 shadow-xl transition-all duration-300 {app.disabled
             ? 'pointer-events-none'
-            : 'hover:scale-[1.02]'}"
+            : 'hover:scale-[1.02] hover:shadow-[0_0_15px_rgba(var(--p),0.5)] hover:shadow-primary/40'}"
           aria-disabled={app.disabled}
           tabindex={app.disabled ? -1 : 0}
         >
