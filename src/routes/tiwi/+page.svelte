@@ -499,6 +499,9 @@
   ): Promise<PreviewFrame[]> {
     try {
       debug(`[*] Starting preview generation for ${frames.length} frames`);
+      debug(
+        `[*] File details: name=${file.name}, size=${file.size}, type=${file.type}`,
+      );
       previewProgress.set({ stage: "processing", current: 0 });
 
       const previewFrames: PreviewFrame[] = [];
@@ -507,6 +510,8 @@
       const fileSettings =
         $videoSettings.find((s) => s.fileName === file.name)?.settings ||
         DEFAULT_SETTINGS;
+
+      debug(`[*] Using settings:`, fileSettings);
 
       const selectedBackground = backgrounds.find(
         (bg) => bg.id === fileSettings.selectedBackground,
@@ -518,15 +523,22 @@
         );
       }
 
+      debug(
+        `[*] Selected background: ${selectedBackground.name} (${selectedBackground.id})`,
+      );
+
       for (let i = 0; i < frames.length; i++) {
         const frame = frames[i];
         previewProgress.set({ stage: "processing", current: i + 1 });
         debug(
-          `[*] Processing preview for timestamp ${frame.timestamp.toFixed(2)}s`,
+          `[*] Processing frame ${i + 1}/${frames.length} at timestamp ${frame.timestamp.toFixed(2)}s`,
         );
 
         try {
+          debug(`[*] Writing input file to FFmpeg virtual filesystem`);
           await ffmpeg.writeFile(file.name, await fetchFile(file));
+
+          debug(`[*] Writing background image to FFmpeg virtual filesystem`);
           await ffmpeg.writeFile(
             selectedBackground.id + ".png",
             await fetchFile(selectedBackground.imagePath),
@@ -534,20 +546,34 @@
 
           // Create a temporary file from the frame blob
           const frameFileName = `input_frame_${frame.timestamp}.png`;
+          debug(
+            `[*] Writing frame blob to FFmpeg virtual filesystem as ${frameFileName}`,
+          );
           await ffmpeg.writeFile(frameFileName, await fetchFile(frame.blob));
 
+          // List files before processing to verify everything is in place
+          const filesBeforeProcess = await ffmpeg.listDir("/");
+          debug(
+            `[*] Files in virtual filesystem before processing:`,
+            filesBeforeProcess,
+          );
+
           // Process the frame with greenscreen effect
+          const filter = DATA.generateGreenscreenFilter(
+            selectedBackground.overlayConfig,
+            fileSettings.greenscreenFillType,
+            fileSettings.greenscreenScale,
+          );
+          debug(`[*] Generated FFmpeg filter:`, filter);
+
+          debug(`[*] Executing FFmpeg command for frame processing`);
           await ffmpeg.exec([
             "-i",
             selectedBackground.id + ".png",
             "-i",
             frameFileName,
             "-filter_complex",
-            DATA.generateGreenscreenFilter(
-              selectedBackground.overlayConfig,
-              fileSettings.greenscreenFillType,
-              fileSettings.greenscreenScale,
-            ),
+            filter,
             "-frames:v",
             "1",
             "-preset",
@@ -555,6 +581,7 @@
             `preview_${frame.timestamp}.png`,
           ]);
 
+          debug(`[*] Reading processed frame from virtual filesystem`);
           const previewData = await ffmpeg.readFile(
             `preview_${frame.timestamp}.png`,
           );
@@ -580,35 +607,65 @@
           });
 
           // Cleanup
-          await ffmpeg.deleteFile(`preview_${frame.timestamp}.png`);
-          await ffmpeg.deleteFile(frameFileName);
-          await ffmpeg.deleteFile(file.name);
-          await ffmpeg.deleteFile(selectedBackground.id + ".png");
+          debug(`[*] Starting cleanup for frame ${i + 1}`);
+          try {
+            await ffmpeg.deleteFile(`preview_${frame.timestamp}.png`);
+            await ffmpeg.deleteFile(frameFileName);
+            await ffmpeg.deleteFile(file.name);
+            await ffmpeg.deleteFile(selectedBackground.id + ".png");
+
+            // Verify cleanup
+            const remainingFiles = await ffmpeg.listDir("/");
+            debug(`[*] Files remaining after cleanup:`, remainingFiles);
+          } catch (cleanupError) {
+            debug(`[*] Error during frame cleanup:`, cleanupError);
+            // Continue processing even if cleanup fails
+          }
+
           debug(
-            `[*] Generated preview for timestamp ${frame.timestamp.toFixed(2)}s`,
+            `[*] Successfully generated preview for timestamp ${frame.timestamp.toFixed(2)}s`,
           );
         } catch (frameError) {
-          console.error(
-            `Error processing frame at ${frame.timestamp}s:`,
-            frameError,
-          );
+          debug(`[*] Detailed frame processing error:`, frameError);
+          if (frameError instanceof Error) {
+            debug(`[*] Error name: ${frameError.name}`);
+            debug(`[*] Error message: ${frameError.message}`);
+            debug(`[*] Error stack: ${frameError.stack}`);
+          }
+
+          // Try to get filesystem state for debugging
+          try {
+            const fsState = await ffmpeg.listDir("/");
+            debug(`[*] Virtual filesystem state at error:`, fsState);
+          } catch (fsError) {
+            debug(`[*] Could not read filesystem state:`, fsError);
+          }
+
           // Clean up any remaining files
           try {
+            debug(`[*] Attempting emergency cleanup after error`);
             await ffmpeg.deleteFile(`preview_${frame.timestamp}.png`);
             await ffmpeg.deleteFile(`input_frame_${frame.timestamp}.png`);
             await ffmpeg.deleteFile(file.name);
             await ffmpeg.deleteFile(selectedBackground.id + ".png");
           } catch (cleanupError) {
-            console.error("Error during cleanup:", cleanupError);
+            debug(`[*] Emergency cleanup failed:`, cleanupError);
           }
           throw frameError;
         }
       }
 
-      debug("[*] Preview generation complete");
+      debug(
+        `[*] Preview generation complete. Generated ${previewFrames.length} previews`,
+      );
       return previewFrames;
     } catch (error) {
-      console.error("Error during preview generation:", error);
+      debug(`[*] Fatal error during preview generation:`, error);
+      if (error instanceof Error) {
+        debug(`[*] Error name: ${error.name}`);
+        debug(`[*] Error message: ${error.message}`);
+        debug(`[*] Error stack: ${error.stack}`);
+      }
       throw new Error(
         error instanceof Error
           ? error.message
