@@ -536,7 +536,7 @@
 
   <HistoryDrawer
     bind:showDrawer={showHistoryDrawer}
-    toastHistory={toastHistory.slice(1)}
+    {toastHistory}
     bind:copyStates
     bind:shareStates
     bind:canShareOnDevice
