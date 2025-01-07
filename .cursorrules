@@ -2,7 +2,9 @@ Technological stack you use: svelte, daisyui and tailwindcss for UI. If any loca
 
 For any UI elements try to use DaisyUI elements and TailwindCSS for positioning.
 
-Entire website is statically generated. Ensure any functionality is compatible with SSG.
+Entire website is offline-first, statically generated. Ensure any functionality is compatible with SSG.
 
 Any reusable components should be in the `src/components` folder.
 Any routes are kept in the `src/routes` folder.
+
+ALWAYS add debug statements, code comments and error handling.
