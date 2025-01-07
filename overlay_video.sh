@@ -23,10 +23,21 @@ PAD_HEIGHT=382
 OFFSET_X=140
 OFFSET_Y=94
 
+# CRT curve effect configuration
+# Adjust these values to control the curve intensity
+# k1: barrel distortion (0.1 to 0.3 recommended)
+# k2: fine-tuning of the curve (0.1 to 0.3 recommended)
+CRT_K1=0.02
+CRT_K2=0.05
+
 # Create the ffmpeg command with overlay filter
 ffmpeg -i "$BACKGROUND" -i "$INPUT_VIDEO" \
-    -filter_complex "[1:v]scale=${MAX_WIDTH}:${MAX_HEIGHT}:force_original_aspect_ratio=decrease,pad=${PAD_WIDTH}:${PAD_HEIGHT}:(ow-iw)/2:(oh-ih)/2[scaled]; \
-                     [0:v][scaled]overlay=${OFFSET_X}:${OFFSET_Y}[v]" \
+    -filter_complex "\
+        [1:v]scale=${MAX_WIDTH}:${MAX_HEIGHT}:force_original_aspect_ratio=decrease,\
+        pad=${PAD_WIDTH}:${PAD_HEIGHT}:(ow-iw)/2:(oh-ih)/2,\
+        format=rgba,\
+        lenscorrection=k1=${CRT_K1}:k2=${CRT_K2}[curved];\
+        [0:v][curved]overlay=${OFFSET_X}:${OFFSET_Y}[v]" \
     -map "[v]" \
     -map 1:a \
     -c:v libx264 \
@@ -36,3 +47,4 @@ ffmpeg -i "$BACKGROUND" -i "$INPUT_VIDEO" \
 
 # Print completion message
 echo "Video processing complete. Output saved as: $OUTPUT_FILE" 
+
