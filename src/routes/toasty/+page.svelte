@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import type { Toast } from "$lib/types/Toast";
+  import toastsData from "$lib/toasts/toasts.json";
 
   import CenteredContainer from "../../components/CenteredContainer.svelte";
   import Footer from "../../components/Footer.svelte";
@@ -28,8 +29,7 @@
   let copyStates: { [key: number]: boolean } = {};
   let shareStates: { [key: number]: boolean } = {};
 
-  let toasts: Toast[] = [];
-  let isLoading = true;
+  let toasts = toastsData;
   let observer: IntersectionObserver;
 
   let isShareSuccess = false;
@@ -309,20 +309,6 @@
     };
   });
 
-  // Separate async initialization
-  onMount(async () => {
-    try {
-      const response = await fetch("/toasts/toasts.json");
-      if (!response.ok) throw new Error("Failed to load toasts data");
-      toasts = await response.json();
-    } catch (error) {
-      console.error("Error loading toasts:", error);
-      toasts = [];
-    } finally {
-      isLoading = false;
-    }
-  });
-
   if (typeof window !== "undefined") {
     window.addEventListener("hashchange", updateActiveHistoryIndex);
     updateActiveHistoryIndex();
@@ -432,15 +418,11 @@
         <div class="flex flex-col gap-2 mt-4">
           <AnimatedButton
             on:click={getRandomToast}
-            disabled={isRolling || isLoading}
+            disabled={isRolling}
             fullWidth={true}
           >
-            {#if isLoading}
-              Ładowanie toastów...
-            {:else}
-              No to jedziem! 🍻
-              <kbd class="kbd kbd-sm hidden md:inline-flex text-white">r</kbd>
-            {/if}
+            No to jedziem! 🍻
+            <kbd class="kbd kbd-sm hidden md:inline-flex text-white">r</kbd>
           </AnimatedButton>
           <div class="grid grid-cols-2 gap-2">
             <button

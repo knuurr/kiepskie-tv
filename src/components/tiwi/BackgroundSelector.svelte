@@ -3,6 +3,7 @@
   import { videoSettings } from "$lib/stores/videoSettingsStore";
   import * as DATA from "../../routes/Constans.svelte";
   import { createEventDispatcher } from "svelte";
+  import backgroundsData from "$lib/tiwi/backgrounds.json";
 
   export let settingId: string;
   export let showDrawer = false;
@@ -28,21 +29,9 @@
     };
   }
 
-  let backgrounds: Background[] = [];
-  let loading = true;
+  let backgrounds: Background[] = backgroundsData.backgrounds;
+  let loading = false;
   let error: string | null = null;
-
-  onMount(async () => {
-    try {
-      const response = await fetch(DATA.PATH_BACKGROUNDS_JSON);
-      const data = await response.json();
-      backgrounds = data.backgrounds;
-    } catch (e) {
-      error = e instanceof Error ? e.message : "Unknown error";
-    } finally {
-      loading = false;
-    }
-  });
 
   function selectBackground(backgroundId: string) {
     dispatch("backgroundSelected", { backgroundId });

@@ -1,0 +1,38 @@
+{
+  "backgrounds": [
+    {
+      "id": "okil-1",
+      "name": "Klasyczny Okił",
+      "description": "Co więcej, to jest klasyczny Okił",
+      "imagePath": "/greenscreen.png",
+      "previewPath": "/greenscreen.png",
+      "overlayConfig": {
+        "imageWidth": 768,
+        "imageHeight": 576,
+        "maxWidth": 512,
+        "maxHeight": 382,
+        "padWidth": 512,
+        "padHeight": 382,
+        "offsetX": 140,
+        "offsetY": 94
+      }
+    },
+    {
+      "id": "adek",
+      "name": "Adek",
+      "description": "Ostatnia iteracja telewizora",
+      "imagePath": "/adek.png",
+      "previewPath": "/adek.png",
+      "overlayConfig": {
+        "imageWidth": 1280,
+        "imageHeight": 720,
+        "maxWidth": 512,
+        "maxHeight": 382,
+        "padWidth": 512,
+        "padHeight": 382,
+        "offsetX": 140,
+        "offsetY": 94
+      }
+    }
+  ]
+}

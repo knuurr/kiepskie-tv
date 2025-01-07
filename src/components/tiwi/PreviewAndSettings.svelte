@@ -10,6 +10,7 @@
   import BackgroundSelector from "./BackgroundSelector.svelte";
   import * as DATA from "../../routes/Constans.svelte";
   import SettingsDrawer from "./SettingsDrawer.svelte";
+  import backgroundsData from "$lib/tiwi/backgrounds.json";
 
   const PLACEHOLDER_MIN_LOADING_TIME = 300; // milliseconds
 
@@ -46,11 +47,24 @@
   let showPreviewModal = false;
   let selectedPreviewUrl: string | null = null;
   let showSettingsDrawer = false;
-  let backgrounds: any[] = [];
+  let backgrounds = backgroundsData.backgrounds;
   let isLoadingBackgrounds = true;
   let hasUnsavedChanges = false;
   let pendingSettings: any = {};
   let currentPreviewPromise: Promise<PreviewFrame[]> | null = null;
+
+  let selectedBackground = backgrounds.find(
+    (bg) =>
+      bg.id === $videoSettings[selectedFileIndex]?.settings?.selectedBackground,
+  );
+
+  $: {
+    selectedBackground = backgrounds.find(
+      (bg) =>
+        bg.id ===
+        $videoSettings[selectedFileIndex]?.settings?.selectedBackground,
+    );
+  }
 
   // Reset preview index when file changes
   $: if (selectedFileIndex !== undefined) {

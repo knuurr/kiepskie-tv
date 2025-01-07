@@ -5,6 +5,7 @@
   import { toasts } from "$lib/stores/toastStore";
   import BackgroundSelector from "./BackgroundSelector.svelte";
   import * as DATA from "../../routes/Constans.svelte";
+  import backgroundsData from "$lib/tiwi/backgrounds.json";
 
   export let showDrawer = false;
   export let selectedFileIndex: number | undefined;
@@ -13,12 +14,25 @@
   export let files: FileList;
 
   let isLoadingBackgrounds = true;
-  let backgrounds: any[] = [];
+  let backgrounds = backgroundsData.backgrounds;
   let hasUnsavedChanges = false;
   let pendingSettings: any = {};
   let lastSavedSettings: any = {};
   let showBackgroundDrawer = false;
   let showCloseConfirmModal = false;
+
+  let selectedBackground = backgrounds.find(
+    (bg) =>
+      bg.id === $videoSettings[selectedFileIndex]?.settings?.selectedBackground,
+  );
+
+  $: {
+    selectedBackground = backgrounds.find(
+      (bg) =>
+        bg.id ===
+        $videoSettings[selectedFileIndex]?.settings?.selectedBackground,
+    );
+  }
 
   // Reset to last saved state whenever file changes or drawer opens
   $: if (selectedFileIndex !== undefined) {
