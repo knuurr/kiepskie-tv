@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { fade } from "svelte/transition";
   import type { Toast } from "$lib/types/Toast";
   import toastsData from "$lib/toasts/toasts.json";
 
@@ -21,6 +22,7 @@
   let typewriterText: string = "";
   let typewriterInterval: ReturnType<typeof setInterval>;
   let activeHistoryIndex: number = 0;
+  let isTypewriterComplete: boolean = false;
 
   const MAX_HISTORY_SIZE = 6;
   const TOAST_LOADING_DELAY_MS = 800; // Configurable delay before starting typewriter effect
@@ -115,6 +117,7 @@
     let index = 0;
     clearInterval(typewriterInterval);
     typewriterText = "";
+    isTypewriterComplete = false;
 
     // Add delay before starting the typewriter effect
     setTimeout(() => {
@@ -125,6 +128,7 @@
         } else {
           clearInterval(typewriterInterval);
           isRolling = false;
+          isTypewriterComplete = true;
         }
       }, 50);
     }, TOAST_LOADING_DELAY_MS);
@@ -366,7 +370,11 @@
           </button>
         </div>
         {#if currentToast}
-          <MissingMetadataInfo toast={currentToast} />
+          {#if isTypewriterComplete}
+            <div transition:fade={{ duration: 300 }}>
+              <MissingMetadataInfo toast={currentToast} />
+            </div>
+          {/if}
         {/if}
         <div class="card bg-base-100 border-2 border-base-200">
           <div class="card-body">
