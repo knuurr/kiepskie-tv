@@ -29,8 +29,11 @@ OVERLAY_HEIGHT_PERCENT=65.0  # This will make overlay ~382px high on 576px backg
 OVERLAY_WIDTH=$(printf "%.0f" $(echo "$BG_WIDTH * $OVERLAY_WIDTH_PERCENT / 100" | bc -l))
 OVERLAY_HEIGHT=$(printf "%.0f" $(echo "$BG_HEIGHT * $OVERLAY_HEIGHT_PERCENT / 100" | bc -l))
 
+# Effect toggles
+ENABLE_CRT=true  # Toggle for CRT effect
+ENABLE_INTERLACED=true  # Toggle for interlaced effect
+
 # CRT effect settings
-ENABLE_CRT=false  # Toggle for CRT effect
 CRT_K1=0.02
 CRT_K2=0.02
 CURVE_SCALE_FACTOR=1.05
@@ -60,16 +63,37 @@ if [ "$PADDING_TYPE" = "pad" ]; then
     SCALE_FILTER="${SCALE_FILTER},pad=${OVERLAY_WIDTH}:${OVERLAY_HEIGHT}:(ow-iw)/2:(oh-ih)/2"
 fi
 
-# Build the filter chain based on CRT toggle
+# Build the filter chain based on effects toggle
 if [ "$ENABLE_CRT" = true ]; then
-    FILTER_CHAIN="${SCALE_FILTER},\
-        format=rgba,\
-        lenscorrection=k1=${CRT_K1}:k2=${CRT_K2},\
-        scale=iw*${CURVE_SCALE_FACTOR}:ih*${CURVE_SCALE_FACTOR}[scaled]"
+    if [ "$ENABLE_INTERLACED" = true ]; then
+        FILTER_CHAIN="${SCALE_FILTER},\
+            split[a][b];\
+            [a]curves=darker[a];\
+            [a][b]blend=all_expr='if(eq(0,mod(Y,2)),A,B)':shortest=1,\
+            format=rgba,\
+            lenscorrection=k1=${CRT_K1}:k2=${CRT_K2},\
+            scale=iw*${CURVE_SCALE_FACTOR}:ih*${CURVE_SCALE_FACTOR}[scaled]"
+    else
+        FILTER_CHAIN="${SCALE_FILTER},\
+            format=rgba,\
+            lenscorrection=k1=${CRT_K1}:k2=${CRT_K2},\
+            scale=iw*${CURVE_SCALE_FACTOR}:ih*${CURVE_SCALE_FACTOR}[scaled]"
+    fi
 else
-    FILTER_CHAIN="${SCALE_FILTER},\
-        format=rgba[scaled]"
+    if [ "$ENABLE_INTERLACED" = true ]; then
+        FILTER_CHAIN="${SCALE_FILTER},\
+            split[a][b];\
+            [a]curves=darker[a];\
+            [a][b]blend=all_expr='if(eq(0,mod(Y,2)),A,B)':shortest=1,\
+            format=rgba[scaled]"
+    else
+        FILTER_CHAIN="${SCALE_FILTER},\
+            format=rgba[scaled]"
+    fi
 fi
+
+# Debug output for chosen filter chain
+echo "Using filter chain: ${FILTER_CHAIN}"
 
 # Execute ffmpeg command
 ffmpeg -i "$BACKGROUND" -i "$INPUT_VIDEO" \
