@@ -28,12 +28,18 @@ OFFSET_Y=94
 # k1: barrel distortion (0.1 to 0.3 recommended)
 # k2: fine-tuning of the curve (0.1 to 0.3 recommended)
 CRT_K1=0.01
-CRT_K2=0.05
+CRT_K2=0.02
 
 # Scale factor to compensate for curve distortion (0.95 to 1.05 range)
 # Values > 1.0 will enlarge the curved image
 # Values < 1.0 will shrink the curved image
-CURVE_SCALE_FACTOR=1
+CURVE_SCALE_FACTOR=1.06
+
+# Calculate adjusted offsets based on curve scale factor
+# For top-left positioning, we need to decrease the offsets when scaling up
+# and increase them when scaling down
+ADJUSTED_OFFSET_X=$( printf "%.0f" $(echo "$OFFSET_X / $CURVE_SCALE_FACTOR" | bc -l))
+ADJUSTED_OFFSET_Y=$( printf "%.0f" $(echo "$OFFSET_Y / $CURVE_SCALE_FACTOR" | bc -l))
 
 # Create the ffmpeg command with overlay filter
 ffmpeg -i "$BACKGROUND" -i "$INPUT_VIDEO" \
@@ -42,8 +48,8 @@ ffmpeg -i "$BACKGROUND" -i "$INPUT_VIDEO" \
         pad=${PAD_WIDTH}:${PAD_HEIGHT}:(ow-iw)/2:(oh-ih)/2,\
         format=rgba,\
         lenscorrection=k1=${CRT_K1}:k2=${CRT_K2},\
-        scale=iw*${CURVE_SCALE_FACTOR}:ih*${CURVE_SCALE_FACTOR}[scaled],\
-        [0:v][scaled]overlay=${OFFSET_X}:${OFFSET_Y}[v]" \
+        scale=iw*${CURVE_SCALE_FACTOR}:ih*${CURVE_SCALE_FACTOR}[scaled];\
+        [0:v][scaled]overlay=${ADJUSTED_OFFSET_X}:${ADJUSTED_OFFSET_Y}[v]" \
     -map "[v]" \
     -map 1:a \
     -c:v libx264 \
