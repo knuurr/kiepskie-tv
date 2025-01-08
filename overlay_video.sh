@@ -30,13 +30,20 @@ OVERLAY_WIDTH=$(printf "%.0f" $(echo "$BG_WIDTH * $OVERLAY_WIDTH_PERCENT / 100" 
 OVERLAY_HEIGHT=$(printf "%.0f" $(echo "$BG_HEIGHT * $OVERLAY_HEIGHT_PERCENT / 100" | bc -l))
 
 # Effect toggles
-ENABLE_CRT=true  # Toggle for CRT effect
+ENABLE_CRT=false  # Toggle for CRT effect
 ENABLE_INTERLACED=true  # Toggle for interlaced effect
+ENABLE_HIGHLIGHT=true  # Toggle for highlight effect
 
 # CRT effect settings
 CRT_K1=0.02
 CRT_K2=0.02
 CURVE_SCALE_FACTOR=1.05
+
+# Highlight settings
+HIGHLIGHT_X=80  # X position of highlight glow
+HIGHLIGHT_Y=60  # Y position of highlight glow
+HIGHLIGHT_SIZE=90  # Size of highlight glow
+HIGHLIGHT_BLUR=7  # Blur amount for highlight
 
 # Calculate position adjustments for CRT effect
 if [ "$ENABLE_CRT" = true ]; then
@@ -63,18 +70,44 @@ if [ "$PADDING_TYPE" = "pad" ]; then
     SCALE_FILTER="${SCALE_FILTER},pad=${OVERLAY_WIDTH}:${OVERLAY_HEIGHT}:(ow-iw)/2:(oh-ih)/2"
 fi
 
+# Build the highlight filter if enabled
+HIGHLIGHT_FILTER=""
+if [ "$ENABLE_HIGHLIGHT" = true ]; then
+    HIGHLIGHT_FILTER="split [main][for_highlight];
+        [for_highlight] format=gbrp,
+        drawtext=fontfile=/usr/share/fonts/truetype/freefont/FreeSerif.ttf:
+        text='¡':x=${HIGHLIGHT_X}:y=${HIGHLIGHT_Y}:
+        fontsize=${HIGHLIGHT_SIZE}:fontcolor=white,
+        boxblur=${HIGHLIGHT_BLUR} [highlight];
+        [main][highlight] blend=all_mode=screen:shortest=1"
+fi
+
 # Build the filter chain based on effects toggle
 if [ "$ENABLE_CRT" = true ]; then
     if [ "$ENABLE_INTERLACED" = true ]; then
         FILTER_CHAIN="${SCALE_FILTER},\
             split[a][b];\
             [a]curves=darker[a];\
-            [a][b]blend=all_expr='if(eq(0,mod(Y,2)),A,B)':shortest=1,\
+            [a][b]blend=all_expr='if(eq(0,mod(Y,2)),A,B)':shortest=1"
+        
+        if [ "$ENABLE_HIGHLIGHT" = true ]; then
+            FILTER_CHAIN="${FILTER_CHAIN},\
+                ${HIGHLIGHT_FILTER}"
+        fi
+        
+        FILTER_CHAIN="${FILTER_CHAIN},\
             format=rgba,\
             lenscorrection=k1=${CRT_K1}:k2=${CRT_K2},\
             scale=iw*${CURVE_SCALE_FACTOR}:ih*${CURVE_SCALE_FACTOR}[scaled]"
     else
-        FILTER_CHAIN="${SCALE_FILTER},\
+        FILTER_CHAIN="${SCALE_FILTER}"
+        
+        if [ "$ENABLE_HIGHLIGHT" = true ]; then
+            FILTER_CHAIN="${FILTER_CHAIN},\
+                ${HIGHLIGHT_FILTER}"
+        fi
+        
+        FILTER_CHAIN="${FILTER_CHAIN},\
             format=rgba,\
             lenscorrection=k1=${CRT_K1}:k2=${CRT_K2},\
             scale=iw*${CURVE_SCALE_FACTOR}:ih*${CURVE_SCALE_FACTOR}[scaled]"
@@ -84,10 +117,24 @@ else
         FILTER_CHAIN="${SCALE_FILTER},\
             split[a][b];\
             [a]curves=darker[a];\
-            [a][b]blend=all_expr='if(eq(0,mod(Y,2)),A,B)':shortest=1,\
+            [a][b]blend=all_expr='if(eq(0,mod(Y,2)),A,B)':shortest=1"
+        
+        if [ "$ENABLE_HIGHLIGHT" = true ]; then
+            FILTER_CHAIN="${FILTER_CHAIN},\
+                ${HIGHLIGHT_FILTER}"
+        fi
+        
+        FILTER_CHAIN="${FILTER_CHAIN},\
             format=rgba[scaled]"
     else
-        FILTER_CHAIN="${SCALE_FILTER},\
+        FILTER_CHAIN="${SCALE_FILTER}"
+        
+        if [ "$ENABLE_HIGHLIGHT" = true ]; then
+            FILTER_CHAIN="${FILTER_CHAIN},\
+                ${HIGHLIGHT_FILTER}"
+        fi
+        
+        FILTER_CHAIN="${FILTER_CHAIN},\
             format=rgba[scaled]"
     fi
 fi
