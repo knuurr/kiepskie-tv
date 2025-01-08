@@ -30,33 +30,21 @@ OVERLAY_WIDTH=$(printf "%.0f" $(echo "$BG_WIDTH * $OVERLAY_WIDTH_PERCENT / 100" 
 OVERLAY_HEIGHT=$(printf "%.0f" $(echo "$BG_HEIGHT * $OVERLAY_HEIGHT_PERCENT / 100" | bc -l))
 
 # CRT effect settings
-ENABLE_CRT=true  # Toggle for CRT effect
+ENABLE_CRT=false  # Toggle for CRT effect
 CRT_K1=0.02
 CRT_K2=0.02
 CURVE_SCALE_FACTOR=1.05
 
-# Calculate center-based position adjustments for CRT effect
+# Calculate position adjustments for CRT effect
 if [ "$ENABLE_CRT" = true ]; then
-    # Calculate the center point of the overlay
-    CENTER_X=$(printf "%.0f" $(echo "$OVERLAY_X + ($OVERLAY_WIDTH / 2)" | bc -l))
-    CENTER_Y=$(printf "%.0f" $(echo "$OVERLAY_Y + ($OVERLAY_HEIGHT / 2)" | bc -l))
-    
-    # Calculate the distance from center to edges
-    HALF_WIDTH=$(printf "%.0f" $(echo "$OVERLAY_WIDTH / 2" | bc -l))
-    HALF_HEIGHT=$(printf "%.0f" $(echo "$OVERLAY_HEIGHT / 2" | bc -l))
-    
-    # Apply scale factor to maintain symmetry around center
-    SCALED_HALF_WIDTH=$(printf "%.0f" $(echo "$HALF_WIDTH * $CURVE_SCALE_FACTOR" | bc -l))
-    SCALED_HALF_HEIGHT=$(printf "%.0f" $(echo "$HALF_HEIGHT * $CURVE_SCALE_FACTOR" | bc -l))
-    
-    # Calculate new position based on scaled center point
-    ADJUSTED_X=$(printf "%.0f" $(echo "$CENTER_X - $SCALED_HALF_WIDTH" | bc -l))
-    ADJUSTED_Y=$(printf "%.0f" $(echo "$CENTER_Y - $SCALED_HALF_HEIGHT" | bc -l))
+    # Scale from center point in one calculation
+    SCALE_OFFSET_X=$(printf "%.0f" $(echo "($OVERLAY_WIDTH * ($CURVE_SCALE_FACTOR - 1)) / 2" | bc -l))
+    SCALE_OFFSET_Y=$(printf "%.0f" $(echo "($OVERLAY_HEIGHT * ($CURVE_SCALE_FACTOR - 1)) / 2" | bc -l))
+    ADJUSTED_X=$((OVERLAY_X - SCALE_OFFSET_X))
+    ADJUSTED_Y=$((OVERLAY_Y - SCALE_OFFSET_Y))
     
     # Debug output
-    echo "Center point: ($CENTER_X, $CENTER_Y)"
-    echo "Original dimensions: ${OVERLAY_WIDTH}x${OVERLAY_HEIGHT}"
-    echo "Scaled dimensions: $((SCALED_HALF_WIDTH*2))x$((SCALED_HALF_HEIGHT*2))"
+    echo "Scale offsets: (${SCALE_OFFSET_X}, ${SCALE_OFFSET_Y})"
     echo "Adjusted position: ($ADJUSTED_X, $ADJUSTED_Y)"
 else
     ADJUSTED_X=$OVERLAY_X
