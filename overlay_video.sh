@@ -11,45 +11,50 @@ fi
 
 INPUT_VIDEO="$1"
 OUTPUT_FILE="${1%.*}_output.${1##*.}"
-BACKGROUND="static/greenscreen.png"  # Background image path
+BACKGROUND="static/greenscreen.png"
 
-# Configuration values from the JSON
-IMAGE_WIDTH=768
-IMAGE_HEIGHT=576
-MAX_WIDTH=512
-MAX_HEIGHT=382
-PAD_WIDTH=512
-PAD_HEIGHT=382
-OFFSET_X=140
-OFFSET_Y=94
+# Background image dimensions (reference size)
+BG_WIDTH=768
+BG_HEIGHT=576
 
-# CRT curve effect configuration
-# Adjust these values to control the curve intensity
-# k1: barrel distortion (0.1 to 0.3 recommended)
-# k2: fine-tuning of the curve (0.1 to 0.3 recommended)
-CRT_K1=0.01
-CRT_K2=0.02
+# Absolute pixel positions for overlay
+OVERLAY_X=141  # Exact pixel position from left
+OVERLAY_Y=100   # Exact pixel position from top
 
-# Scale factor to compensate for curve distortion (0.95 to 1.05 range)
-# Values > 1.0 will enlarge the curved image
-# Values < 1.0 will shrink the curved image
-CURVE_SCALE_FACTOR=1.06
+# Overlay dimensions as percentage of background
+OVERLAY_WIDTH_PERCENT=66.9  # This will make overlay ~515px wide on 768px background
+OVERLAY_HEIGHT_PERCENT=65.0  # This will make overlay ~382px high on 576px background
 
-# Calculate adjusted offsets based on curve scale factor
-# For top-left positioning, we need to decrease the offsets when scaling up
-# and increase them when scaling down
-ADJUSTED_OFFSET_X=$( printf "%.0f" $(echo "$OFFSET_X / $CURVE_SCALE_FACTOR" | bc -l))
-ADJUSTED_OFFSET_Y=$( printf "%.0f" $(echo "$OFFSET_Y / $CURVE_SCALE_FACTOR" | bc -l))
+# Calculate actual dimensions from percentages
+OVERLAY_WIDTH=$(printf "%.0f" $(echo "$BG_WIDTH * $OVERLAY_WIDTH_PERCENT / 100" | bc -l))
+OVERLAY_HEIGHT=$(printf "%.0f" $(echo "$BG_HEIGHT * $OVERLAY_HEIGHT_PERCENT / 100" | bc -l))
 
-# Create the ffmpeg command with overlay filter
+# CRT effect settings
+CRT_K1=0.00
+CRT_K2=0.00
+CURVE_SCALE_FACTOR=1.00
+
+# Calculate curve-adjusted position
+ADJUSTED_X=$( printf "%.0f" $(echo "$OVERLAY_X / $CURVE_SCALE_FACTOR" | bc -l))
+ADJUSTED_Y=$( printf "%.0f" $(echo "$OVERLAY_Y / $CURVE_SCALE_FACTOR" | bc -l))
+
+# Padding type: "stretch" or "pad"
+PADDING_TYPE="pad"
+
+# Create the ffmpeg filter chain
+SCALE_FILTER="[1:v]scale=${OVERLAY_WIDTH}:${OVERLAY_HEIGHT}:force_original_aspect_ratio=decrease"
+if [ "$PADDING_TYPE" = "pad" ]; then
+    SCALE_FILTER="${SCALE_FILTER},pad=${OVERLAY_WIDTH}:${OVERLAY_HEIGHT}:(ow-iw)/2:(oh-ih)/2"
+fi
+
+# Execute ffmpeg command
 ffmpeg -i "$BACKGROUND" -i "$INPUT_VIDEO" \
     -filter_complex "\
-        [1:v]scale=${MAX_WIDTH}:${MAX_HEIGHT}:force_original_aspect_ratio=decrease,\
-        pad=${PAD_WIDTH}:${PAD_HEIGHT}:(ow-iw)/2:(oh-ih)/2,\
+        ${SCALE_FILTER},\
         format=rgba,\
         lenscorrection=k1=${CRT_K1}:k2=${CRT_K2},\
         scale=iw*${CURVE_SCALE_FACTOR}:ih*${CURVE_SCALE_FACTOR}[scaled];\
-        [0:v][scaled]overlay=${ADJUSTED_OFFSET_X}:${ADJUSTED_OFFSET_Y}[v]" \
+        [0:v][scaled]overlay=${ADJUSTED_X}:${ADJUSTED_Y}[v]" \
     -map "[v]" \
     -map 1:a \
     -c:v libx264 \
