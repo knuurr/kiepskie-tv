@@ -17,6 +17,13 @@ BACKGROUND="static/greenscreen.png"
 BG_WIDTH=768
 BG_HEIGHT=576
 
+# Scale factor for video content (0.0-1.0)
+# Controls how much the video is scaled down relative to its container
+# Lower values (0.7-0.8): More padding around edges, smaller video
+# Higher values (0.9-1.0): Less padding, video fills more space
+# Current value provides subtle padding while maintaining good visibility
+VIDEO_SCALE_FACTOR=0.98
+
 # Bloom effect settings
 ENABLE_BLOOM=true  # Toggle for bloom effect on/off 
 
@@ -47,13 +54,27 @@ OVERLAY_HEIGHT_PERCENT=65.0  # This will make overlay ~382px high on 576px backg
 OVERLAY_WIDTH=$(printf "%.0f" $(echo "$BG_WIDTH * $OVERLAY_WIDTH_PERCENT / 100" | bc -l))
 OVERLAY_HEIGHT=$(printf "%.0f" $(echo "$BG_HEIGHT * $OVERLAY_HEIGHT_PERCENT / 100" | bc -l))
 
-# Calculate padded dimensions for bloom
+# Calculate scaled dimensions
+SCALED_WIDTH=$(printf "%.0f" $(echo "$OVERLAY_WIDTH * $VIDEO_SCALE_FACTOR" | bc -l))
+SCALED_HEIGHT=$(printf "%.0f" $(echo "$OVERLAY_HEIGHT * $VIDEO_SCALE_FACTOR" | bc -l))
+
+# Calculate padding for centered position within overlay area
+SCALE_PADDING_X=$(printf "%.0f" $(echo "($OVERLAY_WIDTH - $SCALED_WIDTH) / 2" | bc -l))
+SCALE_PADDING_Y=$(printf "%.0f" $(echo "($OVERLAY_HEIGHT - $SCALED_HEIGHT) / 2" | bc -l))
+
+# Calculate padded dimensions for bloom (including scale padding)
 PADDED_WIDTH=$((OVERLAY_WIDTH + 2*BLOOM_PADDING))
 PADDED_HEIGHT=$((OVERLAY_HEIGHT + 2*BLOOM_PADDING))
 
-# Adjust overlay position to account for bloom padding
-OVERLAY_X=$((141 - BLOOM_PADDING))  # Subtract padding from original X
-OVERLAY_Y=$((100 - BLOOM_PADDING))  # Subtract padding from original Y
+# Adjust overlay position to account for both bloom padding and scaling
+OVERLAY_X=$((141 - BLOOM_PADDING))  # Base position minus bloom padding
+OVERLAY_Y=$((100 - BLOOM_PADDING))  # Base position minus bloom padding
+
+# Debug output
+echo "Original dimensions: ${OVERLAY_WIDTH}x${OVERLAY_HEIGHT}"
+echo "Scaled dimensions: ${SCALED_WIDTH}x${SCALED_HEIGHT}"
+echo "Scale padding: ${SCALE_PADDING_X}x${SCALE_PADDING_Y}"
+echo "Final position: ${OVERLAY_X}x${OVERLAY_Y}"
 
 # Effect toggles
 ENABLE_CRT=true  # Toggle for CRT effect
@@ -106,9 +127,9 @@ fi
 PADDING_TYPE="pad"
 
 # Create the ffmpeg filter chain
-SCALE_FILTER="[1:v]scale=${OVERLAY_WIDTH}:${OVERLAY_HEIGHT}:force_original_aspect_ratio=decrease"
+SCALE_FILTER="[1:v]scale=${SCALED_WIDTH}:${SCALED_HEIGHT}:force_original_aspect_ratio=decrease"
 if [ "$PADDING_TYPE" = "pad" ]; then
-    SCALE_FILTER="${SCALE_FILTER},pad=${OVERLAY_WIDTH}:${OVERLAY_HEIGHT}:(ow-iw)/2:(oh-ih)/2"
+    SCALE_FILTER="${SCALE_FILTER},pad=${OVERLAY_WIDTH}:${OVERLAY_HEIGHT}:(ow-iw)/2:(oh-ih)/2:color=0x00000000"
 fi
 
 # Build the highlight filter if enabled
