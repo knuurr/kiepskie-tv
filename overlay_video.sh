@@ -22,7 +22,7 @@ BG_HEIGHT=576
 # Lower values (0.7-0.8): More padding around edges, smaller video
 # Higher values (0.9-1.0): Less padding, video fills more space
 # Current value provides subtle padding while maintaining good visibility
-VIDEO_SCALE_FACTOR=0.98
+VIDEO_SCALE_FACTOR=0.96
 
 # Bloom effect settings
 ENABLE_BLOOM=true  # Toggle for bloom effect on/off 
@@ -31,7 +31,7 @@ ENABLE_BLOOM=true  # Toggle for bloom effect on/off
 # Lower values (10-20): Tighter glow that stays closer to video edges
 # Higher values (40-100): Wider, more ethereal glow that extends further from video
 # Current value creates a medium spread that doesn't interfere with other UI elements
-BLOOM_PADDING=100
+BLOOM_PADDING=50
 
 # Controls the spread/softness of the bloom effect
 # Lower values (10-15): Sharper, more defined glow with less spread
@@ -79,20 +79,20 @@ echo "Final position: ${OVERLAY_X}x${OVERLAY_Y}"
 # Effect toggles
 ENABLE_CRT=true  # Toggle for CRT effect
 ENABLE_INTERLACED=true  # Toggle for interlaced effect
-ENABLE_HIGHLIGHT=true  # Toggle for highlight effect
+ENABLE_HIGHLIGHT=false  # Toggle for highlight effect
 
 # CRT effect settings
 # Barrel distortion coefficient for horizontal curvature
 # Lower values (0.01): Subtle curve, almost flat screen look
 # Higher values (0.05-0.1): Extreme curve, old TV appearance
 # Current value creates gentle curve typical of 90s CRT monitors
-CRT_K1=0.02
+CRT_K1=0.03
 
 # Barrel distortion coefficient for vertical curvature
 # Lower values (0.01): Minimal vertical curve
 # Higher values (0.05-0.1): Strong fishbowl effect
 # Usually kept equal to K1 for symmetrical distortion
-CRT_K2=0.02
+CRT_K2=0.05
 
 # Scale factor to compensate for image shrinkage due to curvature
 # Values below 1.0: Image appears smaller than input
