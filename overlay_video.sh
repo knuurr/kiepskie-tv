@@ -17,9 +17,27 @@ BACKGROUND="static/greenscreen.png"
 BG_WIDTH=768
 BG_HEIGHT=576
 
-# Absolute pixel positions for overlay
-OVERLAY_X=141  # Exact pixel position from left
-OVERLAY_Y=100   # Exact pixel position from top
+# Bloom effect settings
+ENABLE_BLOOM=true  # Toggle for bloom effect on/off
+
+# How many pixels to extend beyond the video edges for the bloom effect
+# Lower values (10-20): Tighter glow that stays closer to video edges
+# Higher values (40-100): Wider, more ethereal glow that extends further from video
+# Current value creates a medium spread that doesn't interfere with other UI elements
+BLOOM_PADDING=40
+
+# Controls the spread/softness of the bloom effect
+# Lower values (10-15): Sharper, more defined glow with less spread
+# Higher values (25-50): Softer, more diffused glow that blends more
+# Current value creates a soft, CRT-like glow while maintaining visibility
+BLOOM_BLUR=26
+
+# Multiplier for the bloom effect's brightness
+# Lower values (0.5-0.9): Subtle, gentle glow
+# Higher values (1.2-2.0): More intense, bright glow
+# Values above 2.0 may cause oversaturation
+# Current value adds noticeable glow while preserving video details
+BLOOM_INTENSITY=1.2
 
 # Overlay dimensions as percentage of background
 OVERLAY_WIDTH_PERCENT=66.9  # This will make overlay ~515px wide on 768px background
@@ -28,6 +46,14 @@ OVERLAY_HEIGHT_PERCENT=65.0  # This will make overlay ~382px high on 576px backg
 # Calculate actual dimensions from percentages
 OVERLAY_WIDTH=$(printf "%.0f" $(echo "$BG_WIDTH * $OVERLAY_WIDTH_PERCENT / 100" | bc -l))
 OVERLAY_HEIGHT=$(printf "%.0f" $(echo "$BG_HEIGHT * $OVERLAY_HEIGHT_PERCENT / 100" | bc -l))
+
+# Calculate padded dimensions for bloom
+PADDED_WIDTH=$((OVERLAY_WIDTH + 2*BLOOM_PADDING))
+PADDED_HEIGHT=$((OVERLAY_HEIGHT + 2*BLOOM_PADDING))
+
+# Adjust overlay position to account for bloom padding
+OVERLAY_X=$((141 - BLOOM_PADDING))  # Subtract padding from original X
+OVERLAY_Y=$((100 - BLOOM_PADDING))  # Subtract padding from original Y
 
 # Effect toggles
 ENABLE_CRT=false  # Toggle for CRT effect
@@ -95,6 +121,15 @@ if [ "$ENABLE_CRT" = true ]; then
                 ${HIGHLIGHT_FILTER}"
         fi
         
+        if [ "$ENABLE_BLOOM" = true ]; then
+            FILTER_CHAIN="${FILTER_CHAIN},\
+                format=rgba,\
+                pad=${PADDED_WIDTH}:${PADDED_HEIGHT}:${BLOOM_PADDING}:${BLOOM_PADDING}:color=0x00000000,\
+                split [main][bloom];\
+                [bloom]boxblur=${BLOOM_BLUR}[bloom];\
+                [main][bloom]blend=all_mode=screen:shortest=1"
+        fi
+        
         FILTER_CHAIN="${FILTER_CHAIN},\
             format=rgba,\
             lenscorrection=k1=${CRT_K1}:k2=${CRT_K2},\
@@ -105,6 +140,15 @@ if [ "$ENABLE_CRT" = true ]; then
         if [ "$ENABLE_HIGHLIGHT" = true ]; then
             FILTER_CHAIN="${FILTER_CHAIN},\
                 ${HIGHLIGHT_FILTER}"
+        fi
+        
+        if [ "$ENABLE_BLOOM" = true ]; then
+            FILTER_CHAIN="${FILTER_CHAIN},\
+                format=rgba,\
+                pad=${PADDED_WIDTH}:${PADDED_HEIGHT}:${BLOOM_PADDING}:${BLOOM_PADDING}:color=0x00000000,\
+                split [main][bloom];\
+                [bloom]boxblur=${BLOOM_BLUR}[bloom];\
+                [main][bloom]blend=all_mode=screen:shortest=1"
         fi
         
         FILTER_CHAIN="${FILTER_CHAIN},\
@@ -124,6 +168,15 @@ else
                 ${HIGHLIGHT_FILTER}"
         fi
         
+        if [ "$ENABLE_BLOOM" = true ]; then
+            FILTER_CHAIN="${FILTER_CHAIN},\
+                format=rgba,\
+                pad=${PADDED_WIDTH}:${PADDED_HEIGHT}:${BLOOM_PADDING}:${BLOOM_PADDING}:color=0x00000000,\
+                split [main][bloom];\
+                [bloom]boxblur=${BLOOM_BLUR}[bloom];\
+                [main][bloom]blend=all_mode=screen:shortest=1"
+        fi
+        
         FILTER_CHAIN="${FILTER_CHAIN},\
             format=rgba[scaled]"
     else
@@ -132,6 +185,15 @@ else
         if [ "$ENABLE_HIGHLIGHT" = true ]; then
             FILTER_CHAIN="${FILTER_CHAIN},\
                 ${HIGHLIGHT_FILTER}"
+        fi
+        
+        if [ "$ENABLE_BLOOM" = true ]; then
+            FILTER_CHAIN="${FILTER_CHAIN},\
+                format=rgba,\
+                pad=${PADDED_WIDTH}:${PADDED_HEIGHT}:${BLOOM_PADDING}:${BLOOM_PADDING}:color=0x00000000,\
+                split [main][bloom];\
+                [bloom]boxblur=${BLOOM_BLUR}[bloom];\
+                [main][bloom]blend=all_mode=screen:shortest=1"
         fi
         
         FILTER_CHAIN="${FILTER_CHAIN},\
