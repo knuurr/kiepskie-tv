@@ -101,6 +101,11 @@ CRT_K2=0.05
 # Current value (1.05) provides 5% extra size to prevent black edges
 CURVE_SCALE_FACTOR=1.05
 
+# CRT interpolation method
+# Options: nearest (sharp/pixelated), bilinear (smooth)
+# bilinear smooths out stair-stepping on curved edges
+CRT_INTERPOLATION="bilinear"
+
 # Highlight settings
 HIGHLIGHT_X=80  # X position of highlight glow
 HIGHLIGHT_Y=60  # Y position of highlight glow
@@ -168,7 +173,7 @@ if [ "$ENABLE_CRT" = true ]; then
         
         FILTER_CHAIN="${FILTER_CHAIN},\
             format=rgba,\
-            lenscorrection=k1=${CRT_K1}:k2=${CRT_K2},\
+            lenscorrection=k1=${CRT_K1}:k2=${CRT_K2}:i=${CRT_INTERPOLATION},\
             scale=iw*${CURVE_SCALE_FACTOR}:ih*${CURVE_SCALE_FACTOR}[scaled]"
     else
         FILTER_CHAIN="${SCALE_FILTER}"
@@ -189,7 +194,7 @@ if [ "$ENABLE_CRT" = true ]; then
         
         FILTER_CHAIN="${FILTER_CHAIN},\
             format=rgba,\
-            lenscorrection=k1=${CRT_K1}:k2=${CRT_K2},\
+            lenscorrection=k1=${CRT_K1}:k2=${CRT_K2}:i=${CRT_INTERPOLATION},\
             scale=iw*${CURVE_SCALE_FACTOR}:ih*${CURVE_SCALE_FACTOR}[scaled]"
     fi
 else
