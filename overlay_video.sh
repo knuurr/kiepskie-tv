@@ -37,7 +37,7 @@ BLOOM_PADDING=50
 # Lower values (10-15): Sharper, more defined glow with less spread
 # Higher values (25-50): Softer, more diffused glow that blends more
 # Current value creates a soft, CRT-like glow while maintaining visibility
-BLOOM_BLUR=40
+BLOOM_BLUR=20
 
 # Multiplier for the bloom effect's brightness
 # Lower values (0.5-0.9): Subtle, gentle glow
