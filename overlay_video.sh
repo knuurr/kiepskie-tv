@@ -25,7 +25,7 @@ BG_HEIGHT=576
 VIDEO_SCALE_FACTOR=0.96
 
 # Bloom effect settings
-ENABLE_BLOOM=true  # Toggle for bloom effect on/off 
+ENABLE_BLOOM=false  # Toggle for bloom effect on/off 
 
 # How many pixels to extend beyond the video edges for the bloom effect
 # Lower values (10-20): Tighter glow that stays closer to video edges
@@ -54,6 +54,10 @@ OVERLAY_HEIGHT_PERCENT=65.0  # This will make overlay ~382px high on 576px backg
 OVERLAY_WIDTH=$(printf "%.0f" $(echo "$BG_WIDTH * $OVERLAY_WIDTH_PERCENT / 100" | bc -l))
 OVERLAY_HEIGHT=$(printf "%.0f" $(echo "$BG_HEIGHT * $OVERLAY_HEIGHT_PERCENT / 100" | bc -l))
 
+# Base overlay positions (center of the screen)
+BASE_X=141
+BASE_Y=100
+
 # Calculate scaled dimensions
 SCALED_WIDTH=$(printf "%.0f" $(echo "$OVERLAY_WIDTH * $VIDEO_SCALE_FACTOR" | bc -l))
 SCALED_HEIGHT=$(printf "%.0f" $(echo "$OVERLAY_HEIGHT * $VIDEO_SCALE_FACTOR" | bc -l))
@@ -62,23 +66,37 @@ SCALED_HEIGHT=$(printf "%.0f" $(echo "$OVERLAY_HEIGHT * $VIDEO_SCALE_FACTOR" | b
 SCALE_PADDING_X=$(printf "%.0f" $(echo "($OVERLAY_WIDTH - $SCALED_WIDTH) / 2" | bc -l))
 SCALE_PADDING_Y=$(printf "%.0f" $(echo "($OVERLAY_HEIGHT - $SCALED_HEIGHT) / 2" | bc -l))
 
-# Calculate padded dimensions for bloom (including scale padding)
-PADDED_WIDTH=$((OVERLAY_WIDTH + 2*BLOOM_PADDING))
-PADDED_HEIGHT=$((OVERLAY_HEIGHT + 2*BLOOM_PADDING))
-
-# Adjust overlay position to account for both bloom padding and scaling
-OVERLAY_X=$((141 - BLOOM_PADDING))  # Base position minus bloom padding
-OVERLAY_Y=$((100 - BLOOM_PADDING))  # Base position minus bloom padding
+# Calculate initial overlay position
+if [ "$ENABLE_BLOOM" = true ]; then
+    # When bloom is enabled, we need extra padding for the glow
+    PADDED_WIDTH=$((OVERLAY_WIDTH + 2*BLOOM_PADDING))
+    PADDED_HEIGHT=$((OVERLAY_HEIGHT + 2*BLOOM_PADDING))
+    
+    # Adjust position to account for bloom padding
+    OVERLAY_X=$((BASE_X - BLOOM_PADDING))
+    OVERLAY_Y=$((BASE_Y - BLOOM_PADDING))
+else
+    # When bloom is disabled, use base dimensions
+    PADDED_WIDTH=$OVERLAY_WIDTH
+    PADDED_HEIGHT=$OVERLAY_HEIGHT
+    
+    # Use base position without bloom adjustment
+    OVERLAY_X=$BASE_X
+    OVERLAY_Y=$BASE_Y
+fi
 
 # Debug output
+echo "Bloom enabled: ${ENABLE_BLOOM}"
 echo "Original dimensions: ${OVERLAY_WIDTH}x${OVERLAY_HEIGHT}"
+echo "Padded dimensions: ${PADDED_WIDTH}x${PADDED_HEIGHT}"
 echo "Scaled dimensions: ${SCALED_WIDTH}x${SCALED_HEIGHT}"
 echo "Scale padding: ${SCALE_PADDING_X}x${SCALE_PADDING_Y}"
+echo "Base position: ${BASE_X}x${BASE_Y}"
 echo "Final position: ${OVERLAY_X}x${OVERLAY_Y}"
 
 # Effect toggles
-ENABLE_CRT=true  # Toggle for CRT effect
-ENABLE_INTERLACED=true  # Toggle for interlaced effect
+ENABLE_CRT=false  # Toggle for CRT effect
+ENABLE_INTERLACED=false  # Toggle for interlaced effect
 ENABLE_HIGHLIGHT=false  # Toggle for highlight effect
 
 # CRT effect settings
