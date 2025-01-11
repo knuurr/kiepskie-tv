@@ -53,7 +53,7 @@ BLOOM_INTENSITY=1.2
 
 # Overlay dimensions as percentage of background
 OVERLAY_WIDTH_PERCENT=66.9  # This will make overlay ~515px wide on 768px background
-OVERLAY_HEIGHT_PERCENT=65.0  # This will make overlay ~382px high on 576px background
+OVERLAY_HEIGHT_PERCENT=65.3  # This will make overlay ~382px high on 576px background
 
 # Calculate actual dimensions from percentages
 OVERLAY_WIDTH=$(printf "%.0f" $(echo "$BG_WIDTH * $OVERLAY_WIDTH_PERCENT / 100" | bc -l))
