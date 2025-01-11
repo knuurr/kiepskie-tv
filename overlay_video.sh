@@ -25,7 +25,7 @@ BG_HEIGHT=576
 VIDEO_SCALE_FACTOR=0.96
 
 # Bloom effect settings
-ENABLE_BLOOM=false  # Toggle for bloom effect on/off 
+ENABLE_BLOOM=true  # Toggle for bloom effect on/off 
 
 # How many pixels to extend beyond the video edges for the bloom effect
 # Lower values (10-20): Tighter glow that stays closer to video edges
@@ -152,7 +152,7 @@ PADDING_TYPE="pad"
 # Create the ffmpeg filter chain
 SCALE_FILTER="[1:v]scale=${SCALED_WIDTH}:${SCALED_HEIGHT}:force_original_aspect_ratio=decrease"
 if [ "$PADDING_TYPE" = "pad" ]; then
-    SCALE_FILTER="${SCALE_FILTER},pad=${OVERLAY_WIDTH}:${OVERLAY_HEIGHT}:(ow-iw)/2:(oh-ih)/2:color=0x00000000"
+    SCALE_FILTER="${SCALE_FILTER},pad=${OVERLAY_WIDTH}:${OVERLAY_HEIGHT}:(ow-iw)/2:(oh-ih)/2:color=black"
 fi
 
 # Build the highlight filter if enabled
