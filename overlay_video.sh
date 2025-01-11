@@ -24,8 +24,13 @@ BG_HEIGHT=576
 # Current value provides subtle padding while maintaining good visibility
 VIDEO_SCALE_FACTOR=0.96
 
-# Bloom effect settings
-ENABLE_BLOOM=true  # Toggle for bloom effect on/off 
+# Padding color for scaled video
+# Can be specified as:
+# - Named color: "black", "red", etc.
+# - Hex value: "0x000000"
+# - Hex with alpha: "0x000000FF" (FF = full opacity)
+# - Transparent: "0x00000000" (00 = full transparency)
+PADDING_COLOR="0x000000FF"  # Solid black with full opacity
 
 # How many pixels to extend beyond the video edges for the bloom effect
 # Lower values (10-20): Tighter glow that stays closer to video edges
@@ -66,6 +71,12 @@ SCALED_HEIGHT=$(printf "%.0f" $(echo "$OVERLAY_HEIGHT * $VIDEO_SCALE_FACTOR" | b
 SCALE_PADDING_X=$(printf "%.0f" $(echo "($OVERLAY_WIDTH - $SCALED_WIDTH) / 2" | bc -l))
 SCALE_PADDING_Y=$(printf "%.0f" $(echo "($OVERLAY_HEIGHT - $SCALED_HEIGHT) / 2" | bc -l))
 
+
+# Effect toggles
+# Bloom effect settings
+ENABLE_BLOOM=false  # Toggle for bloom effect on/off 
+
+
 # Calculate initial overlay position
 if [ "$ENABLE_BLOOM" = true ]; then
     # When bloom is enabled, we need extra padding for the glow
@@ -94,10 +105,11 @@ echo "Scale padding: ${SCALE_PADDING_X}x${SCALE_PADDING_Y}"
 echo "Base position: ${BASE_X}x${BASE_Y}"
 echo "Final position: ${OVERLAY_X}x${OVERLAY_Y}"
 
-# Effect toggles
+# CRT effect settings
 ENABLE_CRT=false  # Toggle for CRT effect
 ENABLE_INTERLACED=false  # Toggle for interlaced effect
 ENABLE_HIGHLIGHT=false  # Toggle for highlight effect
+
 
 # CRT effect settings
 # Barrel distortion coefficient for horizontal curvature
@@ -152,7 +164,7 @@ PADDING_TYPE="pad"
 # Create the ffmpeg filter chain
 SCALE_FILTER="[1:v]scale=${SCALED_WIDTH}:${SCALED_HEIGHT}:force_original_aspect_ratio=decrease"
 if [ "$PADDING_TYPE" = "pad" ]; then
-    SCALE_FILTER="${SCALE_FILTER},pad=${OVERLAY_WIDTH}:${OVERLAY_HEIGHT}:(ow-iw)/2:(oh-ih)/2:color=black"
+    SCALE_FILTER="${SCALE_FILTER},pad=${OVERLAY_WIDTH}:${OVERLAY_HEIGHT}:(ow-iw)/2:(oh-ih)/2:color=${PADDING_COLOR}"
 fi
 
 # Build the highlight filter if enabled
