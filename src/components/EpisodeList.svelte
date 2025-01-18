@@ -1,4 +1,6 @@
 <script>
+  import ChevronDownIcon from "virtual:icons/heroicons/chevron-down";
+
   export let episodes = [];
   export let isOpen = false;
 </script>
@@ -8,22 +10,11 @@
     <input type="checkbox" bind:checked={isOpen} />
     <div class="collapse-title text-xl font-medium flex items-center gap-2">
       <span>Lista odcinków</span>
-      <svg
+      <ChevronDownIcon
         class="w-4 h-4 transform transition-transform {isOpen
           ? 'rotate-180'
           : ''}"
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M19 9l-7 7-7-7"
-        />
-      </svg>
+      />
     </div>
     <div class="collapse-content">
       {#if episodes.length > 0}

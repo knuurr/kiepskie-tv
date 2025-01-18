@@ -16,6 +16,14 @@
   import EpisodeCard from "../../components/EpisodeCard.svelte";
   import { viewPreference, type ViewMode } from "$lib/stores/viewPreference";
   import { isMobile } from "$lib/utils/isMobile";
+  // icons
+  import ChevronUpIcon from "virtual:icons/heroicons/chevron-up";
+  import TableCellsIcon from "virtual:icons/heroicons/table-cells";
+  import Squares2x2Icon from "virtual:icons/heroicons/squares-2x2";
+  import ChevronDownIcon from "virtual:icons/heroicons/chevron-down";
+  import InformationCircleIcon from "virtual:icons/heroicons/information-circle";
+  import FunnelIcon from "virtual:icons/heroicons/funnel";
+  import ArrowTopRightOnSquareIcon from "virtual:icons/heroicons/arrow-top-right-on-square";
 
   export let data: PageData;
 
@@ -231,20 +239,7 @@
       on:click={scrollToTop}
       aria-label="Przewiń do góry"
     >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        class="h-6 w-6"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M5 15l7-7 7 7"
-        />
-      </svg>
+      <ChevronUpIcon class="h-6 w-6" />
     </button>
   {/if}
 
@@ -277,35 +272,13 @@
 
       <div class="bg-base-200 p-4 rounded-lg mb-4 space-y-2">
         <div class="flex items-center gap-2 text-sm">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path
-              fill-rule="evenodd"
-              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-              clip-rule="evenodd"
-            />
-          </svg>
+          <InformationCircleIcon class="h-5 w-5" />
           <span>
             Kliknij wiersz aby zobaczyć szczegóły odcinka w oknie modalnym
           </span>
         </div>
         <div class="flex items-center gap-2 text-sm">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path
-              fill-rule="evenodd"
-              d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z"
-              clip-rule="evenodd"
-            />
-          </svg>
+          <FunnelIcon class="h-5 w-5" />
           <span>
             Kliknij na <span
               class="border-b border-dotted border-base-content/30"
@@ -349,57 +322,26 @@
                   : ''}"
                 on:click={() => handleViewChange(null)}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-4 w-4"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-                  />
-                </svg>
+                <Squares2x2Icon class="h-4 w-4" />
                 Auto
               </button>
               <button
-                class="join-item btn btn-sm flex-1 sm:flex-none {currentView ===
-                'table'
-                  ? 'btn-primary'
+                class="btn btn-ghost btn-sm gap-2 {shouldShowTable
+                  ? 'btn-active'
                   : ''}"
                 on:click={() => handleViewChange("table")}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-4 w-4"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fill-rule="evenodd"
-                    d="M5 4a3 3 0 00-3 3v6a3 3 0 003 3h10a3 3 0 003-3V7a3 3 0 00-3-3H5zm-1 9v-1h5v2H5a1 1 0 01-1-1zm7 1h4a1 1 0 001-1v-1h-5v2zm0-4h5V8h-5v2zM9 8H4v2h5V8z"
-                    clip-rule="evenodd"
-                  />
-                </svg>
+                <TableCellsIcon class="h-5 w-5" />
                 Tabela
               </button>
               <button
-                class="join-item btn btn-sm flex-1 sm:flex-none {currentView ===
-                'card'
-                  ? 'btn-primary'
+                class="btn btn-ghost btn-sm gap-2 {currentView === 'card'
+                  ? 'btn-active'
                   : ''}"
                 on:click={() => handleViewChange("card")}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-4 w-4"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"
-                  />
-                </svg>
-                Karty
+                <Squares2x2Icon class="h-5 w-5" />
+                Siatka
               </button>
             </div>
           </div>
@@ -457,20 +399,9 @@
                               .includes(term.toLowerCase()),
                           )}
                         />
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke-width="1.5"
-                          stroke="currentColor"
+                        <ArrowTopRightOnSquareIcon
                           class="w-4 h-4 opacity-50 group-hover:opacity-100"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
-                          />
-                        </svg>
+                        />
                       </a>
                     </td>
                     <td class="min-w-[300px] max-w-[400px] whitespace-normal">
@@ -582,20 +513,7 @@
             class="flex flex-col items-center py-4 bg-base-200 bg-opacity-50 cursor-pointer hover:bg-opacity-70 transition-all"
             on:click={loadMore}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-6 w-6 animate-bounce"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
+            <ChevronDownIcon class="h-6 w-6 animate-bounce" />
             <span class="text-base-content/60">
               Pokaż kolejne {Math.min(
                 selectedChunkSize,
@@ -618,20 +536,7 @@
             class="btn btn-primary gap-2"
             on:click={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M5 15l7-7 7 7"
-              />
-            </svg>
+            <ChevronUpIcon class="h-6 w-6" />
             Przewiń do góry
           </button>
         </div>

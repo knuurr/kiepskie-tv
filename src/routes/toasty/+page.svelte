@@ -3,6 +3,8 @@
   import { fade } from "svelte/transition";
   import type { Toast } from "$lib/types/Toast";
   import toastsData from "$lib/toasts/toasts.json";
+  import { pushState, replaceState } from "$app/navigation";
+  import { page } from "$app/stores";
 
   import CenteredContainer from "../../components/CenteredContainer.svelte";
   import Footer from "../../components/Footer.svelte";
@@ -107,7 +109,7 @@
 
     // Only navigate if index changed
     if (newIndex !== activeHistoryIndex) {
-      window.location.hash = `#toast-${newIndex}`;
+      pushState(`#toast-${newIndex}`, { replaceState: true });
       activeHistoryIndex = newIndex;
     }
   }
@@ -230,12 +232,10 @@
 
   // Update active history index when hash changes
   function updateActiveHistoryIndex() {
-    if (typeof window !== "undefined") {
-      const hash = window.location.hash;
-      const match = hash.match(/^#toast-(\d+)$/);
-      if (match) {
-        activeHistoryIndex = parseInt(match[1]);
-      }
+    const hash = $page.url.hash;
+    const match = hash.match(/^#toast-(\d+)$/);
+    if (match) {
+      activeHistoryIndex = parseInt(match[1]);
     }
   }
 
@@ -246,7 +246,7 @@
     const shareData = {
       title: "Toast z Kiepskich",
       text: currentToast.text,
-      url: window.location.href,
+      url: $page.url.href,
     };
 
     try {

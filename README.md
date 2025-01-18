@@ -10,6 +10,22 @@ Here's an example output of what you can expect, when using your video. For this
 
 https://github.com/knuurr/kiepskie-tv/assets/135069967/700ad5d5-4a7f-4f3a-8f78-10bb1349f685
 
+## Tech Stack
+
+- **Framework**: [SvelteKit](https://kit.svelte.dev/) - for static site generation and routing
+- **UI Components**: [DaisyUI](https://daisyui.com/) - for beautiful, ready-to-use components
+- **Styling**: [TailwindCSS](https://tailwindcss.com/) - for utility-first CSS
+- **Icons**: [Heroicons](https://heroicons.com/) (via [unplugin-icons](https://github.com/unplugin/unplugin-icons)) - for consistent, beautiful icons
+- **Video Processing**: [@ffmpeg/ffmpeg](https://github.com/ffmpegwasm/ffmpeg.wasm) - for client-side video manipulation
+
+## Key Features
+
+- 🎬 Client-side video processing
+- 🎨 Beautiful, responsive UI
+- 🔄 Offline-first functionality
+- 📱 Mobile-friendly design
+- ⚡ Fast, static site generation
+
 ---
 
 # Building

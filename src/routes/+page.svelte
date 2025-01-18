@@ -4,6 +4,9 @@
   import CenteredContainer from "../components/CenteredContainer.svelte";
   import Header from "./Header.svelte";
   import AppCard from "../components/AppCard.svelte";
+  // Import Heroicons
+  import HeroiconsArrowDown from "virtual:icons/heroicons/arrow-down";
+  import HeroiconsChevronDoubleRight from "virtual:icons/heroicons/chevron-double-right";
 
   const apps = [
     {
@@ -67,20 +70,9 @@
           href="#apps"
           class="btn btn-circle btn-primary btn-lg animate-bounce group"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke-width="2.5"
-            stroke="currentColor"
+          <HeroiconsArrowDown
             class="w-8 h-8 transition-transform group-hover:translate-y-1"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3"
-            />
-          </svg>
+          />
         </a>
       </div>
     </div>
@@ -121,20 +113,7 @@
                 class="btn btn-primary {app.disabled ? 'btn-disabled' : ''}"
               >
                 Otwórz
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="1.5"
-                  stroke="currentColor"
-                  class="size-5"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="m5.25 4.5 7.5 7.5-7.5 7.5m6-15 7.5 7.5-7.5 7.5"
-                  />
-                </svg>
+                <HeroiconsChevronDoubleRight class="size-5" />
               </span>
             </div>
           </div>

@@ -1,6 +1,5 @@
 <script lang="ts">
   import { tweened } from "svelte/motion";
-  import { fade } from "svelte/transition";
   import { onMount } from "svelte";
   import { FFmpeg } from "@ffmpeg/ffmpeg";
   import { writable } from "svelte/store";
@@ -8,10 +7,6 @@
   // import { fetchFile, toBlobURL } from '@ffmpeg/util';
   // import { toBlobURL } from '@ffmpeg/util';
 
-  import DashedBox from "../DashedBox.svelte";
-
-  import CenteredContainer from "../../components/CenteredContainer.svelte";
-  import ResponsiveContainer from "../../components/ResponsiveContainer.svelte";
   import NavBar from "../../components/NavBar.svelte";
   import Header from "../Header.svelte";
   import Footer from "../../components/Footer.svelte";
@@ -31,7 +26,14 @@
   import PreviewAndSettings from "../../components/tiwi/PreviewAndSettings.svelte";
   import Results from "../../components/tiwi/Results.svelte";
 
-  import { browser } from "$app/environment";
+  // icons
+  import XMarkIcon from "virtual:icons/heroicons/x-mark";
+  import ArrowDownIcon from "virtual:icons/heroicons/arrow-down";
+  import Bars3Icon from "virtual:icons/heroicons/bars-3";
+  import QuestionMarkCircleIcon from "virtual:icons/heroicons/question-mark-circle";
+  import DocumentPlusIcon from "virtual:icons/heroicons/document-plus";
+  import CloudIcon from "virtual:icons/heroicons/cloud";
+  import FilmIcon from "virtual:icons/heroicons/film";
 
   // Debug logging utility
   const isDev = import.meta.env.DEV;
@@ -960,7 +962,7 @@
         class="btn btn-sm btn-circle absolute right-2 top-2"
         on:click={() => (showPreviewModal = false)}
       >
-        ✕
+        <XMarkIcon class="h-4 w-4" />
       </button>
       <figure class="flex items-center justify-center">
         <img
@@ -992,20 +994,7 @@
     }}
   >
     Przejdź do aplikacji
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      class="h-4 w-4 animate-bounce"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        d="M19 14l-7 7m0 0l-7-7m7 7V3"
-      />
-    </svg>
+    <ArrowDownIcon class="h-4 w-4 animate-bounce" />
   </button>
 </Header>
 <!-- </ResponsiveContainer> -->
@@ -1016,20 +1005,7 @@
   <div class="card-body">
     <!-- Section Title -->
     <div class="flex items-center gap-2">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        class="h-5 w-5"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M4 6h16M4 12h16M4 18h7"
-        />
-      </svg>
+      <Bars3Icon class="h-5 w-5" />
       <h2 class="text-lg font-bold">Sekcje</h2>
     </div>
     <!-- Notice text with slight transparency -->
@@ -1063,20 +1039,7 @@
             : ''} flex items-center gap-2"
           on:click={() => (activeTab = "how-it-works")}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
+          <QuestionMarkCircleIcon class="h-5 w-5" />
           Jak to działa
         </button>
 
@@ -1086,20 +1049,7 @@
             : ''} flex items-center gap-2"
           on:click={() => (activeTab = "select-files")}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-            />
-          </svg>
+          <DocumentPlusIcon class="h-5 w-5" />
           Wybierz pliki
         </button>
 
@@ -1109,20 +1059,7 @@
             : ''} flex items-center gap-2"
           on:click={() => (activeTab = "upload")}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-            />
-          </svg>
+          <CloudIcon class="h-5 w-5" />
           Podgląd i ustawienia
         </button>
 
@@ -1132,20 +1069,7 @@
             : ''} flex items-center gap-2"
           on:click={() => (activeTab = "results")}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-            />
-          </svg>
+          <FilmIcon class="h-5 w-5" />
           Twoje wideo
           {#if videoDataList.length > 0}
             <div class="badge badge-sm badge-ghost">

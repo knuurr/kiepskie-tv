@@ -11,6 +11,15 @@
   import * as DATA from "../../routes/Constans.svelte";
   import SettingsDrawer from "./SettingsDrawer.svelte";
   import backgroundsData from "$lib/tiwi/backgrounds.json";
+  import TrashIcon from "virtual:icons/heroicons/trash";
+  import XMarkIcon from "virtual:icons/heroicons/x-mark";
+  import CloudArrowUpIcon from "virtual:icons/heroicons/cloud-arrow-up";
+  import ExclamationTriangleIcon from "virtual:icons/heroicons/exclamation-triangle";
+  import VideoCameraIcon from "virtual:icons/heroicons/video-camera";
+  import PlayCircleIcon from "virtual:icons/heroicons/play-circle";
+  import Cog6ToothIcon from "virtual:icons/heroicons/cog-6-tooth";
+  import MagnifyingGlassPlusIcon from "virtual:icons/heroicons/magnifying-glass-plus";
+  import ChevronLeftIcon from "virtual:icons/heroicons/chevron-left";
 
   const PLACEHOLDER_MIN_LOADING_TIME = 300; // milliseconds
 
@@ -287,20 +296,7 @@
                         on:click={() =>
                           safeRemoveFile(selectedFileIndex, settingId)}
                       >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          class="h-4 w-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                          />
-                        </svg>
+                        <TrashIcon class="h-4 w-4" />
                         Usuń wybrany plik
                       </button>
                     {/if}
@@ -312,20 +308,9 @@
                   <div class="flex flex-col gap-2">
                     {#if !files?.length}
                       <div class="text-center p-8 bg-base-100 rounded-lg">
-                        <svg
+                        <CloudArrowUpIcon
                           class="mx-auto h-12 w-12 text-gray-400"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          aria-hidden="true"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                          />
-                        </svg>
+                        />
                         <h3 class="mt-2 text-sm font-medium">Brak plików</h3>
                         <p class="mt-1 text-sm text-gray-500">
                           Wybierz pliki do przetworzenia
@@ -359,20 +344,9 @@
                                 <div
                                   class="w-full aspect-video bg-base-300 rounded-lg flex items-center justify-center"
                                 >
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
+                                  <ExclamationTriangleIcon
                                     class="h-6 w-6 text-base-content/50"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                  >
-                                    <path
-                                      stroke-linecap="round"
-                                      stroke-linejoin="round"
-                                      stroke-width="2"
-                                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
-                                    />
-                                  </svg>
+                                  />
                                 </div>
                               {/await}
                             {/if}
@@ -393,20 +367,7 @@
                               on:click|stopPropagation={() =>
                                 removeFile(i, settingId)}
                             >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="h-4 w-4"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  stroke-linecap="round"
-                                  stroke-linejoin="round"
-                                  stroke-width="2"
-                                  d="M6 18L18 6M6 6l12 12"
-                                />
-                              </svg>
+                              <XMarkIcon class="h-4 w-4" />
                             </button>
                           </div>
                         </div>
@@ -425,26 +386,7 @@
                     loading={isLoading(state)}
                     fullWidth
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      class="h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-                      />
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
+                    <PlayCircleIcon class="h-5 w-5" />
                     Okiłizuj
                     <div
                       class="flex items-center gap-1 ml-2 text-base-content/70"
@@ -467,20 +409,7 @@
               <div class="card bg-base-100">
                 <div class="card-body">
                   <div class="text-center text-gray-500">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      class="h-12 w-12 mx-auto mb-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-                      />
-                    </svg>
+                    <VideoCameraIcon class="h-12 w-12 mx-auto mb-4" />
                     <p>Wybierz pliki aby zobaczyć podgląd i ustawienia</p>
                   </div>
                 </div>
@@ -526,26 +455,7 @@
                       class="btn btn-ghost btn-sm gap-2"
                       on:click={() => (showSettingsDrawer = true)}
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                        />
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                      </svg>
+                      <Cog6ToothIcon class="h-4 w-4" />
                       Ustawienia
                       <div
                         class="flex items-center gap-1 ml-1 text-base-content/70"
@@ -665,20 +575,9 @@
                                   <div
                                     class="absolute bottom-2 right-2 bg-black/50 p-2 rounded-full transition-opacity opacity-50 group-hover:opacity-100"
                                   >
-                                    <svg
-                                      xmlns="http://www.w3.org/2000/svg"
+                                    <MagnifyingGlassPlusIcon
                                       class="h-4 w-4 text-white"
-                                      fill="none"
-                                      viewBox="0 0 24 24"
-                                      stroke="currentColor"
-                                    >
-                                      <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
-                                      />
-                                    </svg>
+                                    />
                                   </div>
                                 </button>
                                 <!-- Timestamp indicator -->
@@ -733,18 +632,9 @@
                                         <div
                                           class="absolute -left-2 top-1/2 -translate-y-1/2"
                                         >
-                                          <svg
-                                            xmlns="http://www.w3.org/2000/svg"
+                                          <ChevronLeftIcon
                                             class="h-4 w-4 text-primary"
-                                            viewBox="0 0 20 20"
-                                            fill="currentColor"
-                                          >
-                                            <path
-                                              fill-rule="evenodd"
-                                              d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                                              clip-rule="evenodd"
-                                            />
-                                          </svg>
+                                          />
                                         </div>
                                       {/if}
                                       <div
@@ -804,27 +694,12 @@
             disabled={!files}
             fullWidth
           >
+            <PlayCircleIcon class="h-4 w-4" />
             Okiłizuj
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-              />
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
+            <div class="flex items-center gap-1 ml-2 text-base-content/70">
+              <kbd class="kbd kbd-sm">⇧</kbd>
+              <kbd class="kbd kbd-sm">o</kbd>
+            </div>
           </AnimatedButton>
         </div>
       </div>
@@ -834,20 +709,7 @@
       <div class="card-body">
         <div class="card-actions justify-center">
           <button on:click={resetFfmpeg} class="btn btn-error gap-2">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <XMarkIcon class="h-4 w-4" />
             Anuluj przetwarzanie
           </button>
         </div>
@@ -867,7 +729,7 @@
         class="btn btn-sm btn-circle absolute right-2 top-2"
         on:click={() => (showPreviewModal = false)}
       >
-        ✕
+        <XMarkIcon class="h-4 w-4" />
       </button>
       <figure class="flex items-center justify-center">
         <img

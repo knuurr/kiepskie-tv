@@ -1,6 +1,10 @@
 <script lang="ts">
   import type { EpisodeData } from "$lib/types";
   import { onMount, onDestroy } from "svelte";
+  import XMarkIcon from "virtual:icons/heroicons/x-mark";
+  import ArrowTopRightOnSquareIcon from "virtual:icons/heroicons/arrow-top-right-on-square";
+  import ChartBarIcon from "virtual:icons/heroicons/chart-bar";
+  import ArchiveBoxIcon from "virtual:icons/heroicons/archive-box";
 
   export let showDrawer = false;
   export let generationHistory: EpisodeData[] = [];
@@ -61,20 +65,7 @@
             class="btn btn-square btn-sm"
             on:click={() => (showDrawer = false)}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <XMarkIcon class="h-6 w-6" />
           </button>
         </div>
       </div>
@@ -124,20 +115,7 @@
                       class="btn btn-ghost btn-xs"
                       on:click|stopPropagation
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke-width="1.5"
-                        stroke="currentColor"
-                        class="w-4 h-4"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
-                        />
-                      </svg>
+                      <ArrowTopRightOnSquareIcon class="w-4 h-4" />
                     </a>
                     <a
                       href={`/tabela?episode=${episode.nr}`}
@@ -146,20 +124,7 @@
                       class="btn btn-ghost btn-xs"
                       on:click|stopPropagation
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke-width="1.5"
-                        stroke="currentColor"
-                        class="w-4 h-4"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z"
-                        />
-                      </svg>
+                      <ChartBarIcon class="w-4 h-4" />
                     </a>
                   </div>
                 </div>
@@ -170,20 +135,7 @@
           <div
             class="border-2 border-dashed border-base-300 rounded-box p-8 text-center text-base-content/50"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-12 w-12 mx-auto mb-4 opacity-50"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-              />
-            </svg>
+            <ArchiveBoxIcon class="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p class="font-medium">Historia jest pusta</p>
             <p class="text-sm mt-1">
               Kliknij "Losuj odcinek" aby rozpocząć swoją przygodę z losowymi

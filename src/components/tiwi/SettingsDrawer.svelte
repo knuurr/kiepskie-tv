@@ -6,6 +6,12 @@
   import BackgroundSelector from "./BackgroundSelector.svelte";
   import * as DATA from "../../routes/Constans.svelte";
   import backgroundsData from "$lib/tiwi/backgrounds.json";
+  import XMarkIcon from "virtual:icons/heroicons/x-mark";
+  import ExclamationTriangleIcon from "virtual:icons/heroicons/exclamation-triangle";
+  import ChevronDownIcon from "virtual:icons/heroicons/chevron-down";
+  import ArrowUturnLeftIcon from "virtual:icons/heroicons/arrow-uturn-left";
+  import ArrowPathIcon from "virtual:icons/heroicons/arrow-path";
+  import CheckIcon from "virtual:icons/heroicons/check";
 
   export let showDrawer = false;
   export let selectedFileIndex: number | undefined;
@@ -189,40 +195,14 @@
             {#if hasUnsavedChanges}
               <div class="mt-2">
                 <span class="badge badge-warning gap-1">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-3 w-3"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                    />
-                  </svg>
+                  <ExclamationTriangleIcon class="h-3 w-3" />
                   Niezapisane zmiany
                 </span>
               </div>
             {/if}
           </div>
           <button class="btn btn-square btn-sm" on:click={handleCloseAttempt}>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <XMarkIcon class="h-6 w-6" />
           </button>
         </div>
       </div>
@@ -440,19 +420,9 @@
                 </span>
               {/if}
             </div>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
+            <ChevronDownIcon
               class="h-5 w-5 {isLoadingBackgrounds ? 'opacity-50' : ''}"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-              />
-            </svg>
+            />
           </button>
         </div>
       </div>
@@ -464,20 +434,7 @@
         <div class="flex justify-between gap-2">
           <div class="flex gap-2">
             <button class="btn btn-ghost btn-sm" on:click={resetToDefault}>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
-                />
-              </svg>
+              <ArrowUturnLeftIcon class="h-4 w-4" />
               Domyślne
             </button>
             <button
@@ -485,20 +442,7 @@
               on:click={resetSettings}
               disabled={!hasUnsavedChanges}
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
+              <ArrowPathIcon class="h-4 w-4" />
               Cofnij zmiany
             </button>
           </div>
@@ -507,20 +451,7 @@
             disabled={!hasUnsavedChanges}
             on:click={() => settingId && saveSettings(settingId)}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
+            <CheckIcon class="h-4 w-4" />
             Zapisz
           </button>
         </div>

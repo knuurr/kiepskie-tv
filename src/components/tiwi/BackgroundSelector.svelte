@@ -4,6 +4,9 @@
   import * as DATA from "../../routes/Constans.svelte";
   import { createEventDispatcher } from "svelte";
   import backgroundsData from "$lib/tiwi/backgrounds.json";
+  import XMarkIcon from "virtual:icons/heroicons/x-mark";
+  import XCircleIcon from "virtual:icons/heroicons/x-circle";
+  import CheckCircleIcon from "virtual:icons/heroicons/check-circle";
 
   export let settingId: string;
   export let showDrawer = false;
@@ -66,20 +69,7 @@
           class="btn btn-square btn-sm absolute top-2 right-2 z-[90]"
           on:click={() => (showDrawer = false)}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
+          <XMarkIcon class="h-6 w-6" />
         </button>
       </div>
 
@@ -93,19 +83,7 @@
       <!-- Error state -->
       {#if error}
         <div class="alert alert-error">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="stroke-current shrink-0 h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
+          <XCircleIcon class="stroke-current shrink-0 h-6 w-6" />
           <span>Błd: {error}</span>
         </div>
       {/if}
@@ -143,18 +121,7 @@
                   <!-- Selected indicator -->
                   {#if isSelected}
                     <div class="flex-shrink-0">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="h-6 w-6 text-primary"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path
-                          fill-rule="evenodd"
-                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                          clip-rule="evenodd"
-                        />
-                      </svg>
+                      <CheckCircleIcon class="h-6 w-6 text-primary" />
                     </div>
                   {/if}
                 </div>

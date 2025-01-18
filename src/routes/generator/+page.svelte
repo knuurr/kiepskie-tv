@@ -8,6 +8,18 @@
   import AnimatedButton from "../../components/tiwi/AnimatedButton.svelte";
   import EpisodeHistoryDrawer from "../../components/EpisodeHistoryDrawer.svelte";
 
+  // icons
+  import HashtagIcon from "virtual:icons/heroicons/hashtag";
+  import DocumentTextIcon from "virtual:icons/heroicons/document-text";
+  import CalendarIcon from "virtual:icons/heroicons/calendar";
+  import QueueListIcon from "virtual:icons/heroicons/queue-list";
+  import FilmIcon from "virtual:icons/heroicons/film";
+  import PencilSquareIcon from "virtual:icons/heroicons/pencil-square";
+  import ClockIcon from "virtual:icons/heroicons/clock";
+  import LinkIcon from "virtual:icons/heroicons/link";
+  import ArrowTopRightOnSquareIcon from "virtual:icons/heroicons/arrow-top-right-on-square";
+  import ChartBarIcon from "virtual:icons/heroicons/chart-bar";
+
   export let data: PageData;
 
   // Animation configuration
@@ -35,44 +47,32 @@
     {
       label: "Numer",
       key: "nr" as keyof EpisodeData,
-      icon: `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M9.243 3.03a1 1 0 01.727 1.213L9.53 6h2.94l.56-2.243a1 1 0 111.94.486L14.53 6H17a1 1 0 110 2h-2.97l-1 4H15a1 1 0 110 2h-2.47l-.56 2.242a1 1 0 11-1.94-.485L10.47 14H7.53l-.56 2.242a1 1 0 11-1.94-.485L5.47 14H3a1 1 0 110-2h2.97l1-4H5a1 1 0 110-2h2.47l.56-2.243a1 1 0 011.213-.727zM9.03 8l-1 4h2.938l1-4H9.031z" clip-rule="evenodd" />
-      </svg>`,
+      icon: HashtagIcon,
     },
     {
       label: "Tytuł",
       key: "tytul" as keyof EpisodeData,
-      icon: `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
-      </svg>`,
+      icon: DocumentTextIcon,
     },
     {
       label: "Data premiery",
       key: "data_premiery" as keyof EpisodeData,
-      icon: `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
-      </svg>`,
+      icon: CalendarIcon,
     },
     {
       label: "Sezon",
       key: "sezon" as keyof EpisodeData,
-      icon: `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-        <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
-      </svg>`,
+      icon: QueueListIcon,
     },
     {
       label: "Reżyseria",
       key: "rezyseria" as keyof EpisodeData,
-      icon: `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm3 2h6v4H7V5zm8 8v2h1v-2h-1zm-2-2H7v4h6v-4zm2 0h1V9h-1v2zm1-4V5h-1v2h1zM5 5v2H4V5h1zm0 4H4v2h1V9zm-1 4h1v2H4v-2z" clip-rule="evenodd" />
-      </svg>`,
+      icon: FilmIcon,
     },
     {
       label: "Scenariusz",
       key: "scenariusz" as keyof EpisodeData,
-      icon: `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
-      </svg>`,
+      icon: PencilSquareIcon,
     },
   ];
 
@@ -225,20 +225,7 @@
                 class="btn btn-ghost btn-sm gap-2"
                 on:click={() => (showDrawer = true)}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
+                <ClockIcon class="h-5 w-5" />
                 Historia
                 <div class="badge badge-sm badge-primary">
                   {generationHistory.length}/{MAX_HISTORY}
@@ -253,7 +240,7 @@
               <div class="grid grid-cols-[auto,1fr] gap-x-4 gap-y-2">
                 {#each FIELDS as field}
                   <span class="font-semibold flex items-center gap-2">
-                    {@html field.icon}
+                    <svelte:component this={field.icon} class="h-4 w-4" />
                     {field.label}:
                   </span>
                   {#if isLoading}
@@ -274,18 +261,7 @@
 
                 <!-- Links section after Scenariusz -->
                 <span class="font-semibold flex items-center gap-2">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="w-4 h-4"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fill-rule="evenodd"
-                      d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z"
-                      clip-rule="evenodd"
-                    />
-                  </svg>
+                  <LinkIcon class="w-4 h-4" />
                   Linki:
                 </span>
                 <div class="flex gap-2">
@@ -296,20 +272,7 @@
                     class="gap-2 flex items-center underline"
                     class:btn-disabled={!selectedEpisode || !showDetails}
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke-width="1.5"
-                      stroke="currentColor"
-                      class="w-4 h-4"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
-                      />
-                    </svg>
+                    <ArrowTopRightOnSquareIcon class="w-4 h-4" />
                     Kiepscy Wiki
                   </a>
                   <a
@@ -321,20 +284,7 @@
                     class="gap-2 flex items-center underline"
                     class:btn-disabled={!selectedEpisode || !showDetails}
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke-width="1.5"
-                      stroke="currentColor"
-                      class="w-4 h-4"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z"
-                      />
-                    </svg>
+                    <ChartBarIcon class="w-4 h-4" />
                     Zobacz w tabeli
                   </a>
                 </div>

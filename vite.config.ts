@@ -1,7 +1,9 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import { fileURLToPath, URL } from 'node:url'
+import Icons from 'unplugin-icons/vite'
 import { defineConfig } from 'vite';
 import path from 'path';
+
 
 /** @type {import('vite').Plugin} */
 const viteServerConfig = {
@@ -19,7 +21,11 @@ const viteServerConfig = {
 
 
 export default defineConfig({
-	plugins: [sveltekit(), viteServerConfig],
+	plugins: [sveltekit(), viteServerConfig, Icons({
+		compiler: 'svelte',
+		// autoInstall: true,
+		// defaultStyle: 'outline', // Use outline style as default for Heroicons
+	})],
 	test: {
 		include: ['src/**/*.{test,spec}.{js,ts}']
 	},

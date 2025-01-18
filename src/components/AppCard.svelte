@@ -1,4 +1,6 @@
 <script lang="ts">
+  import ChevronDoubleRightIcon from "virtual:icons/heroicons/chevron-double-right";
+
   export let title: string;
   export let description: string;
   export let link: string;
@@ -30,20 +32,7 @@
         class="btn btn-primary btn-block {disabled ? 'btn-disabled' : ''}"
       >
         Zobacz
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke-width="1.5"
-          stroke="currentColor"
-          class="size-5"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="m5.25 4.5 7.5 7.5-7.5 7.5m6-15 7.5 7.5-7.5 7.5"
-          />
-        </svg>
+        <ChevronDoubleRightIcon class="size-5" />
       </button>
     </div>
     {#if additionalInfo}

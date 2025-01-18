@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Toast } from "$lib/types/Toast";
+  import ExclamationTriangleIcon from "virtual:icons/heroicons/exclamation-triangle";
 
   export let toast: Toast;
   export let compact = false;
@@ -26,26 +27,7 @@
       : 'text-sm'} text-base-content/60"
   >
     <span class="col-span-1 text-warning flex justify-center items-center">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        class="h-6 w-6 text-warning"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M12 2L2 22h20L12 2z"
-        />
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M12 16v2m0-8v6"
-        />
-      </svg>
+      <ExclamationTriangleIcon class="h-6 w-6 text-warning" />
     </span>
     <span class="col-span-6">
       {#if compact}

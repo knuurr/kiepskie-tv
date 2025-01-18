@@ -1,6 +1,10 @@
 <script lang="ts">
   import { fade } from "svelte/transition";
   import type { Writable } from "svelte/store";
+  import ArrowDownTrayIcon from "virtual:icons/heroicons/arrow-down-tray";
+  import ShareIcon from "virtual:icons/heroicons/share";
+  import VideoCameraIcon from "virtual:icons/heroicons/video-camera";
+  import CloudArrowUpIcon from "virtual:icons/heroicons/cloud-arrow-up";
 
   // Props
   export let files: FileList;
@@ -122,20 +126,7 @@
                       videoDataList[i].videoName,
                     )}
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                    />
-                  </svg>
+                  <ArrowDownTrayIcon class="h-4 w-4" />
                   <span>Zapisz</span>
                 </button>
                 <button
@@ -146,40 +137,14 @@
                       videoDataList[i].videoName,
                     )}
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                    />
-                  </svg>
+                  <ShareIcon class="h-4 w-4" />
                   <span>Udostępnij</span>
                 </button>
               </div>
             {:else}
               <!-- Waiting state -->
               <div class="flex items-center justify-center py-12 text-gray-500">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-12 w-12"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-                  />
-                </svg>
+                <VideoCameraIcon class="h-12 w-12" />
                 <span class="ml-3">Czeka na przetworzenie</span>
               </div>
             {/if}
@@ -190,20 +155,7 @@
   {:else}
     <!-- No files state -->
     <div class="text-center py-8 text-gray-500">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        class="h-12 w-12 mx-auto mb-4"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-        />
-      </svg>
+      <CloudArrowUpIcon class="h-12 w-12 mx-auto mb-4" />
       <p>
         {#if files?.length > 0}
           Kliknij "Okiłizuj" aby rozpocząć przetwarzanie
