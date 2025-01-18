@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { videoSettings } from "$lib/stores/videoSettingsStore";
-  import { DEFAULT_SETTINGS } from "$lib/constants";
+  import { DEFAULT_SETTINGS, FEATURES } from "$lib/constants";
   import { toasts } from "$lib/stores/toastStore";
   import BackgroundSelector from "./BackgroundSelector.svelte";
   import * as DATA from "../../routes/Constans.svelte";
@@ -264,94 +264,96 @@
           </label>
 
           <!-- Scale Controls -->
-          <div class="p-4 bg-base-100 rounded-lg">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-medium">Skale</span>
-              <label class="flex items-center gap-2">
-                <span class="text-sm">Synchronizuj skale</span>
+          {#if FEATURES.ENABLE_SCALE_CONTROLS}
+            <div class="p-4 bg-base-100 rounded-lg">
+              <div class="flex items-center justify-between mb-2">
+                <span class="font-medium">Skale</span>
+                <label class="flex items-center gap-2">
+                  <span class="text-sm">Synchronizuj skale</span>
+                  <input
+                    type="checkbox"
+                    class="toggle toggle-sm"
+                    checked={pendingSettings.scalesLocked}
+                    on:change={(e) => {
+                      if (settingId) {
+                        handleSettingChange(settingId, {
+                          scalesLocked: e.currentTarget.checked,
+                        });
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+              <p class="text-xs text-base-content/70 mb-4">
+                Synchronizacja skal pozwala na jednoczesną zmianę rozmiaru obu
+                elementów wideo
+              </p>
+
+              <!-- Boczek Scale -->
+              <div class="mb-4">
+                <div class="flex justify-between mb-2">
+                  <span>Skala Boczka</span>
+                  <span class="text-base-content/70">
+                    {(pendingSettings.boczekScale * 100).toFixed(0)}%
+                  </span>
+                </div>
                 <input
-                  type="checkbox"
-                  class="toggle toggle-sm"
-                  checked={pendingSettings.scalesLocked}
-                  on:change={(e) => {
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  class="range range-sm"
+                  value={pendingSettings.boczekScale}
+                  on:input={(e) => {
                     if (settingId) {
+                      const newScale = parseFloat(e.currentTarget.value);
                       handleSettingChange(settingId, {
-                        scalesLocked: e.currentTarget.checked,
+                        boczekScale: newScale,
+                        ...(pendingSettings.scalesLocked
+                          ? { greenscreenScale: newScale }
+                          : {}),
                       });
                     }
                   }}
                 />
-              </label>
-            </div>
-            <p class="text-xs text-base-content/70 mb-4">
-              Synchronizacja skal pozwala na jednoczesną zmianę rozmiaru obu
-              elementów wideo
-            </p>
-
-            <!-- Boczek Scale -->
-            <div class="mb-4">
-              <div class="flex justify-between mb-2">
-                <span>Skala Boczka</span>
-                <span class="text-base-content/70">
-                  {(pendingSettings.boczekScale * 100).toFixed(0)}%
-                </span>
+                <p class="text-xs text-base-content/70 mt-2">
+                  Kontroluje rozmiar reakcji Boczka w końcowej scenie
+                </p>
               </div>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.1"
-                class="range range-sm"
-                value={pendingSettings.boczekScale}
-                on:input={(e) => {
-                  if (settingId) {
-                    const newScale = parseFloat(e.currentTarget.value);
-                    handleSettingChange(settingId, {
-                      boczekScale: newScale,
-                      ...(pendingSettings.scalesLocked
-                        ? { greenscreenScale: newScale }
-                        : {}),
-                    });
-                  }
-                }}
-              />
-              <p class="text-xs text-base-content/70 mt-2">
-                Kontroluje rozmiar reakcji Boczka w końcowej scenie
-              </p>
-            </div>
 
-            <!-- Greenscreen Scale -->
-            <div>
-              <div class="flex justify-between mb-2">
-                <span>Skala Greenscreena</span>
-                <span class="text-base-content/70">
-                  {(pendingSettings.greenscreenScale * 100).toFixed(0)}%
-                </span>
+              <!-- Greenscreen Scale -->
+              <div>
+                <div class="flex justify-between mb-2">
+                  <span>Skala Greenscreena</span>
+                  <span class="text-base-content/70">
+                    {(pendingSettings.greenscreenScale * 100).toFixed(0)}%
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  class="range range-sm"
+                  value={pendingSettings.greenscreenScale}
+                  on:input={(e) => {
+                    if (settingId) {
+                      const newScale = parseFloat(e.currentTarget.value);
+                      handleSettingChange(settingId, {
+                        greenscreenScale: newScale,
+                        ...(pendingSettings.scalesLocked
+                          ? { boczekScale: newScale }
+                          : {}),
+                      });
+                    }
+                  }}
+                />
+                <p class="text-xs text-base-content/70 mt-2">
+                  Kontroluje rozmiar Twojego wideo w oknie telewizora
+                </p>
               </div>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.1"
-                class="range range-sm"
-                value={pendingSettings.greenscreenScale}
-                on:input={(e) => {
-                  if (settingId) {
-                    const newScale = parseFloat(e.currentTarget.value);
-                    handleSettingChange(settingId, {
-                      greenscreenScale: newScale,
-                      ...(pendingSettings.scalesLocked
-                        ? { boczekScale: newScale }
-                        : {}),
-                    });
-                  }
-                }}
-              />
-              <p class="text-xs text-base-content/70 mt-2">
-                Kontroluje rozmiar Twojego wideo w oknie telewizora
-              </p>
             </div>
-          </div>
+          {/if}
 
           <!-- Boczek Fill Type Select -->
           {#if pendingSettings.addBoczek}
