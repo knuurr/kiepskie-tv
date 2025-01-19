@@ -299,10 +299,16 @@
     transformState = "1/2";
 
     // Generate FFmpeg filter with selected background's configuration
-    const greenscreenFilter = DATA.generateGreenscreenFilter(
+    const greenscreenFilter = DATA.generateCRTFilter(
       selectedBackground.overlayConfig,
       fileSettings.greenscreenFillType,
       fileSettings.greenscreenScale,
+      fileSettings.enableCRT,
+      fileSettings.enableBloom,
+      fileSettings.enableInterlaced,
+      fileSettings.enableHighlight,
+      fileSettings.enableRGB,
+      fileSettings.paddingColor,
     );
     debug("Generated FFmpeg filter:", greenscreenFilter);
 
@@ -313,6 +319,10 @@
       file.name,
       "-filter_complex",
       greenscreenFilter,
+      "-map",
+      "[v]",
+      "-map",
+      "1:a",
       "-c:v",
       "libx264",
       "-c:a",
@@ -355,8 +365,8 @@
         boczekFilter,
         "-map",
         "[v]",
-        "-map",
-        "[a]",
+        "-c:v",
+        "libx264",
         "-preset",
         "ultrafast",
         `output${_i}.mp4`,
@@ -561,10 +571,16 @@
           );
 
           // Process the frame with greenscreen effect
-          const filter = DATA.generateGreenscreenFilter(
+          const filter = DATA.generateCRTFilter(
             selectedBackground.overlayConfig,
             fileSettings.greenscreenFillType,
             fileSettings.greenscreenScale,
+            fileSettings.enableCRT,
+            fileSettings.enableBloom,
+            fileSettings.enableInterlaced,
+            fileSettings.enableHighlight,
+            fileSettings.enableRGB,
+            fileSettings.paddingColor,
           );
           debug(`[*] Generated FFmpeg filter:`, filter);
 
@@ -578,6 +594,9 @@
             filter,
             "-frames:v",
             "1",
+            "-map",
+            "[v]",
+
             "-preset",
             "ultrafast",
             `preview_${frame.timestamp}.png`,

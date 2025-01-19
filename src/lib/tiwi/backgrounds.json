@@ -7,14 +7,33 @@
       "imagePath": "/greenscreen.png",
       "previewPath": "/greenscreen.png",
       "overlayConfig": {
-        "imageWidth": 768,
-        "imageHeight": 576,
+        "bgWidth": 768,
+        "bgHeight": 576,
         "maxWidth": 512,
         "maxHeight": 382,
         "padWidth": 512,
         "padHeight": 382,
         "offsetX": 140,
-        "offsetY": 94
+        "offsetY": 94,
+        "overlayWidthPercent": 66.9,
+        "overlayHeightPercent": 65.3,
+        "bloomSettings": {
+          "padding": 50,
+          "blur": 20,
+          "intensity": 1.2
+        },
+        "crtSettings": {
+          "k1": 0.03,
+          "k2": 0.05,
+          "curveScaleFactor": 1.05,
+          "interpolation": "bilinear"
+        },
+        "highlightSettings": {
+          "x": 80,
+          "y": 60,
+          "size": 90,
+          "blur": 7
+        }
       }
     },
     {
@@ -24,14 +43,33 @@
       "imagePath": "/adek.png",
       "previewPath": "/adek.png",
       "overlayConfig": {
-        "imageWidth": 1280,
-        "imageHeight": 720,
+        "bgWidth": 1280,
+        "bgHeight": 720,
         "maxWidth": 512,
         "maxHeight": 382,
         "padWidth": 512,
         "padHeight": 382,
         "offsetX": 140,
-        "offsetY": 94
+        "offsetY": 94,
+        "overlayWidthPercent": 66.9,
+        "overlayHeightPercent": 65.3,
+        "bloomSettings": {
+          "padding": 50,
+          "blur": 20,
+          "intensity": 1.2
+        },
+        "crtSettings": {
+          "k1": 0.03,
+          "k2": 0.05,
+          "curveScaleFactor": 1.05,
+          "interpolation": "lanczos"
+        },
+        "highlightSettings": {
+          "x": 80,
+          "y": 60,
+          "size": 90,
+          "blur": 7
+        }
       }
     }
   ]

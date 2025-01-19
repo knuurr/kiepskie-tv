@@ -1,7 +1,11 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { videoSettings } from "$lib/stores/videoSettingsStore";
-  import { DEFAULT_SETTINGS } from "$lib/constants";
+  import {
+    DEFAULT_SETTINGS,
+    FEATURES,
+    GREENSCREEN_SCALE_PRESETS,
+  } from "$lib/constants";
   import { toasts } from "$lib/stores/toastStore";
   import BackgroundSelector from "./BackgroundSelector.svelte";
   import * as DATA from "../../routes/Constans.svelte";
@@ -13,6 +17,10 @@
   import ArrowPathIcon from "virtual:icons/heroicons/arrow-path";
   import CheckIcon from "virtual:icons/heroicons/check";
 
+  import type { VideoSettings } from "$lib/types/VideoSettings";
+  import { HELP_CONTENT } from "$lib/tiwi/helpContent";
+  import HelpModal from "./HelpModal.svelte";
+
   export let showDrawer = false;
   export let selectedFileIndex: number | undefined;
   export let settingId: string | undefined;
@@ -22,39 +30,50 @@
   let isLoadingBackgrounds = true;
   let backgrounds = backgroundsData.backgrounds;
   let hasUnsavedChanges = false;
-  let pendingSettings: any = {};
-  let lastSavedSettings: any = {};
+  let pendingSettings: VideoSettings["settings"] = { ...DEFAULT_SETTINGS };
+  let lastSavedSettings: VideoSettings["settings"] = { ...DEFAULT_SETTINGS };
   let showBackgroundDrawer = false;
   let showCloseConfirmModal = false;
+  let currentHelpContent: {
+    title: string;
+    description?: string;
+    imagePath?: string;
+    component?: typeof SvelteComponent;
+  } | null = null;
+  let showHelpModal = false;
 
-  let selectedBackground = backgrounds.find(
-    (bg) =>
-      bg.id === $videoSettings[selectedFileIndex]?.settings?.selectedBackground,
-  );
+  let selectedBackground = backgrounds.find((bg) => {
+    if (selectedFileIndex === undefined) return false;
+    return (
+      bg.id === $videoSettings[selectedFileIndex]?.settings?.selectedBackground
+    );
+  });
 
   $: {
-    selectedBackground = backgrounds.find(
-      (bg) =>
+    selectedBackground = backgrounds.find((bg) => {
+      if (selectedFileIndex === undefined) return false;
+      return (
         bg.id ===
-        $videoSettings[selectedFileIndex]?.settings?.selectedBackground,
-    );
+        $videoSettings[selectedFileIndex]?.settings?.selectedBackground
+      );
+    });
   }
 
   // Reset to last saved state whenever file changes or drawer opens
-  $: if (selectedFileIndex !== undefined) {
-    if ($videoSettings[selectedFileIndex]) {
-      lastSavedSettings = { ...$videoSettings[selectedFileIndex].settings };
-      pendingSettings = { ...lastSavedSettings };
-    }
+  $: if (selectedFileIndex !== undefined && $videoSettings[selectedFileIndex]) {
+    lastSavedSettings = { ...$videoSettings[selectedFileIndex].settings };
+    pendingSettings = { ...lastSavedSettings };
     hasUnsavedChanges = false;
   }
 
   // Also reset when drawer opens
-  $: if (showDrawer) {
-    if (selectedFileIndex !== undefined && $videoSettings[selectedFileIndex]) {
-      lastSavedSettings = { ...$videoSettings[selectedFileIndex].settings };
-      pendingSettings = { ...lastSavedSettings };
-    }
+  $: if (
+    showDrawer &&
+    selectedFileIndex !== undefined &&
+    $videoSettings[selectedFileIndex]
+  ) {
+    lastSavedSettings = { ...$videoSettings[selectedFileIndex].settings };
+    pendingSettings = { ...lastSavedSettings };
     hasUnsavedChanges = false;
   }
 
@@ -143,6 +162,11 @@
     resetSettings();
     showCloseConfirmModal = false;
     showDrawer = false;
+  }
+
+  function showHelp(contentKey: keyof typeof HELP_CONTENT) {
+    currentHelpContent = HELP_CONTENT[contentKey];
+    showHelpModal = true;
   }
 
   onMount(async () => {
@@ -244,119 +268,265 @@
           </label>
 
           <!-- Scale Controls -->
-          <div class="p-4 bg-base-100 rounded-lg">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-medium">Skale</span>
-              <label class="flex items-center gap-2">
-                <span class="text-sm">Synchronizuj skale</span>
+          {#if FEATURES.ENABLE_SCALE_CONTROLS}
+            <div class="p-4 bg-base-100 rounded-lg">
+              <div class="flex items-center justify-between mb-2">
+                <span class="font-medium">Skale</span>
+                <label class="flex items-center gap-2">
+                  <span class="text-sm">Synchronizuj skale</span>
+                  <input
+                    type="checkbox"
+                    class="toggle toggle-sm"
+                    checked={pendingSettings.scalesLocked}
+                    on:change={(e) => {
+                      if (settingId) {
+                        handleSettingChange(settingId, {
+                          scalesLocked: e.currentTarget.checked,
+                        });
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+              <p class="text-xs text-base-content/70 mb-4">
+                Synchronizacja skal pozwala na jednoczesną zmianę rozmiaru obu
+                elementów wideo
+              </p>
+
+              <!-- Boczek Scale -->
+              <div class="mb-4">
+                <div class="flex justify-between mb-2">
+                  <span>Skala Boczka</span>
+                  <span class="text-base-content/70">
+                    {(pendingSettings.boczekScale * 100).toFixed(0)}%
+                  </span>
+                </div>
                 <input
-                  type="checkbox"
-                  class="toggle toggle-sm"
-                  checked={pendingSettings.scalesLocked}
-                  on:change={(e) => {
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  class="range range-sm"
+                  value={pendingSettings.boczekScale}
+                  on:input={(e) => {
                     if (settingId) {
+                      const newScale = parseFloat(e.currentTarget.value);
                       handleSettingChange(settingId, {
-                        scalesLocked: e.currentTarget.checked,
+                        boczekScale: newScale,
+                        ...(pendingSettings.scalesLocked
+                          ? { greenscreenScale: newScale }
+                          : {}),
                       });
                     }
                   }}
                 />
+                <p class="text-xs text-base-content/70 mt-2">
+                  Kontroluje rozmiar reakcji Boczka w końcowej scenie
+                </p>
+              </div>
+
+              <!-- Greenscreen Scale -->
+              <div>
+                <div class="flex justify-between mb-2">
+                  <span>Skala Greenscreena</span>
+                  <span class="text-base-content/70">
+                    {(pendingSettings.greenscreenScale * 100).toFixed(0)}%
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  class="range range-sm"
+                  value={pendingSettings.greenscreenScale}
+                  on:input={(e) => {
+                    if (settingId) {
+                      const newScale = parseFloat(e.currentTarget.value);
+                      handleSettingChange(settingId, {
+                        greenscreenScale: newScale,
+                        ...(pendingSettings.scalesLocked
+                          ? { boczekScale: newScale }
+                          : {}),
+                      });
+                    }
+                  }}
+                />
+                <p class="text-xs text-base-content/70 mt-2">
+                  Kontroluje rozmiar Twojego wideo w oknie telewizora
+                </p>
+              </div>
+            </div>
+          {/if}
+
+          <!-- CRT Effects Section -->
+          <div class="flex flex-col gap-2 p-4 bg-base-100 rounded-lg">
+            <div class="flex flex-col gap-1">
+              <h3 class="font-medium">Efekty CRT</h3>
+              <button
+                class="text-xs text-base-content/90 hover:text-primary transition-colors flex items-center gap-1"
+                on:click={() => showHelp("CRT_EFFECTS")}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="w-4 h-4"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"
+                  />
+                </svg>
+                Dowiedz się więcej o efektach CRT
+              </button>
+            </div>
+            <div class="grid grid-cols-1 gap-4">
+              <label class="flex items-center justify-between gap-2">
+                <div>
+                  <span class="flex-1">Efekt CRT</span>
+                  <p class="text-xs text-base-content/70">
+                    Dodaje zniekształcenie soczewki CRT
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  class="toggle toggle-success"
+                  checked={pendingSettings?.enableCRT ?? false}
+                  on:change={(e) =>
+                    handleSettingChange(settingId, {
+                      enableCRT: e.currentTarget.checked,
+                    })}
+                />
               </label>
-            </div>
-            <p class="text-xs text-base-content/70 mb-4">
-              Synchronizacja skal pozwala na jednoczesną zmianę rozmiaru obu
-              elementów wideo
-            </p>
 
-            <!-- Boczek Scale -->
-            <div class="mb-4">
-              <div class="flex justify-between mb-2">
-                <span>Skala Boczka</span>
-                <span class="text-base-content/70">
-                  {(pendingSettings.boczekScale * 100).toFixed(0)}%
-                </span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.1"
-                class="range range-sm"
-                value={pendingSettings.boczekScale}
-                on:input={(e) => {
-                  if (settingId) {
-                    const newScale = parseFloat(e.currentTarget.value);
+              <label class="flex items-center justify-between gap-2">
+                <div>
+                  <span class="flex-1">Poświata</span>
+                  <p class="text-xs text-base-content/70">
+                    Dodaje efekt poświaty wokół obrazu
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  class="toggle toggle-success"
+                  checked={pendingSettings?.enableBloom ?? false}
+                  on:change={(e) =>
                     handleSettingChange(settingId, {
-                      boczekScale: newScale,
-                      ...(pendingSettings.scalesLocked
-                        ? { greenscreenScale: newScale }
-                        : {}),
-                    });
-                  }
-                }}
-              />
-              <p class="text-xs text-base-content/70 mt-2">
-                Kontroluje rozmiar reakcji Boczka w końcowej scenie
-              </p>
-            </div>
+                      enableBloom: e.currentTarget.checked,
+                    })}
+                />
+              </label>
 
-            <!-- Greenscreen Scale -->
-            <div>
-              <div class="flex justify-between mb-2">
-                <span>Skala Greenscreena</span>
-                <span class="text-base-content/70">
-                  {(pendingSettings.greenscreenScale * 100).toFixed(0)}%
-                </span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.1"
-                class="range range-sm"
-                value={pendingSettings.greenscreenScale}
-                on:input={(e) => {
-                  if (settingId) {
-                    const newScale = parseFloat(e.currentTarget.value);
+              <label class="flex items-center justify-between gap-2">
+                <div>
+                  <span class="flex-1">Przeplot</span>
+                  <p class="text-xs text-base-content/70">
+                    Symuluje efekt przeplotu starego telewizora
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  class="toggle toggle-success"
+                  checked={pendingSettings?.enableInterlaced ?? false}
+                  on:change={(e) =>
                     handleSettingChange(settingId, {
-                      greenscreenScale: newScale,
-                      ...(pendingSettings.scalesLocked
-                        ? { boczekScale: newScale }
-                        : {}),
-                    });
-                  }
-                }}
-              />
-              <p class="text-xs text-base-content/70 mt-2">
-                Kontroluje rozmiar Twojego wideo w oknie telewizora
-              </p>
+                      enableInterlaced: e.currentTarget.checked,
+                    })}
+                />
+              </label>
+
+              {#if FEATURES.ENABLE_RGB}
+                <label class="flex items-center justify-between gap-2">
+                  <div>
+                    <span class="flex-1">Efekt RGB</span>
+                    <p class="text-xs text-base-content/70">
+                      Dodaje efekt aberracji chromatycznej RGB
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    class="toggle toggle-success"
+                    checked={pendingSettings?.enableRGB ?? false}
+                    on:change={(e) =>
+                      handleSettingChange(settingId, {
+                        enableRGB: e.currentTarget.checked,
+                      })}
+                  />
+                </label>
+              {/if}
+
+              {#if FEATURES.ENABLE_HIGHLIGHT}
+                <label class="flex items-center justify-between gap-2">
+                  <div>
+                    <span class="flex-1">Odbłysk</span>
+                    <p class="text-xs text-base-content/70">
+                      Dodaje efekt odbłysku na ekranie
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    class="toggle toggle-success"
+                    checked={pendingSettings?.enableHighlight ?? false}
+                    on:change={(e) =>
+                      handleSettingChange(settingId, {
+                        enableHighlight: e.currentTarget.checked,
+                      })}
+                  />
+                </label>
+              {/if}
             </div>
           </div>
 
           <!-- Boczek Fill Type Select -->
           {#if pendingSettings.addBoczek}
             <div class="flex flex-col gap-2 p-4 bg-base-100 rounded-lg">
-              <div class="flex items-center justify-between">
-                <span class="flex-1">Tryb dopasowania Boczka</span>
-                <select
-                  class="select select-bordered select-sm w-48"
-                  value={pendingSettings.boczekFillType}
-                  on:change={(e) => {
-                    if (settingId) {
-                      handleSettingChange(settingId, {
-                        boczekFillType: e.currentTarget.value,
-                      });
-                    }
-                  }}
+              <div class="flex flex-col gap-1">
+                <div class="flex items-center justify-between">
+                  <span class="flex-1">Tryb dopasowania Boczka</span>
+                  <select
+                    class="select select-bordered select-sm w-48"
+                    value={pendingSettings.boczekFillType}
+                    on:change={(e) => {
+                      if (settingId) {
+                        handleSettingChange(settingId, {
+                          boczekFillType: e.currentTarget.value,
+                        });
+                      }
+                    }}
+                  >
+                    <option value="stretch">Rozciągnij</option>
+                    <option value="blur-padding"
+                      >Zachowaj proporcje z rozmyciem</option
+                    >
+                    <option value="black-padding"
+                      >Zachowaj proporcje z czarnym tłem</option
+                    >
+                  </select>
+                </div>
+                <button
+                  class="text-xs text-base-content/90 hover:text-primary transition-colors flex items-center gap-1"
+                  on:click={() => showHelp("BOCZEK_FILL")}
                 >
-                  <option value="stretch">Rozciągnij</option>
-                  <option value="blur-padding"
-                    >Zachowaj proporcje z rozmyciem</option
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="currentColor"
+                    class="w-4 h-4"
                   >
-                  <option value="black-padding"
-                    >Zachowaj proporcje z czarnym tłem</option
-                  >
-                </select>
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"
+                    />
+                  </svg>
+                  Dowiedz się więcej o trybach dopasowania
+                </button>
               </div>
               <p class="text-xs text-base-content/70">
                 Określa sposób dopasowania reakcji Boczka do ekranu - możesz
@@ -365,29 +535,104 @@
             </div>
           {/if}
 
+          <!-- Greenscreen Scale Presets -->
+          <div class="flex flex-col gap-2 p-4 bg-base-100 rounded-lg">
+            <div class="flex flex-col gap-1">
+              <div class="flex items-center justify-between">
+                <span class="flex-1">Skalowanie wideo</span>
+              </div>
+              <button
+                class="text-xs text-base-content/90 hover:text-primary transition-colors flex items-center gap-1"
+                on:click={() => showHelp("VIDEO_SCALE")}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="w-4 h-4"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"
+                  />
+                </svg>
+                Dowiedz się więcej o skalowaniu wideo
+              </button>
+            </div>
+            <p class="text-xs text-base-content/70 mb-2">
+              Określa wielkość wideo względem okna telewizora
+            </p>
+            <div class="flex flex-col gap-2">
+              {#each Object.entries(GREENSCREEN_SCALE_PRESETS) as [key, preset]}
+                <div class="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="greenscreen-scale"
+                    class="radio radio-sm radio-primary"
+                    value={preset.value}
+                    checked={pendingSettings.greenscreenScale === preset.value}
+                    on:change={(e) => {
+                      if (settingId) {
+                        handleSettingChange(settingId, {
+                          greenscreenScale: parseFloat(e.currentTarget.value),
+                        });
+                      }
+                    }}
+                  />
+                  <label class="text-sm">{preset.label}</label>
+                </div>
+              {/each}
+            </div>
+          </div>
+
           <!-- Greenscreen Fill Type Select -->
           <div class="flex flex-col gap-2 p-4 bg-base-100 rounded-lg">
-            <div class="flex items-center justify-between">
-              <span class="flex-1">Tryb dopasowania do tła</span>
-              <select
-                class="select select-bordered select-sm w-48"
-                value={pendingSettings.greenscreenFillType}
-                on:change={(e) => {
-                  if (settingId) {
-                    handleSettingChange(settingId, {
-                      greenscreenFillType: e.currentTarget.value,
-                    });
-                  }
-                }}
+            <div class="flex flex-col gap-1">
+              <div class="flex items-center justify-between">
+                <span class="flex-1">Tryb dopasowania do tła</span>
+                <select
+                  class="select select-bordered select-sm w-48"
+                  value={pendingSettings.greenscreenFillType}
+                  on:change={(e) => {
+                    if (settingId) {
+                      handleSettingChange(settingId, {
+                        greenscreenFillType: e.currentTarget.value,
+                      });
+                    }
+                  }}
+                >
+                  <option value="black-padding"
+                    >Zachowaj proporcje z czarnym tłem</option
+                  >
+                  <option value="stretch">Rozciągnij</option>
+                  <option value="blur-padding"
+                    >Zachowaj proporcje z rozmyciem</option
+                  >
+                </select>
+              </div>
+              <button
+                class="text-xs text-base-content/90 hover:text-primary transition-colors flex items-center gap-1"
+                on:click={() => showHelp("GREENSCREEN_FILL")}
               >
-                <option value="black-padding"
-                  >Zachowaj proporcje z czarnym tłem</option
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="w-4 h-4"
                 >
-                <option value="stretch">Rozciągnij</option>
-                <option value="blur-padding"
-                  >Zachowaj proporcje z rozmyciem</option
-                >
-              </select>
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"
+                  />
+                </svg>
+                Dowiedz się więcej o trybach dopasowania do tła
+              </button>
             </div>
             <p class="text-xs text-base-content/70">
               Określa sposób dopasowania Twojego wideo do okna telewizora -
@@ -496,4 +741,15 @@
       on:click={() => (showCloseConfirmModal = false)}
     />
   </div>
+{/if}
+
+<!-- Help Modal -->
+{#if currentHelpContent}
+  <HelpModal
+    bind:showModal={showHelpModal}
+    title={currentHelpContent.title}
+    description={currentHelpContent.description}
+    imagePath={currentHelpContent.imagePath}
+    ContentComponent={currentHelpContent.component}
+  />
 {/if}

@@ -2,12 +2,34 @@
 <script context="module" lang="ts">
   // Default settings
   export const DEFAULT_SETTINGS = {
-    addBoczek: true,
-    addIntro: true,
+    addBoczek: false,
+    addIntro: false,
     selectedBackground: "okil-1",
     boczekScale: 0.8,
     greenscreenScale: 0.8,
     scalesLocked: false,
+    enableCRT: false,
+    enableBloom: false,
+    enableInterlaced: false,
+    enableHighlight: false,
+    bloomSettings: {
+      padding: 50,
+      blur: 20,
+      intensity: 1.2,
+    },
+    crtSettings: {
+      k1: 0.03,
+      k2: 0.05,
+      curveScaleFactor: 1.05,
+      interpolation: "bilinear",
+    },
+    highlightSettings: {
+      x: 80,
+      y: 60,
+      size: 90,
+      blur: 7,
+    },
+    paddingColor: "0x000000FF",
   };
 
   // Names
@@ -69,17 +91,20 @@
       offsetX: number;
       offsetY: number;
     },
-    fillType: "stretch" | "blur-padding" | "black-padding" = "black-padding",
+    greenscreenFillType:
+      | "stretch"
+      | "blur-padding"
+      | "black-padding" = "black-padding",
     scale: number = 0.8,
   ) {
     // Apply scale to maxWidth and maxHeight
     const scaledMaxWidth = Math.round(config.maxWidth * scale);
     const scaledMaxHeight = Math.round(config.maxHeight * scale);
 
-    if (fillType === "stretch") {
+    if (greenscreenFillType === "stretch") {
       // Simple stretch to fit the container
       return `[1:v]scale=${config.padWidth}:${config.padHeight}[overlay];[0:v][overlay]overlay=x=${config.offsetX}:y=${config.offsetY}`;
-    } else if (fillType === "blur-padding") {
+    } else if (greenscreenFillType === "blur-padding") {
       // Scale with aspect ratio and fill with blur
       return `[1:v]split[toScale][toBlur];[toScale]scale=w='min(iw,${scaledMaxWidth})':h='min(ih,${scaledMaxHeight})':force_original_aspect_ratio=decrease[scaled];[toBlur]scale=32:18,gblur=sigma=2,scale=${config.padWidth}:${config.padHeight}[blurred];[blurred][scaled]overlay=(W-w)/2:(H-h)/2[overlay];[0:v][overlay]overlay=x=${config.offsetX}:y=${config.offsetY}`;
     } else {
@@ -88,16 +113,263 @@
     }
   }
 
+  import type { OverlayConfig } from "$lib/types/VideoSettings";
+
+  export function generateCRTFilter(
+    config: OverlayConfig,
+    greenscreenFillType:
+      | "stretch"
+      | "blur-padding"
+      | "black-padding" = "black-padding",
+    scale: number,
+    enableCRT: boolean,
+    enableBloom: boolean,
+    enableInterlaced: boolean,
+    enableHighlight: boolean,
+    enableRGB: boolean,
+    paddingColor: string,
+  ) {
+    // Debug statement to log config values
+    console.debug("Config values:", {
+      config: config,
+      enableCRT,
+      enableBloom,
+      enableInterlaced,
+      enableHighlight,
+      enableRGB,
+      paddingColor,
+    });
+
+    // Calculate actual dimensions from percentages
+    const overlayWidth: number = Math.round(
+      (config.bgWidth * config.overlayWidthPercent) / 100,
+    );
+    const overlayHeight: number = Math.round(
+      (config.bgHeight * config.overlayHeightPercent) / 100,
+    );
+
+    // Debug output for calculated dimensions
+    console.debug(
+      `Calculated overlay dimensions: ${overlayWidth}x${overlayHeight} (Width x Height)`,
+    );
+
+    // Calculate scaled dimensions
+    const scaledWidth: number = Math.round(overlayWidth * scale);
+    const scaledHeight: number = Math.round(overlayHeight * scale);
+
+    // Define paddedWidth and paddedHeight outside the conditional
+    let paddedWidth: number = overlayWidth;
+    let paddedHeight: number = overlayHeight;
+
+    let overlayX: number = config.offsetX;
+    let overlayY: number = config.offsetY;
+
+    // Calculate position adjustments for CRT effect
+    if (enableCRT) {
+      // Scale from center point in one calculation
+      const scaleOffsetX = Math.round(
+        (overlayWidth * (config.crtSettings.curveScaleFactor - 1)) / 2,
+      );
+      const scaleOffsetY = Math.round(
+        (overlayHeight * (config.crtSettings.curveScaleFactor - 1)) / 2,
+      );
+      overlayX = overlayX - scaleOffsetX;
+      overlayY = overlayY - scaleOffsetY;
+
+      // Debug output
+      console.debug("Scale offsets:", { scaleOffsetX, scaleOffsetY });
+      console.debug("Adjusted position:", { overlayX, overlayY });
+    }
+
+    // If bloom is enabled, we'll adjust the padding later in the filter chain
+    if (enableBloom) {
+      // Additional logging for calculated values when bloom is enabled
+      console.debug(
+        "Bloom enabled: paddedWidth =",
+        paddedWidth,
+        ", paddedHeight =",
+        paddedHeight,
+        ", overlayX =",
+        overlayX,
+        ", overlayY =",
+        overlayY,
+      );
+    } else {
+      // Additional logging for calculated values when bloom is disabled
+      console.debug(
+        "Bloom disabled: paddedWidth =",
+        paddedWidth,
+        ", paddedHeight =",
+        paddedHeight,
+        ", overlayX =",
+        overlayX,
+        ", overlayY =",
+        overlayY,
+      );
+    }
+
+    // Create the ffmpeg filter chain
+    let scaleFilter: string = `[1:v]scale=${scaledWidth}:${scaledHeight}:force_original_aspect_ratio=decrease`;
+    if (greenscreenFillType === "black-padding") {
+      scaleFilter += `,pad=${overlayWidth}:${overlayHeight}:(ow-iw)/2:(oh-ih)/2:color=${paddingColor}`;
+    }
+
+    // Build the RGB effect filter if enabled
+    let rgbFilter: string = "";
+    if (enableRGB) {
+      rgbFilter = `split=3[red][green][blue];
+        [red]lutrgb=g=0:b=0,scale=${overlayWidth + 16}:${overlayHeight},crop=${overlayWidth}:${overlayHeight}[red];
+        [green]lutrgb=r=0:b=0,scale=${overlayWidth + 8}:${overlayHeight},crop=${overlayWidth}:${overlayHeight}[green];
+        [blue]lutrgb=r=0:g=0,scale=${overlayWidth}:${overlayHeight},crop=${overlayWidth}:${overlayHeight}[blue];
+        [red][blue]blend=all_mode='addition'[rb];
+        [rb][green]blend=all_mode='addition',format=gbrp`;
+    }
+
+    // Build the highlight filter if enabled
+    let highlightFilter: string = "";
+    if (enableHighlight) {
+      highlightFilter = `split [main][for_highlight];
+        [for_highlight] format=gbrp,
+        drawbox=x=${config.highlightSettings.x}:y=${config.highlightSettings.y}:w=${config.highlightSettings.size}:h=${config.highlightSettings.size}:color=white@0.5:t=fill,
+        boxblur=${config.highlightSettings.blur} [highlight];
+        [main][highlight] blend=all_mode=screen:shortest=1`;
+    }
+
+    let filterChain: string = "";
+    // Build the filter chain based on effects toggle
+    if (enableCRT) {
+      if (enableInterlaced) {
+        filterChain = `${scaleFilter}`;
+
+        if (enableRGB) {
+          filterChain = `${filterChain},${rgbFilter}`;
+        }
+
+        filterChain = `${filterChain},split[a][b];
+            [a]curves=darker[a];
+            [a][b]blend=all_expr='if(eq(0,mod(Y,2)),A,B)':shortest=1`;
+
+        if (enableHighlight) {
+          filterChain = `${filterChain},${highlightFilter}`;
+        }
+
+        if (enableBloom) {
+          filterChain = `${filterChain},
+                format=rgba,
+                pad=${overlayWidth + 2 * config.bloomSettings.padding}:${overlayHeight + 2 * config.bloomSettings.padding}:${config.bloomSettings.padding}:${config.bloomSettings.padding}:color=0x00000000,
+                split [main][bloom];
+                [bloom]boxblur=${config.bloomSettings.blur}[bloom];
+                [main][bloom]blend=all_mode=screen:shortest=1`;
+
+          // Adjust position for bloom padding
+          overlayX = overlayX - config.bloomSettings.padding;
+          overlayY = overlayY - config.bloomSettings.padding;
+        }
+
+        filterChain = `${filterChain},
+            format=rgba,
+            lenscorrection=k1=${config.crtSettings.k1}:k2=${config.crtSettings.k2}:i=${config.crtSettings.interpolation},
+            scale=iw*${config.crtSettings.curveScaleFactor}:ih*${config.crtSettings.curveScaleFactor}[scaled]`;
+      } else {
+        filterChain = `${scaleFilter}`;
+
+        if (enableRGB) {
+          filterChain = `${filterChain},${rgbFilter}`;
+        }
+
+        if (enableHighlight) {
+          filterChain = `${filterChain},${highlightFilter}`;
+        }
+
+        if (enableBloom) {
+          filterChain = `${filterChain},
+                format=rgba,
+                pad=${overlayWidth + 2 * config.bloomSettings.padding}:${overlayHeight + 2 * config.bloomSettings.padding}:${config.bloomSettings.padding}:${config.bloomSettings.padding}:color=0x00000000,
+                split [main][bloom];
+                [bloom]boxblur=${config.bloomSettings.blur}[bloom];
+                [main][bloom]blend=all_mode=screen:shortest=1`;
+
+          // Adjust position for bloom padding
+          overlayX = overlayX - config.bloomSettings.padding;
+          overlayY = overlayY - config.bloomSettings.padding;
+        }
+
+        filterChain = `${filterChain},
+            format=rgba,
+            lenscorrection=k1=${config.crtSettings.k1}:k2=${config.crtSettings.k2}:i=${config.crtSettings.interpolation},
+            scale=iw*${config.crtSettings.curveScaleFactor}:ih*${config.crtSettings.curveScaleFactor}[scaled]`;
+      }
+    } else {
+      if (enableInterlaced) {
+        filterChain = `${scaleFilter}`;
+
+        if (enableRGB) {
+          filterChain = `${filterChain},${rgbFilter}`;
+        }
+
+        filterChain = `${filterChain},split[a][b];
+            [a]curves=darker[a];
+            [a][b]blend=all_expr='if(eq(0,mod(Y,2)),A,B)':shortest=1`;
+
+        if (enableHighlight) {
+          filterChain = `${filterChain},${highlightFilter}`;
+        }
+
+        if (enableBloom) {
+          filterChain = `${filterChain},
+                format=rgba,
+                pad=${overlayWidth + 2 * config.bloomSettings.padding}:${overlayHeight + 2 * config.bloomSettings.padding}:${config.bloomSettings.padding}:${config.bloomSettings.padding}:color=0x00000000,
+                split [main][bloom];
+                [bloom]boxblur=${config.bloomSettings.blur}[bloom];
+                [main][bloom]blend=all_mode=screen:shortest=1`;
+
+          // Adjust position for bloom padding
+          overlayX = overlayX - config.bloomSettings.padding;
+          overlayY = overlayY - config.bloomSettings.padding;
+        }
+
+        filterChain = `${filterChain},format=rgba[scaled]`;
+      } else {
+        filterChain = `${scaleFilter}`;
+
+        if (enableRGB) {
+          filterChain = `${filterChain},${rgbFilter}`;
+        }
+
+        if (enableHighlight) {
+          filterChain = `${filterChain},${highlightFilter}`;
+        }
+
+        if (enableBloom) {
+          filterChain = `${filterChain},
+                format=rgba,
+                pad=${overlayWidth + 2 * config.bloomSettings.padding}:${overlayHeight + 2 * config.bloomSettings.padding}:${config.bloomSettings.padding}:${config.bloomSettings.padding}:color=0x00000000,
+                split [main][bloom];
+                [bloom]boxblur=${config.bloomSettings.blur}[bloom];
+                [main][bloom]blend=all_mode=screen:shortest=1`;
+
+          // Adjust position for bloom padding
+          overlayX = overlayX - config.bloomSettings.padding;
+          overlayY = overlayY - config.bloomSettings.padding;
+        }
+
+        filterChain = `${filterChain},format=rgba[scaled]`;
+      }
+    }
+
+    return `${filterChain};[0:v][scaled]overlay=${overlayX}:${overlayY}[v]`;
+  }
+
   // Default greenscreen filter (for backward compatibility)
   // TODO: Remove this
-  export const FFMPEG_FILTER_ADD_GREENSCREEN = generateGreenscreenFilter({
-    maxWidth: 510,
-    maxHeight: 382,
-    padWidth: 512,
-    padHeight: 382,
-    offsetX: 140,
-    offsetY: 94,
-  });
+  // export const FFMPEG_FILTER_ADD_GREENSCREEN = generateGreenscreenFilter({
+  //   maxWidth: 510,
+  //   maxHeight: 382,
+  //   padWidth: 512,
+  //   padHeight: 382,
+  //   offsetX: 140,
+  //   offsetY: 94,
+  // });
 
   export const FFMPEG_FILTER_ADD_WATERMARK =
     "[1][0]scale2ref=w=oh*mdar:h=ih*0.1[wm][vid];[vid][wm]overlay=W-w-10:H-h-10";
