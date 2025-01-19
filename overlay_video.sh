@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Debug mode - print commands as they are executed
-set -x
+# set -x
 
 # Check if required arguments are provided
 if [ "$#" -ne 1 ]; then
@@ -22,7 +22,7 @@ BG_HEIGHT=576
 # Lower values (0.7-0.8): More padding around edges, smaller video
 # Higher values (0.9-1.0): Less padding, video fills more space
 # Current value provides subtle padding while maintaining good visibility
-VIDEO_SCALE_FACTOR=0.96
+VIDEO_SCALE_FACTOR=0.97
 
 # Padding color for scaled video
 # Can be specified as:
@@ -49,7 +49,7 @@ BLOOM_BLUR=20
 # Higher values (1.2-2.0): More intense, bright glow
 # Values above 2.0 may cause oversaturation
 # Current value adds noticeable glow while preserving video details
-BLOOM_INTENSITY=1.2
+# BLOOM_INTENSITY=1.2
 
 # Overlay dimensions as percentage of background
 OVERLAY_WIDTH_PERCENT=66.9  # This will make overlay ~515px wide on 768px background
@@ -58,6 +58,9 @@ OVERLAY_HEIGHT_PERCENT=65.3  # This will make overlay ~382px high on 576px backg
 # Calculate actual dimensions from percentages
 OVERLAY_WIDTH=$(printf "%.0f" $(echo "$BG_WIDTH * $OVERLAY_WIDTH_PERCENT / 100" | bc -l))
 OVERLAY_HEIGHT=$(printf "%.0f" $(echo "$BG_HEIGHT * $OVERLAY_HEIGHT_PERCENT / 100" | bc -l))
+
+# Logging the calculated dimensions
+echo "Calculated overlay dimensions: ${OVERLAY_WIDTH}x${OVERLAY_HEIGHT} (Width x Height)"
 
 # Base overlay positions (center of the screen)
 BASE_X=141
@@ -68,8 +71,8 @@ SCALED_WIDTH=$(printf "%.0f" $(echo "$OVERLAY_WIDTH * $VIDEO_SCALE_FACTOR" | bc 
 SCALED_HEIGHT=$(printf "%.0f" $(echo "$OVERLAY_HEIGHT * $VIDEO_SCALE_FACTOR" | bc -l))
 
 # Calculate padding for centered position within overlay area
-SCALE_PADDING_X=$(printf "%.0f" $(echo "($OVERLAY_WIDTH - $SCALED_WIDTH) / 2" | bc -l))
-SCALE_PADDING_Y=$(printf "%.0f" $(echo "($OVERLAY_HEIGHT - $SCALED_HEIGHT) / 2" | bc -l))
+# SCALE_PADDING_X=$(printf "%.0f" $(echo "($OVERLAY_WIDTH - $SCALED_WIDTH) / 2" | bc -l))
+# SCALE_PADDING_Y=$(printf "%.0f" $(echo "($OVERLAY_HEIGHT - $SCALED_HEIGHT) / 2" | bc -l))
 
 
 # Effect toggles
@@ -86,6 +89,9 @@ if [ "$ENABLE_BLOOM" = true ]; then
     # Adjust position to account for bloom padding
     OVERLAY_X=$((BASE_X - BLOOM_PADDING))
     OVERLAY_Y=$((BASE_Y - BLOOM_PADDING))
+
+    # Additional logging for bloom enabled state
+    echo "Bloom enabled: PADDED_WIDTH=${PADDED_WIDTH}, PADDED_HEIGHT=${PADDED_HEIGHT}, OVERLAY_X=${OVERLAY_X}, OVERLAY_Y=${OVERLAY_Y}"
 else
     # When bloom is disabled, use base dimensions
     PADDED_WIDTH=$OVERLAY_WIDTH
@@ -94,6 +100,9 @@ else
     # Use base position without bloom adjustment
     OVERLAY_X=$BASE_X
     OVERLAY_Y=$BASE_Y
+
+    # Additional logging for bloom disabled state
+    echo "Bloom disabled: PADDED_WIDTH=${PADDED_WIDTH}, PADDED_HEIGHT=${PADDED_HEIGHT}, OVERLAY_X=${OVERLAY_X}, OVERLAY_Y=${OVERLAY_Y}"
 fi
 
 # Debug output
@@ -101,12 +110,12 @@ echo "Bloom enabled: ${ENABLE_BLOOM}"
 echo "Original dimensions: ${OVERLAY_WIDTH}x${OVERLAY_HEIGHT}"
 echo "Padded dimensions: ${PADDED_WIDTH}x${PADDED_HEIGHT}"
 echo "Scaled dimensions: ${SCALED_WIDTH}x${SCALED_HEIGHT}"
-echo "Scale padding: ${SCALE_PADDING_X}x${SCALE_PADDING_Y}"
+# echo "Scale padding: ${SCALE_PADDING_X}x${SCALE_PADDING_Y}"
 echo "Base position: ${BASE_X}x${BASE_Y}"
 echo "Final position: ${OVERLAY_X}x${OVERLAY_Y}"
 
 # CRT effect settings
-ENABLE_CRT=false  # Toggle for CRT effect
+ENABLE_CRT=true  # Toggle for CRT effect
 ENABLE_INTERLACED=false  # Toggle for interlaced effect
 ENABLE_HIGHLIGHT=false  # Toggle for highlight effect
 
@@ -129,7 +138,7 @@ CRT_K2=0.05
 # Values above 1.0: Compensates for edge shrinkage
 # Higher values (1.1-1.2): More compensation but may cut off edges
 # Current value (1.05) provides 5% extra size to prevent black edges
-CURVE_SCALE_FACTOR=1.05
+CURVE_SCALE_FACTOR=1.07
 
 # CRT interpolation method
 # Options: nearest (sharp/pixelated), bilinear (smooth)
@@ -272,14 +281,15 @@ else
     fi
 fi
 
+FILTER_CHAIN="${FILTER_CHAIN};[0:v][scaled]overlay=${ADJUSTED_X}:${ADJUSTED_Y}[v]"
+
 # Debug output for chosen filter chain
 echo "Using filter chain: ${FILTER_CHAIN}"
 
 # Execute ffmpeg command
 ffmpeg -i "$BACKGROUND" -i "$INPUT_VIDEO" \
     -filter_complex "\
-        ${FILTER_CHAIN};\
-        [0:v][scaled]overlay=${ADJUSTED_X}:${ADJUSTED_Y}[v]" \
+        ${FILTER_CHAIN}" \
     -map "[v]" \
     -map 1:a \
     -c:v libx264 \
