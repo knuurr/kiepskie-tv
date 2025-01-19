@@ -11,6 +11,8 @@
   import * as DATA from "../../routes/Constans.svelte";
   import backgroundsData from "$lib/tiwi/backgrounds.json";
   import type { VideoSettings } from "$lib/types/VideoSettings";
+  import { HELP_CONTENT } from "$lib/tiwi/helpContent";
+  import HelpModal from "./HelpModal.svelte";
 
   export let showDrawer = false;
   export let selectedFileIndex: number | undefined;
@@ -25,6 +27,12 @@
   let lastSavedSettings: VideoSettings["settings"] = { ...DEFAULT_SETTINGS };
   let showBackgroundDrawer = false;
   let showCloseConfirmModal = false;
+  let currentHelpContent: {
+    title: string;
+    description: string;
+    imagePath?: string;
+  } | null = null;
+  let showHelpModal = false;
 
   let selectedBackground = backgrounds.find((bg) => {
     if (selectedFileIndex === undefined) return false;
@@ -146,6 +154,11 @@
     resetSettings();
     showCloseConfirmModal = false;
     showDrawer = false;
+  }
+
+  function showHelp(contentKey: keyof typeof HELP_CONTENT) {
+    currentHelpContent = HELP_CONTENT[contentKey];
+    showHelpModal = true;
   }
 
   onMount(async () => {
@@ -366,7 +379,29 @@
 
           <!-- CRT Effects Section -->
           <div class="flex flex-col gap-2 p-4 bg-base-100 rounded-lg">
-            <h3 class="font-medium mb-2">Efekty CRT</h3>
+            <div class="flex flex-col gap-1">
+              <h3 class="font-medium">Efekty CRT</h3>
+              <button
+                class="text-xs text-base-content/90 hover:text-primary transition-colors flex items-center gap-1"
+                on:click={() => showHelp("CRT_EFFECTS")}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="w-4 h-4"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"
+                  />
+                </svg>
+                Dowiedz się więcej o efektach CRT
+              </button>
+            </div>
             <div class="grid grid-cols-1 gap-4">
               <label class="flex items-center justify-between gap-2">
                 <div>
@@ -447,27 +482,49 @@
           <!-- Boczek Fill Type Select -->
           {#if pendingSettings.addBoczek}
             <div class="flex flex-col gap-2 p-4 bg-base-100 rounded-lg">
-              <div class="flex items-center justify-between">
-                <span class="flex-1">Tryb dopasowania Boczka</span>
-                <select
-                  class="select select-bordered select-sm w-48"
-                  value={pendingSettings.boczekFillType}
-                  on:change={(e) => {
-                    if (settingId) {
-                      handleSettingChange(settingId, {
-                        boczekFillType: e.currentTarget.value,
-                      });
-                    }
-                  }}
+              <div class="flex flex-col gap-1">
+                <div class="flex items-center justify-between">
+                  <span class="flex-1">Tryb dopasowania Boczka</span>
+                  <select
+                    class="select select-bordered select-sm w-48"
+                    value={pendingSettings.boczekFillType}
+                    on:change={(e) => {
+                      if (settingId) {
+                        handleSettingChange(settingId, {
+                          boczekFillType: e.currentTarget.value,
+                        });
+                      }
+                    }}
+                  >
+                    <option value="stretch">Rozciągnij</option>
+                    <option value="blur-padding"
+                      >Zachowaj proporcje z rozmyciem</option
+                    >
+                    <option value="black-padding"
+                      >Zachowaj proporcje z czarnym tłem</option
+                    >
+                  </select>
+                </div>
+                <button
+                  class="text-xs text-base-content/90 hover:text-primary transition-colors flex items-center gap-1"
+                  on:click={() => showHelp("BOCZEK_FILL")}
                 >
-                  <option value="stretch">Rozciągnij</option>
-                  <option value="blur-padding"
-                    >Zachowaj proporcje z rozmyciem</option
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="currentColor"
+                    class="w-4 h-4"
                   >
-                  <option value="black-padding"
-                    >Zachowaj proporcje z czarnym tłem</option
-                  >
-                </select>
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"
+                    />
+                  </svg>
+                  Dowiedz się więcej o trybach dopasowania
+                </button>
               </div>
               <p class="text-xs text-base-content/70">
                 Określa sposób dopasowania reakcji Boczka do ekranu - możesz
@@ -478,8 +535,30 @@
 
           <!-- Greenscreen Scale Presets -->
           <div class="flex flex-col gap-2 p-4 bg-base-100 rounded-lg">
-            <div class="flex items-center justify-between">
-              <span class="flex-1">Skalowanie wideo</span>
+            <div class="flex flex-col gap-1">
+              <div class="flex items-center justify-between">
+                <span class="flex-1">Skalowanie wideo</span>
+              </div>
+              <button
+                class="text-xs text-base-content/90 hover:text-primary transition-colors flex items-center gap-1"
+                on:click={() => showHelp("VIDEO_SCALE")}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="w-4 h-4"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"
+                  />
+                </svg>
+                Dowiedz się więcej o skalowaniu wideo
+              </button>
             </div>
             <p class="text-xs text-base-content/70 mb-2">
               Określa wielkość wideo względem okna telewizora
@@ -509,27 +588,49 @@
 
           <!-- Greenscreen Fill Type Select -->
           <div class="flex flex-col gap-2 p-4 bg-base-100 rounded-lg">
-            <div class="flex items-center justify-between">
-              <span class="flex-1">Tryb dopasowania do tła</span>
-              <select
-                class="select select-bordered select-sm w-48"
-                value={pendingSettings.greenscreenFillType}
-                on:change={(e) => {
-                  if (settingId) {
-                    handleSettingChange(settingId, {
-                      greenscreenFillType: e.currentTarget.value,
-                    });
-                  }
-                }}
+            <div class="flex flex-col gap-1">
+              <div class="flex items-center justify-between">
+                <span class="flex-1">Tryb dopasowania do tła</span>
+                <select
+                  class="select select-bordered select-sm w-48"
+                  value={pendingSettings.greenscreenFillType}
+                  on:change={(e) => {
+                    if (settingId) {
+                      handleSettingChange(settingId, {
+                        greenscreenFillType: e.currentTarget.value,
+                      });
+                    }
+                  }}
+                >
+                  <option value="black-padding"
+                    >Zachowaj proporcje z czarnym tłem</option
+                  >
+                  <option value="stretch">Rozciągnij</option>
+                  <option value="blur-padding"
+                    >Zachowaj proporcje z rozmyciem</option
+                  >
+                </select>
+              </div>
+              <button
+                class="text-xs text-base-content/90 hover:text-primary transition-colors flex items-center gap-1"
+                on:click={() => showHelp("GREENSCREEN_FILL")}
               >
-                <option value="black-padding"
-                  >Zachowaj proporcje z czarnym tłem</option
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="w-4 h-4"
                 >
-                <option value="stretch">Rozciągnij</option>
-                <option value="blur-padding"
-                  >Zachowaj proporcje z rozmyciem</option
-                >
-              </select>
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"
+                  />
+                </svg>
+                Dowiedz się więcej o trybach dopasowania do tła
+              </button>
             </div>
             <p class="text-xs text-base-content/70">
               Określa sposób dopasowania Twojego wideo do okna telewizora -
@@ -687,4 +788,14 @@
       on:click={() => (showCloseConfirmModal = false)}
     />
   </div>
+{/if}
+
+<!-- Help Modal -->
+{#if currentHelpContent}
+  <HelpModal
+    bind:showModal={showHelpModal}
+    title={currentHelpContent.title}
+    description={currentHelpContent.description}
+    imagePath={currentHelpContent.imagePath}
+  />
 {/if}
