@@ -1,11 +1,16 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { videoSettings } from "$lib/stores/videoSettingsStore";
-  import { DEFAULT_SETTINGS, FEATURES } from "$lib/constants";
+  import {
+    DEFAULT_SETTINGS,
+    FEATURES,
+    GREENSCREEN_SCALE_PRESETS,
+  } from "$lib/constants";
   import { toasts } from "$lib/stores/toastStore";
   import BackgroundSelector from "./BackgroundSelector.svelte";
   import * as DATA from "../../routes/Constans.svelte";
   import backgroundsData from "$lib/tiwi/backgrounds.json";
+  import type { VideoSettings } from "$lib/types/VideoSettings";
 
   export let showDrawer = false;
   export let selectedFileIndex: number | undefined;
@@ -16,39 +21,43 @@
   let isLoadingBackgrounds = true;
   let backgrounds = backgroundsData.backgrounds;
   let hasUnsavedChanges = false;
-  let pendingSettings: any = {};
-  let lastSavedSettings: any = {};
+  let pendingSettings: VideoSettings["settings"] = { ...DEFAULT_SETTINGS };
+  let lastSavedSettings: VideoSettings["settings"] = { ...DEFAULT_SETTINGS };
   let showBackgroundDrawer = false;
   let showCloseConfirmModal = false;
 
-  let selectedBackground = backgrounds.find(
-    (bg) =>
-      bg.id === $videoSettings[selectedFileIndex]?.settings?.selectedBackground,
-  );
+  let selectedBackground = backgrounds.find((bg) => {
+    if (selectedFileIndex === undefined) return false;
+    return (
+      bg.id === $videoSettings[selectedFileIndex]?.settings?.selectedBackground
+    );
+  });
 
   $: {
-    selectedBackground = backgrounds.find(
-      (bg) =>
+    selectedBackground = backgrounds.find((bg) => {
+      if (selectedFileIndex === undefined) return false;
+      return (
         bg.id ===
-        $videoSettings[selectedFileIndex]?.settings?.selectedBackground,
-    );
+        $videoSettings[selectedFileIndex]?.settings?.selectedBackground
+      );
+    });
   }
 
   // Reset to last saved state whenever file changes or drawer opens
-  $: if (selectedFileIndex !== undefined) {
-    if ($videoSettings[selectedFileIndex]) {
-      lastSavedSettings = { ...$videoSettings[selectedFileIndex].settings };
-      pendingSettings = { ...lastSavedSettings };
-    }
+  $: if (selectedFileIndex !== undefined && $videoSettings[selectedFileIndex]) {
+    lastSavedSettings = { ...$videoSettings[selectedFileIndex].settings };
+    pendingSettings = { ...lastSavedSettings };
     hasUnsavedChanges = false;
   }
 
   // Also reset when drawer opens
-  $: if (showDrawer) {
-    if (selectedFileIndex !== undefined && $videoSettings[selectedFileIndex]) {
-      lastSavedSettings = { ...$videoSettings[selectedFileIndex].settings };
-      pendingSettings = { ...lastSavedSettings };
-    }
+  $: if (
+    showDrawer &&
+    selectedFileIndex !== undefined &&
+    $videoSettings[selectedFileIndex]
+  ) {
+    lastSavedSettings = { ...$videoSettings[selectedFileIndex].settings };
+    pendingSettings = { ...lastSavedSettings };
     hasUnsavedChanges = false;
   }
 
@@ -355,6 +364,86 @@
             </div>
           {/if}
 
+          <!-- CRT Effects Section -->
+          <div class="flex flex-col gap-2 p-4 bg-base-100 rounded-lg">
+            <h3 class="font-medium mb-2">Efekty CRT</h3>
+            <div class="grid grid-cols-1 gap-4">
+              <label class="flex items-center justify-between gap-2">
+                <div>
+                  <span class="flex-1">Efekt CRT</span>
+                  <p class="text-xs text-base-content/70">
+                    Dodaje zniekształcenie soczewki CRT
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  class="toggle toggle-success"
+                  checked={pendingSettings?.enableCRT ?? false}
+                  on:change={(e) =>
+                    handleSettingChange(settingId, {
+                      enableCRT: e.currentTarget.checked,
+                    })}
+                />
+              </label>
+
+              <label class="flex items-center justify-between gap-2">
+                <div>
+                  <span class="flex-1">Poświata</span>
+                  <p class="text-xs text-base-content/70">
+                    Dodaje efekt poświaty wokół obrazu
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  class="toggle toggle-success"
+                  checked={pendingSettings?.enableBloom ?? false}
+                  on:change={(e) =>
+                    handleSettingChange(settingId, {
+                      enableBloom: e.currentTarget.checked,
+                    })}
+                />
+              </label>
+
+              <label class="flex items-center justify-between gap-2">
+                <div>
+                  <span class="flex-1">Przeplot</span>
+                  <p class="text-xs text-base-content/70">
+                    Symuluje efekt przeplotu starego telewizora
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  class="toggle toggle-success"
+                  checked={pendingSettings?.enableInterlaced ?? false}
+                  on:change={(e) =>
+                    handleSettingChange(settingId, {
+                      enableInterlaced: e.currentTarget.checked,
+                    })}
+                />
+              </label>
+
+              {#if FEATURES.ENABLE_HIGHLIGHT}
+                <label class="flex items-center justify-between gap-2">
+                  <div>
+                    <span class="flex-1">Odbłysk</span>
+                    <p class="text-xs text-base-content/70">
+                      Dodaje efekt odbłysku na ekranie
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    class="toggle toggle-success"
+                    checked={pendingSettings?.enableHighlight ?? false}
+                    on:change={(e) =>
+                      handleSettingChange(settingId, {
+                        enableHighlight: e.currentTarget.checked,
+                      })}
+                  />
+                </label>
+              {/if}
+            </div>
+          </div>
+
           <!-- Boczek Fill Type Select -->
           {#if pendingSettings.addBoczek}
             <div class="flex flex-col gap-2 p-4 bg-base-100 rounded-lg">
@@ -386,6 +475,37 @@
               </p>
             </div>
           {/if}
+
+          <!-- Greenscreen Scale Presets -->
+          <div class="flex flex-col gap-2 p-4 bg-base-100 rounded-lg">
+            <div class="flex items-center justify-between">
+              <span class="flex-1">Skalowanie wideo</span>
+            </div>
+            <p class="text-xs text-base-content/70 mb-2">
+              Określa wielkość wideo względem okna telewizora
+            </p>
+            <div class="flex flex-col gap-2">
+              {#each Object.entries(GREENSCREEN_SCALE_PRESETS) as [key, preset]}
+                <div class="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="greenscreen-scale"
+                    class="radio radio-sm radio-primary"
+                    value={preset.value}
+                    checked={pendingSettings.greenscreenScale === preset.value}
+                    on:change={(e) => {
+                      if (settingId) {
+                        handleSettingChange(settingId, {
+                          greenscreenScale: parseFloat(e.currentTarget.value),
+                        });
+                      }
+                    }}
+                  />
+                  <label class="text-sm">{preset.label}</label>
+                </div>
+              {/each}
+            </div>
+          </div>
 
           <!-- Greenscreen Fill Type Select -->
           <div class="flex flex-col gap-2 p-4 bg-base-100 rounded-lg">

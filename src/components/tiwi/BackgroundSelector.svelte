@@ -1,9 +1,10 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { videoSettings } from "$lib/stores/videoSettingsStore";
-  import * as DATA from "../../routes/Constans.svelte";
+  // import { onMount } from "svelte";
+  // import { videoSettings } from "$lib/stores/videoSettingsStore";
+  // import * as DATA from "../../routes/Constans.svelte";
   import { createEventDispatcher } from "svelte";
   import backgroundsData from "$lib/tiwi/backgrounds.json";
+  import type { OverlayConfig } from "$lib/types/VideoSettings";
 
   export let settingId: string;
   export let showDrawer = false;
@@ -19,14 +20,7 @@
     description: string;
     imagePath: string;
     previewPath: string;
-    overlayConfig: {
-      maxWidth: number;
-      maxHeight: number;
-      padWidth: number;
-      padHeight: number;
-      offsetX: number;
-      offsetY: number;
-    };
+    overlayConfig: OverlayConfig;
   }
 
   let backgrounds: Background[] = backgroundsData.backgrounds;
