@@ -79,6 +79,16 @@ SCALED_HEIGHT=$(printf "%.0f" $(echo "$OVERLAY_HEIGHT * $VIDEO_SCALE_FACTOR" | b
 # Bloom effect settings
 ENABLE_BLOOM=false  # Toggle for bloom effect on/off 
 
+# RGB split effect settings
+ENABLE_RGB=true  # Toggle for RGB chromatic aberration
+RGB_RED_SCALE=1.04   # Scale factor for red channel (1.04 = 4% larger)
+RGB_GREEN_SCALE=1.02 # Scale factor for green channel (1.02 = 2% larger) 
+RGB_BLUE_SCALE=1.0   # Scale factor for blue channel (baseline size)
+
+# CRT effect settings
+ENABLE_CRT=false  # Toggle for CRT effect
+ENABLE_INTERLACED=false  # Toggle for interlaced effect
+ENABLE_HIGHLIGHT=false  # Toggle for highlight effect
 
 # Calculate initial overlay position
 if [ "$ENABLE_BLOOM" = true ]; then
@@ -113,12 +123,6 @@ echo "Scaled dimensions: ${SCALED_WIDTH}x${SCALED_HEIGHT}"
 # echo "Scale padding: ${SCALE_PADDING_X}x${SCALE_PADDING_Y}"
 echo "Base position: ${BASE_X}x${BASE_Y}"
 echo "Final position: ${OVERLAY_X}x${OVERLAY_Y}"
-
-# CRT effect settings
-ENABLE_CRT=true  # Toggle for CRT effect
-ENABLE_INTERLACED=false  # Toggle for interlaced effect
-ENABLE_HIGHLIGHT=false  # Toggle for highlight effect
-
 
 # CRT effect settings
 # Barrel distortion coefficient for horizontal curvature
@@ -191,7 +195,24 @@ fi
 # Build the filter chain based on effects toggle
 if [ "$ENABLE_CRT" = true ]; then
     if [ "$ENABLE_INTERLACED" = true ]; then
-        FILTER_CHAIN="${SCALE_FILTER},\
+        FILTER_CHAIN="${SCALE_FILTER}"
+        
+        if [ "$ENABLE_RGB" = true ]; then
+            # Calculate scaled dimensions for each color channel
+            RED_WIDTH=$(printf "%.0f" $(echo "$SCALED_WIDTH * $RGB_RED_SCALE" | bc -l))
+            GREEN_WIDTH=$(printf "%.0f" $(echo "$SCALED_WIDTH * $RGB_GREEN_SCALE" | bc -l))
+            BLUE_WIDTH=$SCALED_WIDTH  # Base size
+            
+            FILTER_CHAIN="${FILTER_CHAIN},\
+                split=3[red][green][blue];\
+                [red] lutrgb=g=0:b=0,scale=${RED_WIDTH}:${SCALED_HEIGHT},crop=${SCALED_WIDTH}:${SCALED_HEIGHT} [red];\
+                [green] lutrgb=r=0:b=0,scale=${GREEN_WIDTH}:${SCALED_HEIGHT},crop=${SCALED_WIDTH}:${SCALED_HEIGHT} [green];\
+                [blue] lutrgb=r=0:g=0,scale=${BLUE_WIDTH}:${SCALED_HEIGHT},crop=${SCALED_WIDTH}:${SCALED_HEIGHT} [blue];\
+                [red][blue] blend=all_mode='addition' [rb];\
+                [rb][green] blend=all_mode='addition'"
+        fi
+        
+        FILTER_CHAIN="${FILTER_CHAIN},\
             split[a][b];\
             [a]curves=darker[a];\
             [a][b]blend=all_expr='if(eq(0,mod(Y,2)),A,B)':shortest=1"
@@ -216,6 +237,21 @@ if [ "$ENABLE_CRT" = true ]; then
             scale=iw*${CURVE_SCALE_FACTOR}:ih*${CURVE_SCALE_FACTOR}[scaled]"
     else
         FILTER_CHAIN="${SCALE_FILTER}"
+        
+        if [ "$ENABLE_RGB" = true ]; then
+            # Calculate scaled dimensions for each color channel
+            RED_WIDTH=$(printf "%.0f" $(echo "$SCALED_WIDTH * $RGB_RED_SCALE" | bc -l))
+            GREEN_WIDTH=$(printf "%.0f" $(echo "$SCALED_WIDTH * $RGB_GREEN_SCALE" | bc -l))
+            BLUE_WIDTH=$SCALED_WIDTH  # Base size
+            
+            FILTER_CHAIN="${FILTER_CHAIN},\
+                split=3[red][green][blue];\
+                [red] lutrgb=g=0:b=0,scale=${RED_WIDTH}:${SCALED_HEIGHT},crop=${SCALED_WIDTH}:${SCALED_HEIGHT} [red];\
+                [green] lutrgb=r=0:b=0,scale=${GREEN_WIDTH}:${SCALED_HEIGHT},crop=${SCALED_WIDTH}:${SCALED_HEIGHT} [green];\
+                [blue] lutrgb=r=0:g=0,scale=${BLUE_WIDTH}:${SCALED_HEIGHT},crop=${SCALED_WIDTH}:${SCALED_HEIGHT} [blue];\
+                [red][blue] blend=all_mode='addition' [rb];\
+                [rb][green] blend=all_mode='addition'"
+        fi
         
         if [ "$ENABLE_HIGHLIGHT" = true ]; then
             FILTER_CHAIN="${FILTER_CHAIN},\
@@ -238,7 +274,24 @@ if [ "$ENABLE_CRT" = true ]; then
     fi
 else
     if [ "$ENABLE_INTERLACED" = true ]; then
-        FILTER_CHAIN="${SCALE_FILTER},\
+        FILTER_CHAIN="${SCALE_FILTER}"
+        
+        if [ "$ENABLE_RGB" = true ]; then
+            # Calculate scaled dimensions for each color channel
+            RED_WIDTH=$(printf "%.0f" $(echo "$SCALED_WIDTH * $RGB_RED_SCALE" | bc -l))
+            GREEN_WIDTH=$(printf "%.0f" $(echo "$SCALED_WIDTH * $RGB_GREEN_SCALE" | bc -l))
+            BLUE_WIDTH=$SCALED_WIDTH  # Base size
+            
+            FILTER_CHAIN="${FILTER_CHAIN},\
+                split=3[red][green][blue];\
+                [red] lutrgb=g=0:b=0,scale=${RED_WIDTH}:${SCALED_HEIGHT},crop=${SCALED_WIDTH}:${SCALED_HEIGHT} [red];\
+                [green] lutrgb=r=0:b=0,scale=${GREEN_WIDTH}:${SCALED_HEIGHT},crop=${SCALED_WIDTH}:${SCALED_HEIGHT} [green];\
+                [blue] lutrgb=r=0:g=0,scale=${BLUE_WIDTH}:${SCALED_HEIGHT},crop=${SCALED_WIDTH}:${SCALED_HEIGHT} [blue];\
+                [red][blue] blend=all_mode='addition' [rb];\
+                [rb][green] blend=all_mode='addition'"
+        fi
+        
+        FILTER_CHAIN="${FILTER_CHAIN},\
             split[a][b];\
             [a]curves=darker[a];\
             [a][b]blend=all_expr='if(eq(0,mod(Y,2)),A,B)':shortest=1"
@@ -261,6 +314,21 @@ else
             format=rgba[scaled]"
     else
         FILTER_CHAIN="${SCALE_FILTER}"
+        
+        if [ "$ENABLE_RGB" = true ]; then
+            # Calculate scaled dimensions for each color channel
+            RED_WIDTH=$(printf "%.0f" $(echo "$SCALED_WIDTH * $RGB_RED_SCALE" | bc -l))
+            GREEN_WIDTH=$(printf "%.0f" $(echo "$SCALED_WIDTH * $RGB_GREEN_SCALE" | bc -l))
+            BLUE_WIDTH=$SCALED_WIDTH  # Base size
+            
+            FILTER_CHAIN="${FILTER_CHAIN},\
+                split=3[red][green][blue];\
+                [red] lutrgb=g=0:b=0,scale=${RED_WIDTH}:${SCALED_HEIGHT},crop=${SCALED_WIDTH}:${SCALED_HEIGHT} [red];\
+                [green] lutrgb=r=0:b=0,scale=${GREEN_WIDTH}:${SCALED_HEIGHT},crop=${SCALED_WIDTH}:${SCALED_HEIGHT} [green];\
+                [blue] lutrgb=r=0:g=0,scale=${BLUE_WIDTH}:${SCALED_HEIGHT},crop=${SCALED_WIDTH}:${SCALED_HEIGHT} [blue];\
+                [red][blue] blend=all_mode='addition' [rb];\
+                [rb][green] blend=all_mode='addition'"
+        fi
         
         if [ "$ENABLE_HIGHLIGHT" = true ]; then
             FILTER_CHAIN="${FILTER_CHAIN},\
