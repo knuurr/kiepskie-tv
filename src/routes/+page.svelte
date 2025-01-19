@@ -5,8 +5,8 @@
   import Header from "./Header.svelte";
   import AppCard from "../components/AppCard.svelte";
   // Import Heroicons
-  import HeroiconsArrowDown from "virtual:icons/heroicons/arrow-down";
-  import HeroiconsChevronDoubleRight from "virtual:icons/heroicons/chevron-double-right";
+  import ArrowDownIcon from "virtual:icons/heroicons/arrow-down";
+  import ChevronDoubleRightIcon from "virtual:icons/heroicons/chevron-double-right";
 
   const apps = [
     {
@@ -70,7 +70,7 @@
           href="#apps"
           class="btn btn-circle btn-primary btn-lg animate-bounce group"
         >
-          <HeroiconsArrowDown
+          <ArrowDownIcon
             class="w-8 h-8 transition-transform group-hover:translate-y-1"
           />
         </a>
@@ -113,7 +113,7 @@
                 class="btn btn-primary {app.disabled ? 'btn-disabled' : ''}"
               >
                 Otwórz
-                <HeroiconsChevronDoubleRight class="size-5" />
+                <ChevronDoubleRightIcon class="size-5" />
               </span>
             </div>
           </div>

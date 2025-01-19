@@ -16,6 +16,7 @@
   import ArrowUturnLeftIcon from "virtual:icons/heroicons/arrow-uturn-left";
   import ArrowPathIcon from "virtual:icons/heroicons/arrow-path";
   import CheckIcon from "virtual:icons/heroicons/check";
+  import InformationCircleIcon from "virtual:icons/heroicons/information-circle";
 
   import type { VideoSettings } from "$lib/types/VideoSettings";
   import { HELP_CONTENT } from "$lib/tiwi/helpContent";
@@ -367,20 +368,7 @@
                 class="text-xs text-base-content/90 hover:text-primary transition-colors flex items-center gap-1"
                 on:click={() => showHelp("CRT_EFFECTS")}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="1.5"
-                  stroke="currentColor"
-                  class="w-4 h-4"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"
-                  />
-                </svg>
+                <InformationCircleIcon class="w-4 h-4" />
                 Dowiedz się więcej o efektach CRT
               </button>
             </div>
@@ -511,20 +499,7 @@
                   class="text-xs text-base-content/90 hover:text-primary transition-colors flex items-center gap-1"
                   on:click={() => showHelp("BOCZEK_FILL")}
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke-width="1.5"
-                    stroke="currentColor"
-                    class="w-4 h-4"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"
-                    />
-                  </svg>
+                  <InformationCircleIcon class="w-4 h-4" />
                   Dowiedz się więcej o trybach dopasowania
                 </button>
               </div>
@@ -545,20 +520,7 @@
                 class="text-xs text-base-content/90 hover:text-primary transition-colors flex items-center gap-1"
                 on:click={() => showHelp("VIDEO_SCALE")}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="1.5"
-                  stroke="currentColor"
-                  class="w-4 h-4"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"
-                  />
-                </svg>
+                <InformationCircleIcon class="w-4 h-4" />
                 Dowiedz się więcej o skalowaniu wideo
               </button>
             </div>
@@ -617,20 +579,7 @@
                 class="text-xs text-base-content/90 hover:text-primary transition-colors flex items-center gap-1"
                 on:click={() => showHelp("GREENSCREEN_FILL")}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="1.5"
-                  stroke="currentColor"
-                  class="w-4 h-4"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"
-                  />
-                </svg>
+                <InformationCircleIcon class="w-4 h-4" />
                 Dowiedz się więcej o trybach dopasowania do tła
               </button>
             </div>

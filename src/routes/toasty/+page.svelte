@@ -17,6 +17,12 @@
   import MissingMetadataInfo from "../../components/MissingMetadataInfo.svelte";
   import HistoryDrawer from "../../components/HistoryDrawer.svelte";
 
+  import ClockIcon from "virtual:icons/heroicons/clock";
+  import ClipboardIcon from "virtual:icons/heroicons/clipboard";
+  import CheckIcon from "virtual:icons/heroicons/check";
+  import ShareIcon from "virtual:icons/heroicons/share";
+  import ArrowPathIcon from "virtual:icons/heroicons/arrow-path";
+
   let currentToast: Toast | null = null;
   let previousToast: Toast | null = null;
   let isRolling: boolean = false;
@@ -347,20 +353,7 @@
             class="btn btn-ghost btn-sm gap-2"
             on:click={() => (showHistoryDrawer = true)}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
+            <ClockIcon class="h-5 w-5" />
             Historia
             <div class="badge badge-sm badge-primary">
               {historyCount}/{MAX_HISTORY_SIZE}
@@ -440,35 +433,9 @@
               aria-label="Kopiuj do schowka"
             >
               {#if isSuccess}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="1.5"
-                  stroke="currentColor"
-                  class="w-5 h-5"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M4.5 12.75l6 6 9-13.5"
-                  />
-                </svg>
+                <CheckIcon class="w-5 h-5" />
               {:else}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="1.5"
-                  stroke="currentColor"
-                  class="w-5 h-5"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184"
-                  />
-                </svg>
+                <ClipboardIcon class="w-5 h-5" />
               {/if}
               <span class="hidden">Kopiuj do schowka</span>
               <kbd class="kbd kbd-sm hidden md:inline-flex text-white">⇧</kbd>
@@ -491,35 +458,9 @@
                 aria-label="Udostępnij"
               >
                 {#if isShareSuccess}
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke-width="1.5"
-                    stroke="currentColor"
-                    class="w-5 h-5"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="M4.5 12.75l6 6 9-13.5"
-                    />
-                  </svg>
+                  <CheckIcon class="w-5 h-5" />
                 {:else}
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke-width="1.5"
-                    stroke="currentColor"
-                    class="w-5 h-5"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"
-                    />
-                  </svg>
+                  <ShareIcon class="w-5 h-5" />
                 {/if}
                 <span class="hidden">Udostępnij</span>
                 <kbd class="kbd kbd-sm hidden md:inline-flex text-white">⇧</kbd>
