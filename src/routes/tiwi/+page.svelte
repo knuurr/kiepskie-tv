@@ -305,6 +305,7 @@
       fileSettings.enableBloom,
       fileSettings.enableInterlaced,
       fileSettings.enableHighlight,
+      fileSettings.enableRGB,
       fileSettings.paddingColor,
     );
     debug("Generated FFmpeg filter:", greenscreenFilter);
@@ -576,6 +577,7 @@
             fileSettings.enableBloom,
             fileSettings.enableInterlaced,
             fileSettings.enableHighlight,
+            fileSettings.enableRGB,
             fileSettings.paddingColor,
           );
           debug(`[*] Generated FFmpeg filter:`, filter);

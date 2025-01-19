@@ -126,6 +126,7 @@
     enableBloom: boolean,
     enableInterlaced: boolean,
     enableHighlight: boolean,
+    enableRGB: boolean,
     paddingColor: string,
   ) {
     // Debug statement to log config values
@@ -135,6 +136,7 @@
       enableBloom,
       enableInterlaced,
       enableHighlight,
+      enableRGB,
       paddingColor,
     });
 
@@ -212,6 +214,17 @@
       scaleFilter += `,pad=${overlayWidth}:${overlayHeight}:(ow-iw)/2:(oh-ih)/2:color=${paddingColor}`;
     }
 
+    // Build the RGB effect filter if enabled
+    let rgbFilter: string = "";
+    if (enableRGB) {
+      rgbFilter = `split=3[red][green][blue];
+        [red]lutrgb=g=0:b=0,scale=${overlayWidth + 16}:${overlayHeight},crop=${overlayWidth}:${overlayHeight}[red];
+        [green]lutrgb=r=0:b=0,scale=${overlayWidth + 8}:${overlayHeight},crop=${overlayWidth}:${overlayHeight}[green];
+        [blue]lutrgb=r=0:g=0,scale=${overlayWidth}:${overlayHeight},crop=${overlayWidth}:${overlayHeight}[blue];
+        [red][blue]blend=all_mode='addition'[rb];
+        [rb][green]blend=all_mode='addition',format=gbrp`;
+    }
+
     // Build the highlight filter if enabled
     let highlightFilter: string = "";
     if (enableHighlight) {
@@ -226,22 +239,26 @@
     // Build the filter chain based on effects toggle
     if (enableCRT) {
       if (enableInterlaced) {
-        filterChain = `${scaleFilter},\
-            split[a][b];\
-            [a]curves=darker[a];\
+        filterChain = `${scaleFilter}`;
+
+        if (enableRGB) {
+          filterChain = `${filterChain},${rgbFilter}`;
+        }
+
+        filterChain = `${filterChain},split[a][b];
+            [a]curves=darker[a];
             [a][b]blend=all_expr='if(eq(0,mod(Y,2)),A,B)':shortest=1`;
 
         if (enableHighlight) {
-          filterChain = `${filterChain},\
-                ${highlightFilter}`;
+          filterChain = `${filterChain},${highlightFilter}`;
         }
 
         if (enableBloom) {
-          filterChain = `${filterChain},\
-                format=rgba,\
-                pad=${overlayWidth + 2 * config.bloomSettings.padding}:${overlayHeight + 2 * config.bloomSettings.padding}:${config.bloomSettings.padding}:${config.bloomSettings.padding}:color=0x00000000,\
-                split [main][bloom];\
-                [bloom]boxblur=${config.bloomSettings.blur}[bloom];\
+          filterChain = `${filterChain},
+                format=rgba,
+                pad=${overlayWidth + 2 * config.bloomSettings.padding}:${overlayHeight + 2 * config.bloomSettings.padding}:${config.bloomSettings.padding}:${config.bloomSettings.padding}:color=0x00000000,
+                split [main][bloom];
+                [bloom]boxblur=${config.bloomSettings.blur}[bloom];
                 [main][bloom]blend=all_mode=screen:shortest=1`;
 
           // Adjust position for bloom padding
@@ -249,24 +266,27 @@
           overlayY = overlayY - config.bloomSettings.padding;
         }
 
-        filterChain = `${filterChain},\
-            format=rgba,\
-            lenscorrection=k1=${config.crtSettings.k1}:k2=${config.crtSettings.k2}:i=${config.crtSettings.interpolation},\
+        filterChain = `${filterChain},
+            format=rgba,
+            lenscorrection=k1=${config.crtSettings.k1}:k2=${config.crtSettings.k2}:i=${config.crtSettings.interpolation},
             scale=iw*${config.crtSettings.curveScaleFactor}:ih*${config.crtSettings.curveScaleFactor}[scaled]`;
       } else {
         filterChain = `${scaleFilter}`;
 
+        if (enableRGB) {
+          filterChain = `${filterChain},${rgbFilter}`;
+        }
+
         if (enableHighlight) {
-          filterChain = `${filterChain},\
-                ${highlightFilter}`;
+          filterChain = `${filterChain},${highlightFilter}`;
         }
 
         if (enableBloom) {
-          filterChain = `${filterChain},\
-                format=rgba,\
-                pad=${overlayWidth + 2 * config.bloomSettings.padding}:${overlayHeight + 2 * config.bloomSettings.padding}:${config.bloomSettings.padding}:${config.bloomSettings.padding}:color=0x00000000,\
-                split [main][bloom];\
-                [bloom]boxblur=${config.bloomSettings.blur}[bloom];\
+          filterChain = `${filterChain},
+                format=rgba,
+                pad=${overlayWidth + 2 * config.bloomSettings.padding}:${overlayHeight + 2 * config.bloomSettings.padding}:${config.bloomSettings.padding}:${config.bloomSettings.padding}:color=0x00000000,
+                split [main][bloom];
+                [bloom]boxblur=${config.bloomSettings.blur}[bloom];
                 [main][bloom]blend=all_mode=screen:shortest=1`;
 
           // Adjust position for bloom padding
@@ -274,29 +294,33 @@
           overlayY = overlayY - config.bloomSettings.padding;
         }
 
-        filterChain = `${filterChain},\
-            format=rgba,\
-            lenscorrection=k1=${config.crtSettings.k1}:k2=${config.crtSettings.k2}:i=${config.crtSettings.interpolation},\
+        filterChain = `${filterChain},
+            format=rgba,
+            lenscorrection=k1=${config.crtSettings.k1}:k2=${config.crtSettings.k2}:i=${config.crtSettings.interpolation},
             scale=iw*${config.crtSettings.curveScaleFactor}:ih*${config.crtSettings.curveScaleFactor}[scaled]`;
       }
     } else {
       if (enableInterlaced) {
-        filterChain = `${scaleFilter},\
-            split[a][b];\
-            [a]curves=darker[a];\
+        filterChain = `${scaleFilter}`;
+
+        if (enableRGB) {
+          filterChain = `${filterChain},${rgbFilter}`;
+        }
+
+        filterChain = `${filterChain},split[a][b];
+            [a]curves=darker[a];
             [a][b]blend=all_expr='if(eq(0,mod(Y,2)),A,B)':shortest=1`;
 
         if (enableHighlight) {
-          filterChain = `${filterChain},\
-                ${highlightFilter}`;
+          filterChain = `${filterChain},${highlightFilter}`;
         }
 
         if (enableBloom) {
-          filterChain = `${filterChain},\
-                format=rgba,\
-                pad=${overlayWidth + 2 * config.bloomSettings.padding}:${overlayHeight + 2 * config.bloomSettings.padding}:${config.bloomSettings.padding}:${config.bloomSettings.padding}:color=0x00000000,\
-                split [main][bloom];\
-                [bloom]boxblur=${config.bloomSettings.blur}[bloom];\
+          filterChain = `${filterChain},
+                format=rgba,
+                pad=${overlayWidth + 2 * config.bloomSettings.padding}:${overlayHeight + 2 * config.bloomSettings.padding}:${config.bloomSettings.padding}:${config.bloomSettings.padding}:color=0x00000000,
+                split [main][bloom];
+                [bloom]boxblur=${config.bloomSettings.blur}[bloom];
                 [main][bloom]blend=all_mode=screen:shortest=1`;
 
           // Adjust position for bloom padding
@@ -304,22 +328,24 @@
           overlayY = overlayY - config.bloomSettings.padding;
         }
 
-        filterChain = `${filterChain},\
-            format=rgba[scaled]`;
+        filterChain = `${filterChain},format=rgba[scaled]`;
       } else {
         filterChain = `${scaleFilter}`;
 
+        if (enableRGB) {
+          filterChain = `${filterChain},${rgbFilter}`;
+        }
+
         if (enableHighlight) {
-          filterChain = `${filterChain},\
-                ${highlightFilter}`;
+          filterChain = `${filterChain},${highlightFilter}`;
         }
 
         if (enableBloom) {
-          filterChain = `${filterChain},\
-                format=rgba,\
-                pad=${overlayWidth + 2 * config.bloomSettings.padding}:${overlayHeight + 2 * config.bloomSettings.padding}:${config.bloomSettings.padding}:${config.bloomSettings.padding}:color=0x00000000,\
-                split [main][bloom];\
-                [bloom]boxblur=${config.bloomSettings.blur}[bloom];\
+          filterChain = `${filterChain},
+                format=rgba,
+                pad=${overlayWidth + 2 * config.bloomSettings.padding}:${overlayHeight + 2 * config.bloomSettings.padding}:${config.bloomSettings.padding}:${config.bloomSettings.padding}:color=0x00000000,
+                split [main][bloom];
+                [bloom]boxblur=${config.bloomSettings.blur}[bloom];
                 [main][bloom]blend=all_mode=screen:shortest=1`;
 
           // Adjust position for bloom padding
@@ -327,13 +353,11 @@
           overlayY = overlayY - config.bloomSettings.padding;
         }
 
-        filterChain = `${filterChain},\
-            format=rgba[scaled]`;
+        filterChain = `${filterChain},format=rgba[scaled]`;
       }
     }
 
-    return `${filterChain};\
-        [0:v][scaled]overlay=${overlayX}:${overlayY}[v]`;
+    return `${filterChain};[0:v][scaled]overlay=${overlayX}:${overlayY}[v]`;
   }
 
   // Default greenscreen filter (for backward compatibility)

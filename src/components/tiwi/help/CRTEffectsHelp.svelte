@@ -20,6 +20,10 @@
       <strong>Przeplot</strong> - symuluje efekt przeplotu linii, charakterystyczny
       dla starych telewizorów
     </li>
+    <li>
+      <strong>Efekt RGB</strong> - dodaje efekt aberracji chromatycznej, rozdzielając
+      kolory RGB, co było charakterystyczne dla starych telewizorów
+    </li>
   </ul>
 
   {#if imagePath}

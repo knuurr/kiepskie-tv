@@ -458,6 +458,26 @@
                 />
               </label>
 
+              {#if FEATURES.ENABLE_RGB}
+                <label class="flex items-center justify-between gap-2">
+                  <div>
+                    <span class="flex-1">Efekt RGB</span>
+                    <p class="text-xs text-base-content/70">
+                      Dodaje efekt aberracji chromatycznej RGB
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    class="toggle toggle-success"
+                    checked={pendingSettings?.enableRGB ?? false}
+                    on:change={(e) =>
+                      handleSettingChange(settingId, {
+                        enableRGB: e.currentTarget.checked,
+                      })}
+                  />
+                </label>
+              {/if}
+
               {#if FEATURES.ENABLE_HIGHLIGHT}
                 <label class="flex items-center justify-between gap-2">
                   <div>

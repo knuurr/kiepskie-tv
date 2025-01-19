@@ -2,6 +2,7 @@
 export const FEATURES = {
   ENABLE_SCALE_CONTROLS: false, // Set to true to enable scale controls in UI
   ENABLE_HIGHLIGHT: false, // Set to true to enable highlight effect in UI
+  ENABLE_RGB: true, // Set to true to enable RGB effect in UI
 } as const;
 
 // Greenscreen scale presets
@@ -24,6 +25,7 @@ export const DEFAULT_SETTINGS = {
   enableBloom: false,
   enableInterlaced: false,
   enableHighlight: false,
+  enableRGB: true,
   bloomPadding: 50,
   bloomBlur: 20,
   bloomIntensity: 1.2,

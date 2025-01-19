@@ -44,6 +44,7 @@ export interface VideoSettings {
     enableBloom: boolean;
     enableInterlaced: boolean;
     enableHighlight: boolean;
+    enableRGB: boolean;
     bloomPadding: number;
     bloomBlur: number;
     bloomIntensity: number;
