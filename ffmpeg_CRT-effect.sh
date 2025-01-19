@@ -3,7 +3,7 @@
 # A collection of FFmpeg filterchains which can be used to create a stylised
 # 'CRT screen' effect on given input.
 #
-# The filter-chains have been split apart to increase modularity, at the cost of
+# The filter-chains have been split apart to increase modularity at the cost of
 # sacrificing simplicity and increasing redundant code. Filter-chains can be
 # added or removed in various orders, but special attention must be paid to
 # selecting the correct termination syntax for each stage.
@@ -13,18 +13,17 @@
 # Version: 2019.04.06_02.49.13
 # Source https://oioiiooixiii.blogspot.com
 
-### FILTERCHAINS ###############################################################
+### FILTERCHAINS #############################################################
 
 # Reduce input to 25% PAL resolution
-shrink144="scale=-2:144,format=rgb24"
+shrink144="scale=-2:144"
 
-# Crop to 4:3 aspect ration at 25% PAL resolution
+# Crop to 4:3 aspect ratio at 25% PAL resolution
 crop43="crop=180:144"
 
 # Create RGB chromatic aberration
-rgbFX="format=rgb24,
-       split=3[red][green][blue];
-       [red] lutrgb=g=0:b=0,
+rgbFX="split=3[red][green][blue];
+      [red] lutrgb=g=0:b=0,
             scale=188x144,
             crop=180:144 [red];
       [green] lutrgb=r=0:b=0,
@@ -52,7 +51,8 @@ yuvFX="split=3[y][u][v];
       [yv][u] blend=all_mode='lighten'"
 
 # Create edge contour effect
-edgeFX="edgedetect=mode=colormix:high=0"
+# Lower performace SIGNIFICANTLY
+edgeFX="edgedetect=mode=colormix:high=0.6:low=0.3"
 
 # Add noise to each frame of input
 noiseFX="noise=c0s=7:allf=t"
@@ -86,20 +86,20 @@ reflections="[base];
              nullsrc=size=720x576,
              format=gbrp,
              drawtext=
-               fontfile=/usr/share/fonts/truetype/freefont/FreeSerif.ttf:
+               font='Sans-Serif':
                text='€':
                x=50:
                y=50:
                fontsize=150:
                fontcolor=white,
              drawtext=
-               fontfile=/usr/share/fonts/truetype/freefont/FreeSerif.ttf:
+               font='Sans-Serif':
                text='J':
                x=600:
                y=460:
                fontsize=120:
                fontcolor=white,
-             boxblur=25 [lights];
+             boxblur=20 [lights];
              [lights][base] blend=all_mode=screen:shortest=1"
 
 # Add more detailed highlight to input [crt screen]
@@ -107,7 +107,7 @@ highlight="[base];
              nullsrc=size=720x576,
              format=gbrp,
              drawtext=
-               fontfile=/usr/share/fonts/truetype/freefont/FreeSerif.ttf:
+               font='Sans-Serif':
                text='¡':
                x=80:
                y=60:
@@ -127,23 +127,19 @@ bloomEffect="split [a][b];
                     format=gbrp [b];
              [b][a] blend=all_mode=screen:shortest=1"
 
-### FFMPEG COMMAND #############################################################
+### FFMPEG COMMAND ###########################################################
 
 ffmpeg \
    -i "$1" \
    -vf "
          ${shrink144},
-         ${crop43},
          ${rgbFX},
-         ${yuvFX},
-         ${noiseFX},
          ${interlaceFX},
          ${scale2PAL}
-         ${screenGauss}
          ${reflections}
          ${highlight},
-         ${curveImage},
          ${bloomEffect}
+
       " \
    "${1}__crtTV.mkv"
 
