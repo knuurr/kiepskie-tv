@@ -29,8 +29,9 @@
   let showCloseConfirmModal = false;
   let currentHelpContent: {
     title: string;
-    description: string;
+    description?: string;
     imagePath?: string;
+    component?: typeof SvelteComponent;
   } | null = null;
   let showHelpModal = false;
 
@@ -797,5 +798,6 @@
     title={currentHelpContent.title}
     description={currentHelpContent.description}
     imagePath={currentHelpContent.imagePath}
+    ContentComponent={currentHelpContent.component}
   />
 {/if}
