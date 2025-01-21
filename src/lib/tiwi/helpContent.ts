@@ -13,7 +13,7 @@ export const HELP_CONTENT = {
     component: BoczekFillHelp
   },
   VIDEO_SCALE: {
-    title: "Skalowanie wideo",
+    title: "Grubość ramki",
     component: VideoScaleHelp
   },
   GREENSCREEN_FILL: {

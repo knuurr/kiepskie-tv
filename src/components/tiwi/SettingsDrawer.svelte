@@ -514,14 +514,14 @@
           <div class="flex flex-col gap-2 p-4 bg-base-100 rounded-lg">
             <div class="flex flex-col gap-1">
               <div class="flex items-center justify-between">
-                <span class="flex-1">Skalowanie wideo</span>
+                <span class="flex-1">Grubość ramki</span>
               </div>
               <button
                 class="text-xs text-base-content/90 hover:text-primary transition-colors flex items-center gap-1"
                 on:click={() => showHelp("VIDEO_SCALE")}
               >
                 <InformationCircleIcon class="w-4 h-4" />
-                Dowiedz się więcej o skalowaniu wideo
+                Co to jest grubość ramki?
               </button>
             </div>
             <p class="text-xs text-base-content/70 mb-2">

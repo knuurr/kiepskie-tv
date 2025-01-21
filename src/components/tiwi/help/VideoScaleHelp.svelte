@@ -7,13 +7,13 @@
 
   <ul>
     <li>
-      <strong>Brak skalowania</strong> - wideo wypełnia całe okno
+      <strong>Brak ramki</strong> - wideo wypełnia całe okno
     </li>
     <li>
-      <strong>Delikatne skalowanie</strong> - tworzy delikatną ramkę wokół wideo
+      <strong>Delikatna ramka</strong> - tworzy delikatną ramkę wokół wideo
     </li>
     <li>
-      <strong>Mocne skalowanie</strong> - tworzy wyraźną ramkę wokół wideo, podkreślając
+      <strong>Gruba ramka</strong> - tworzy wyraźną ramkę wokół wideo, podkreślając
       efekt starego telewizora
     </li>
   </ul>
