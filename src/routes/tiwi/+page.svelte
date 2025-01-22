@@ -759,9 +759,10 @@
       ffmpegStore.setState("loaded");
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
-      ffmpegStore.setState("error", error.message);
+      console.error("[FFmpeg Load Error]", error);
+      ffmpegStore.setState("error");
       toasts.add(
-        "Błąd ładowania FFmpeg: " + error.message,
+        "Wystąpił błąd podczas ładowania. Sprawdź połączenie i spróbuj ponownie.",
         "error",
         5000,
         true,
