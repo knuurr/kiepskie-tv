@@ -88,7 +88,8 @@
   <div class="flex items-start gap-2 text-sm text-base-content/70">
     <InformationCircleIcon class="h-4 w-4 flex-shrink-0 mt-0.5" />
     <span>
-      Aplikacja wymaga pobrania dodatkowych zależności (~25MB).
+      Aplikacja polega na pobraniu dodatkowych zależności, bez których nie
+      będzie działać.
       {#if $ffmpegStore.state === "not_loaded" || $ffmpegStore.state === "loading"}
         Poczekaj na zakończenie pobierania by móc korzystać z funkcjonalności.
       {/if}
