@@ -209,6 +209,9 @@
   // Add a store to track if processing has started
   const processingStarted = writable(false);
 
+  import { ffmpegStore } from "$lib/stores/ffmpegStore";
+  import FFmpegStatus from "../../components/tiwi/FFmpegStatus.svelte";
+
   onMount(async () => {
     loadFfmpeg();
     // Load backgrounds data
@@ -729,6 +732,7 @@
 
   async function loadFfmpeg() {
     try {
+      ffmpegStore.setState("loading");
       const baseUrl = "https://unpkg.com/@ffmpeg/core@0.12.4/dist/esm";
       ffmpeg = new FFmpeg();
       await ffmpeg.load({
@@ -750,9 +754,12 @@
             return map;
           });
       });
+
       state = "loaded";
+      ffmpegStore.setState("loaded");
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
+      ffmpegStore.setState("error", error.message);
       toasts.add(
         "Błąd ładowania FFmpeg: " + error.message,
         "error",
@@ -1022,6 +1029,9 @@
 <!-- <ResponsiveContainer> -->
 <div class="card bg-base-100 shadow-xl" id="main-card">
   <div class="card-body">
+    <!-- FFmpeg Status -->
+    <FFmpegStatus onRetry={resetFfmpeg} />
+
     <!-- Section Title -->
     <div class="flex items-center gap-2">
       <Bars3Icon class="h-5 w-5" />

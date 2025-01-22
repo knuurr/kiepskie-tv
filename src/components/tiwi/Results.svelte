@@ -153,17 +153,49 @@
       {/each}
     </div>
   {:else}
-    <!-- No files state -->
-    <div class="text-center py-8 text-gray-500">
-      <CloudArrowUpIcon class="h-12 w-12 mx-auto mb-4" />
-      <p>
-        {#if files?.length > 0}
-          Kliknij "Okiłizuj" aby rozpocząć przetwarzanie
-        {:else}
-          Wybierz pliki do przetworzenia w zakładce "Wrzuć wideło" a następnie
-          kliknij "Okiłizuj"
-        {/if}
-      </p>
+    <!-- No files placeholder that mimics video card -->
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div class="card bg-base-200">
+        <div class="card-body p-4">
+          <!-- Title and status badges -->
+          <div class="card-title text-base justify-between">
+            <div class="truncate flex-1 text-base-content/50">wideło.mp4</div>
+            <div class="flex-none">
+              <div class="badge badge-ghost">Przykład</div>
+            </div>
+          </div>
+
+          <!-- Placeholder video area -->
+          <div
+            class="bg-black/5 rounded-lg overflow-hidden aspect-video flex items-center justify-center"
+          >
+            <div class="text-center text-base-content/50">
+              <VideoCameraIcon class="h-12 w-12 mx-auto mb-2" />
+              {#if files?.length > 0}
+                <p class="text-sm">
+                  Kliknij "Okiłizuj" aby rozpocząć przetwarzanie
+                </p>
+              {:else}
+                <p class="text-sm">
+                  Wybierz pliki do przetworzenia w zakładce "Wrzuć wideło"
+                </p>
+              {/if}
+            </div>
+          </div>
+
+          <!-- Action buttons placeholder -->
+          <div class="card-actions justify-end mt-4 gap-2">
+            <button class="btn btn-primary btn-sm gap-2 flex-1 btn-disabled">
+              <ArrowDownTrayIcon class="h-4 w-4" />
+              <span>Zapisz</span>
+            </button>
+            <button class="btn btn-secondary btn-sm gap-2 flex-1 btn-disabled">
+              <ShareIcon class="h-4 w-4" />
+              <span>Udostępnij</span>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   {/if}
 </div>
