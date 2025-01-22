@@ -7,6 +7,16 @@ export default {
       fontFamily: {
         kiepscy: ['Boink LET Plain', ...fontFamily.sans],
       },
+      keyframes: {
+        shimmer: {
+          '100%': {
+            transform: 'translateX(100%)',
+          },
+        },
+      },
+      animation: {
+        shimmer: 'shimmer 2s infinite',
+      },
     },
   },
   plugins: [

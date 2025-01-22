@@ -22,6 +22,7 @@
   import ChevronLeftIcon from "virtual:icons/heroicons/chevron-left";
   import InformationCircleIcon from "virtual:icons/heroicons/information-circle";
   import { ffmpegStore } from "$lib/stores/ffmpegStore";
+  import Shimmer from "../ui/Shimmer.svelte";
 
   const PLACEHOLDER_MIN_LOADING_TIME = 300; // milliseconds
 
@@ -282,14 +283,12 @@
                       disabled
                       selected={selectedFileIndex === undefined}
                     >
-                      {#if isFFmpegLoading}
-                        <span class="animate-pulse"
-                          >Poczekaj na załadowanie FFmpeg...</span
+                      {#if files?.length}
+                        <span class="text-base-content"
+                          >Wybierz plik do edycji</span
                         >
                       {:else}
-                        {files?.length
-                          ? "Wybierz plik do edycji"
-                          : "Brak plików"}
+                        <span class="text-base-content/50">Brak plików</span>
                       {/if}
                     </option>
                     {#each Array.from(files || []) as file, i}
@@ -323,31 +322,31 @@
               <div class="hidden lg:block">
                 <div class="flex flex-col gap-2">
                   {#if !files?.length}
-                    <div class="text-center p-8 bg-base-100 rounded-lg">
-                      <CloudArrowUpIcon
-                        class="mx-auto h-12 w-12 text-gray-400 {isFFmpegLoading
-                          ? 'animate-pulse'
-                          : ''}"
-                      />
-                      <h3
-                        class="mt-2 text-sm font-medium {isFFmpegLoading
-                          ? 'animate-pulse'
-                          : ''}"
-                      >
-                        {isFFmpegLoading
-                          ? "Ładowanie FFmpeg..."
-                          : "Brak plików"}
-                      </h3>
-                      <p
-                        class="mt-1 text-sm text-gray-500 {isFFmpegLoading
-                          ? 'animate-pulse'
-                          : ''}"
-                      >
-                        {isFFmpegLoading
-                          ? "Proszę czekać..."
-                          : "Wybierz pliki do przetworzenia"}
-                      </p>
-                    </div>
+                    <Shimmer active={isFFmpegLoading}>
+                      <div class="text-center p-8 bg-base-100 rounded-lg">
+                        <CloudArrowUpIcon
+                          class="mx-auto h-12 w-12 text-gray-400 {isFFmpegLoading
+                            ? 'animate-pulse'
+                            : ''}"
+                        />
+                        <h3
+                          class="mt-2 text-sm font-medium text-gray-500 {isFFmpegLoading
+                            ? 'animate-pulse'
+                            : ''}"
+                        >
+                          Brak plików
+                        </h3>
+                        <p
+                          class="mt-1 text-sm text-gray-500 {isFFmpegLoading
+                            ? 'animate-pulse'
+                            : ''}"
+                        >
+                          <span class="text-base-content/50"
+                            >Wybierz pliki do przetworzenia</span
+                          >
+                        </p>
+                      </div>
+                    </Shimmer>
                   {/if}
                   {#each Array.from(files || []) as file, i}
                     {@const settingId = $videoSettings[i]?.id}
@@ -421,18 +420,18 @@
                   loading={isLoading(state)}
                   fullWidth
                 >
-                  <PlayCircleIcon
-                    class="h-5 w-5 {isFFmpegLoading ? 'animate-pulse' : ''}"
-                  />
-                  <span class={isFFmpegLoading ? "animate-pulse" : ""}>
-                    Okiłizuj
-                  </span>
-                  <div
-                    class="flex items-center gap-1 ml-2 text-base-content/70"
-                  >
-                    <kbd class="kbd kbd-sm">⇧</kbd>
-                    <kbd class="kbd kbd-sm">o</kbd>
-                  </div>
+                  <Shimmer active={isFFmpegLoading}>
+                    <div class="flex items-center gap-2 justify-center">
+                      <PlayCircleIcon class="h-5 w-5" />
+                      <span>Okiłizuj</span>
+                      <div
+                        class="flex items-center gap-1 ml-2 text-base-content/70"
+                      >
+                        <kbd class="kbd kbd-sm">⇧</kbd>
+                        <kbd class="kbd kbd-sm">o</kbd>
+                      </div>
+                    </div>
+                  </Shimmer>
                 </AnimatedButton>
               </div>
             {/if}
@@ -442,17 +441,15 @@
         <!-- Preview and Settings -->
         <div class="lg:col-span-2">
           {#if !files?.length}
-            <div
-              class="card bg-base-100 {$ffmpegStore.state !== 'loaded'
-                ? 'opacity-50'
-                : ''}"
-            >
-              <div class="card-body">
-                <div class="text-center text-gray-500">
-                  <VideoCameraIcon class="h-12 w-12 mx-auto mb-4" />
-                  <p>Wybierz pliki aby zobaczyć podgląd i ustawienia</p>
+            <div class="card bg-base-100">
+              <Shimmer active={isFFmpegLoading}>
+                <div class="card-body">
+                  <div class="text-center text-gray-500">
+                    <VideoCameraIcon class="h-12 w-12 mx-auto mb-4" />
+                    <p>Wybierz pliki aby zobaczyć podgląd i ustawienia</p>
+                  </div>
                 </div>
-              </div>
+              </Shimmer>
             </div>
           {/if}
           {#if selectedFileIndex !== undefined && files[selectedFileIndex]}
@@ -504,20 +501,22 @@
                     </div>
                   </div>
                   <button
-                    class="btn btn-ghost btn-sm gap-2 {isFFmpegLoading
-                      ? 'animate-pulse'
-                      : ''}"
+                    class="btn btn-ghost btn-sm gap-2"
                     on:click={() => (showSettingsDrawer = true)}
                     disabled={isFFmpegLoading}
                   >
-                    <Cog6ToothIcon class="h-4 w-4" />
-                    Ustawienia
-                    <div
-                      class="flex items-center gap-1 ml-1 text-base-content/70"
-                    >
-                      <kbd class="kbd kbd-sm">⇧</kbd>
-                      <kbd class="kbd kbd-sm">s</kbd>
-                    </div>
+                    <Shimmer active={isFFmpegLoading}>
+                      <div class="flex items-center gap-2">
+                        <Cog6ToothIcon class="h-4 w-4" />
+                        <span>Ustawienia</span>
+                        <div
+                          class="flex items-center gap-1 ml-1 text-base-content/70"
+                        >
+                          <kbd class="kbd kbd-sm">⇧</kbd>
+                          <kbd class="kbd kbd-sm">s</kbd>
+                        </div>
+                      </div>
+                    </Shimmer>
                   </button>
                 </div>
 

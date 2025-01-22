@@ -4,7 +4,9 @@
   import ArrowDownTrayIcon from "virtual:icons/heroicons/arrow-down-tray";
   import ShareIcon from "virtual:icons/heroicons/share";
   import VideoCameraIcon from "virtual:icons/heroicons/video-camera";
-  import CloudArrowUpIcon from "virtual:icons/heroicons/cloud-arrow-up";
+  import Shimmer from "../ui/Shimmer.svelte";
+  import { ffmpegStore } from "$lib/stores/ffmpegStore";
+
   import {
     getCurrentSubstate,
     type TransformState,
@@ -26,6 +28,9 @@
   // Functions
   export let downloadVideo: (blob: Blob, fileName: string) => void;
   export let shareVideo: (blob: Blob, name: string) => void;
+
+  // FFmpeg state
+  $: isFFmpegLoading = $ffmpegStore.state === "loading";
 </script>
 
 <div transition:fade={{ duration: 200 }}>
@@ -161,47 +166,52 @@
   {:else}
     <!-- No files placeholder that mimics video card -->
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-      <div class="card bg-base-200">
-        <div class="card-body p-4">
-          <!-- Title and status badges -->
-          <div class="card-title text-base justify-between">
-            <div class="truncate flex-1 text-base-content/50">wideło.mp4</div>
-            <div class="flex-none">
-              <div class="badge badge-ghost">Przykład</div>
+      <Shimmer active={isFFmpegLoading}>
+        <div class="card bg-base-200">
+          <div class="card-body p-4">
+            <!-- Title and status badges -->
+            <div class="card-title text-base justify-between">
+              <div class="truncate flex-1 text-base-content/50">wideło.mp4</div>
+              <div class="flex-none">
+                <div class="badge badge-ghost">Przykład</div>
+              </div>
             </div>
-          </div>
 
-          <!-- Placeholder video area -->
-          <div
-            class="bg-black/5 rounded-lg overflow-hidden aspect-video flex items-center justify-center"
-          >
-            <div class="text-center text-base-content/50">
-              <VideoCameraIcon class="h-12 w-12 mx-auto mb-2" />
-              {#if files?.length > 0}
-                <p class="text-sm">
-                  Kliknij "Okiłizuj" aby rozpocząć przetwarzanie
-                </p>
-              {:else}
-                <p class="text-sm">
-                  Wybierz pliki do przetworzenia w zakładce "Wrzuć wideło"
-                </p>
-              {/if}
+            <!-- Placeholder video area -->
+
+            <div
+              class="bg-black/5 rounded-lg overflow-hidden aspect-video flex items-center justify-center"
+            >
+              <div class="text-center text-base-content/50">
+                <VideoCameraIcon class="h-12 w-12 mx-auto mb-2" />
+                {#if files?.length > 0}
+                  <p class="text-sm">
+                    Kliknij "Okiłizuj" aby rozpocząć przetwarzanie
+                  </p>
+                {:else}
+                  <p class="text-sm">
+                    Wybierz pliki do przetworzenia w zakładce "Wrzuć wideło"
+                  </p>
+                {/if}
+              </div>
             </div>
-          </div>
 
-          <!-- Action buttons placeholder -->
-          <div class="card-actions justify-end mt-4 gap-2">
-            <button class="btn btn-primary btn-sm gap-2 flex-1 btn-disabled">
-              <ArrowDownTrayIcon class="h-4 w-4" />
-              <span>Zapisz</span>
-            </button>
-            <button class="btn btn-secondary btn-sm gap-2 flex-1 btn-disabled">
-              <ShareIcon class="h-4 w-4" />
-              <span>Udostępnij</span>
-            </button>
+            <!-- Action buttons placeholder -->
+            <div class="card-actions justify-end mt-4 gap-2">
+              <button class="btn btn-primary btn-sm gap-2 flex-1 btn-disabled">
+                <ArrowDownTrayIcon class="h-4 w-4" />
+                <span>Zapisz</span>
+              </button>
+              <button
+                class="btn btn-secondary btn-sm gap-2 flex-1 btn-disabled"
+              >
+                <ShareIcon class="h-4 w-4" />
+                <span>Udostępnij</span>
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      </Shimmer>
     </div>
   {/if}
 </div>

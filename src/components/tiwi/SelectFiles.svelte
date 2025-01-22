@@ -7,6 +7,7 @@
   import InformationCircleIcon from "virtual:icons/heroicons/information-circle";
   import { createEventDispatcher } from "svelte";
   import { ffmpegStore } from "$lib/stores/ffmpegStore";
+  import Shimmer from "../ui/Shimmer.svelte";
 
   // Props
   export let files: File[] = [];
@@ -57,55 +58,49 @@
       </div>
 
       <div class="flex flex-col items-center justify-center w-full">
-        <label
-          for="dropzone-file"
-          class="flex flex-col items-center justify-center w-full h-64 border-2 border-base-300 border-dashed rounded-lg cursor-{isFFmpegReady
-            ? 'pointer'
-            : 'not-allowed'} bg-base-100 hover:bg-base-200 transition-colors {!isFFmpegReady
-            ? 'opacity-50'
-            : ''} {isFFmpegLoading ? 'animate-pulse' : ''}"
-        >
-          <div class="flex flex-col items-center justify-center pt-5 pb-6">
-            <FilmIcon
-              class="w-12 h-12 mb-4 {isFFmpegReady
-                ? 'text-primary'
-                : 'text-base-content/50'} {isFFmpegLoading
-                ? 'animate-pulse'
-                : ''}"
+        <Shimmer active={isFFmpegLoading} class_name="w-full">
+          <label
+            for="dropzone-file"
+            class="flex flex-col items-center justify-center w-full h-64 border-2 border-base-300 border-dashed rounded-lg cursor-{isFFmpegReady
+              ? 'pointer'
+              : 'not-allowed'} bg-base-100 hover:bg-base-200 transition-colors {!isFFmpegReady
+              ? 'opacity-50'
+              : ''}"
+          >
+            <div class="flex flex-col items-center justify-center pt-5 pb-6">
+              <FilmIcon
+                class="w-12 h-12 mb-4 {isFFmpegReady
+                  ? 'text-primary'
+                  : 'text-base-content/50'}"
+              />
+              {#if isFFmpegReady}
+                <p class="mb-2 text-lg text-center sm:text-base">
+                  Dropnij wideło albo kliknij by "załonczyć"
+                </p>
+                <p class="text-xs text-gray-500">MP4 lub WEBM (MAX 2GB)</p>
+              {:else}
+                <p
+                  class="mb-2 text-lg text-center sm:text-base text-base-content/70"
+                >
+                  Poczekaj na załadowanie FFmpeg...
+                </p>
+                <p class="text-xs text-base-content/50">
+                  Funkcja będzie dostępna po załadowaniu
+                </p>
+              {/if}
+            </div>
+            <input
+              id="dropzone-file"
+              type="file"
+              class="hidden"
+              name="file"
+              multiple
+              on:change={handleFilesChange}
+              accept="video/*"
+              disabled={!isFFmpegReady}
             />
-            {#if isFFmpegReady}
-              <p class="mb-2 text-lg text-center sm:text-base">
-                Dropnij wideło albo kliknij by "załonczyć"
-              </p>
-              <p class="text-xs text-gray-500">MP4 lub WEBM (MAX 2GB)</p>
-            {:else}
-              <p
-                class="mb-2 text-lg text-center sm:text-base text-base-content/70 {isFFmpegLoading
-                  ? 'animate-pulse'
-                  : ''}"
-              >
-                Poczekaj na załadowanie FFmpeg...
-              </p>
-              <p
-                class="text-xs text-base-content/50 {isFFmpegLoading
-                  ? 'animate-pulse'
-                  : ''}"
-              >
-                Funkcja będzie dostępna po załadowaniu
-              </p>
-            {/if}
-          </div>
-          <input
-            id="dropzone-file"
-            type="file"
-            class="hidden"
-            name="file"
-            multiple
-            on:change={handleFilesChange}
-            accept="video/*"
-            disabled={!isFFmpegReady}
-          />
-        </label>
+          </label>
+        </Shimmer>
         <div class="label flex flex-col items-start gap-1 w-full mt-2">
           <span class="label-text-alt text-gray-400"
             >Max. wielkość 2GB. Testowane na plikach mp4/webm poniżej 60 sekund.</span
