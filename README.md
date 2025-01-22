@@ -17,6 +17,7 @@ https://github.com/knuurr/kiepskie-tv/assets/135069967/700ad5d5-4a7f-4f3a-8f78-1
 - **Styling**: [TailwindCSS](https://tailwindcss.com/) - for utility-first CSS
 - **Icons**: [Heroicons](https://heroicons.com/) (via [unplugin-icons](https://github.com/unplugin/unplugin-icons)) - for consistent, beautiful icons
 - **Video Processing**: [@ffmpeg/ffmpeg](https://github.com/ffmpegwasm/ffmpeg.wasm) - for client-side video manipulation
+- **Loading States**: [Animated Loading Skeletons](https://delba.dev/blog/animated-loading-skeletons-with-tailwind) - for elegant shimmer effects using TailwindCSS
 
 ## Key Features
 
