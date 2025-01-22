@@ -5,6 +5,10 @@
   import ShareIcon from "virtual:icons/heroicons/share";
   import VideoCameraIcon from "virtual:icons/heroicons/video-camera";
   import CloudArrowUpIcon from "virtual:icons/heroicons/cloud-arrow-up";
+  import {
+    getCurrentSubstate,
+    type TransformState,
+  } from "$lib/types/ProcessingState";
 
   // Props
   export let files: FileList;
@@ -12,7 +16,7 @@
   export let currentProcessingIndex: Writable<number | null>;
   export let fileProgress: Writable<Map<number, number>>;
   export let state: string;
-  export let transformState: "1/2" | "2/2" | "0/2";
+  export let transformState: TransformState;
   export let videoDataList: Array<{
     videoName: string;
     videoBlob: Blob;
@@ -38,7 +42,9 @@
               </div>
               <div class="flex-none">
                 {#if $currentProcessingIndex === i}
-                  <div class="badge badge-primary">Przetwarzanie</div>
+                  <div class="badge badge-primary">
+                    <span class="animate-pulse">Przetwarzanie</span>
+                  </div>
                 {:else if videoDataList[i]}
                   <div class="badge badge-success">Gotowe</div>
                 {:else if state === "convert.start"}
@@ -56,15 +62,20 @@
                     ? 'text-gray-400'
                     : ''}"
                 >
-                  <span>
-                    {#if $currentProcessingIndex === i}
-                      Przetwarzanie...
-                    {:else if i > ($currentProcessingIndex ?? -1)}
-                      Czeka w kolejce...
-                    {:else}
-                      Finalizowanie...
-                    {/if}
-                  </span>
+                  {#if $currentProcessingIndex === i}
+                    <span class="font-medium">
+                      <span class="animate-pulse">
+                        {getCurrentSubstate(
+                          transformState,
+                          $fileProgress.get(i) || 0,
+                        )}
+                      </span>
+                    </span>
+                  {:else if i > ($currentProcessingIndex ?? -1)}
+                    <span>Czeka w kolejce...</span>
+                  {:else}
+                    <span>Finalizowanie...</span>
+                  {/if}
                   <span>{($fileProgress.get(i) || 0).toFixed(0)}%</span>
                 </div>
                 <progress
@@ -74,11 +85,6 @@
                   value={$fileProgress.get(i) || 0}
                   max="100"
                 />
-                {#if transformState !== "0/2" && $currentProcessingIndex === i}
-                  <div class="text-xs text-gray-500">
-                    Etap {transformState}
-                  </div>
-                {/if}
               </div>
             {/if}
 

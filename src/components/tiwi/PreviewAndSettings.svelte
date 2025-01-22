@@ -252,6 +252,8 @@
       cleanupPreviews();
     };
   });
+
+  $: isFFmpegLoading = $ffmpegStore.state === "loading";
 </script>
 
 <div class="" transition:fade={{ duration: 200 }}>
@@ -280,7 +282,15 @@
                       disabled
                       selected={selectedFileIndex === undefined}
                     >
-                      {files?.length ? "Wybierz plik do edycji" : "Brak plików"}
+                      {#if isFFmpegLoading}
+                        <span class="animate-pulse"
+                          >Poczekaj na załadowanie FFmpeg...</span
+                        >
+                      {:else}
+                        {files?.length
+                          ? "Wybierz plik do edycji"
+                          : "Brak plików"}
+                      {/if}
                     </option>
                     {#each Array.from(files || []) as file, i}
                       <option value={i}>
@@ -298,8 +308,12 @@
                         safeRemoveFile(selectedFileIndex, settingId)}
                       disabled={$ffmpegStore.state !== "loaded"}
                     >
-                      <TrashIcon class="h-4 w-4" />
-                      Usuń wybrany plik
+                      <TrashIcon
+                        class="h-4 w-4 {isFFmpegLoading ? 'animate-pulse' : ''}"
+                      />
+                      <span class={isFFmpegLoading ? "animate-pulse" : ""}>
+                        Usuń wybrany plik
+                      </span>
                     </button>
                   {/if}
                 </div>
@@ -309,18 +323,29 @@
               <div class="hidden lg:block">
                 <div class="flex flex-col gap-2">
                   {#if !files?.length}
-                    <div
-                      class="text-center p-8 bg-base-100 rounded-lg {$ffmpegStore.state !==
-                      'loaded'
-                        ? 'opacity-50'
-                        : ''}"
-                    >
+                    <div class="text-center p-8 bg-base-100 rounded-lg">
                       <CloudArrowUpIcon
-                        class="mx-auto h-12 w-12 text-gray-400"
+                        class="mx-auto h-12 w-12 text-gray-400 {isFFmpegLoading
+                          ? 'animate-pulse'
+                          : ''}"
                       />
-                      <h3 class="mt-2 text-sm font-medium">Brak plików</h3>
-                      <p class="mt-1 text-sm text-gray-500">
-                        Wybierz pliki do przetworzenia
+                      <h3
+                        class="mt-2 text-sm font-medium {isFFmpegLoading
+                          ? 'animate-pulse'
+                          : ''}"
+                      >
+                        {isFFmpegLoading
+                          ? "Ładowanie FFmpeg..."
+                          : "Brak plików"}
+                      </h3>
+                      <p
+                        class="mt-1 text-sm text-gray-500 {isFFmpegLoading
+                          ? 'animate-pulse'
+                          : ''}"
+                      >
+                        {isFFmpegLoading
+                          ? "Proszę czekać..."
+                          : "Wybierz pliki do przetworzenia"}
                       </p>
                     </div>
                   {/if}
@@ -387,7 +412,7 @@
               </div>
             </div>
 
-            <!-- Convert Button - Now at bottom of column -->
+            <!-- Convert Button -->
             {#if files?.length > 0}
               <div class="mt-4 pt-4 border-t border-base-300 hidden lg:block">
                 <AnimatedButton
@@ -396,8 +421,12 @@
                   loading={isLoading(state)}
                   fullWidth
                 >
-                  <PlayCircleIcon class="h-5 w-5" />
-                  Okiłizuj
+                  <PlayCircleIcon
+                    class="h-5 w-5 {isFFmpegLoading ? 'animate-pulse' : ''}"
+                  />
+                  <span class={isFFmpegLoading ? "animate-pulse" : ""}>
+                    Okiłizuj
+                  </span>
                   <div
                     class="flex items-center gap-1 ml-2 text-base-content/70"
                   >
@@ -405,9 +434,6 @@
                     <kbd class="kbd kbd-sm">o</kbd>
                   </div>
                 </AnimatedButton>
-                <p class="text-xs text-center mt-2 text-base-content/70">
-                  Wszystkie pliki zostaną przetworzone po kolei
-                </p>
               </div>
             {/if}
           </div>
@@ -478,8 +504,11 @@
                     </div>
                   </div>
                   <button
-                    class="btn btn-ghost btn-sm gap-2"
+                    class="btn btn-ghost btn-sm gap-2 {isFFmpegLoading
+                      ? 'animate-pulse'
+                      : ''}"
                     on:click={() => (showSettingsDrawer = true)}
+                    disabled={isFFmpegLoading}
                   >
                     <Cog6ToothIcon class="h-4 w-4" />
                     Ustawienia
@@ -706,22 +735,6 @@
             </div>
           {/if}
         </div>
-      </div>
-
-      <!-- Mobile Convert Button -->
-      <div class="lg:hidden card-actions justify-end mt-4">
-        <AnimatedButton
-          on:click={() => convertVideos(files)}
-          disabled={!files || $ffmpegStore.state !== "loaded"}
-          fullWidth
-        >
-          <PlayCircleIcon class="h-4 w-4" />
-          Okiłizuj
-          <div class="flex items-center gap-1 ml-2 text-base-content/70">
-            <kbd class="kbd kbd-sm">⇧</kbd>
-            <kbd class="kbd kbd-sm">o</kbd>
-          </div>
-        </AnimatedButton>
       </div>
     </div>
   </div>

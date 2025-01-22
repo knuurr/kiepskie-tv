@@ -262,11 +262,14 @@
 
   // Apply ffmpeg logic to individual input file
   async function convertVideo(file: File, duration: number) {
+    // Initial setup
+    transformState = "PREPARING";
+    let _i = 0; // Initialize counter
+    const outputs: string[] = []; // Initialize outputs array
+
     const fileSettings =
       $videoSettings.find((s) => s.fileName === file.name)?.settings ||
       DEFAULT_SETTINGS;
-
-    // Find selected background configuration
     const selectedBackground = backgrounds.find(
       (bg) => bg.id === fileSettings.selectedBackground,
     );
@@ -280,28 +283,15 @@
       return;
     }
 
-    let _i = 0;
-    let outputs = [];
-
-    debug("Using background:", selectedBackground.name);
-    debug("Background config:", selectedBackground.overlayConfig);
-
+    // Load files
     await ffmpeg.writeFile(file.name, await fetchFile(file));
-    debug("[*] Current Virtual FS:", await ffmpeg.listDir("/"));
-
-    // Load selected background image using the background's imagePath
     await ffmpeg.writeFile(
       selectedBackground.id + ".png",
       await fetchFile(selectedBackground.imagePath),
     );
-    debug(
-      "[*] Current Virtual FS after loading background image:",
-      await ffmpeg.listDir("/"),
-    );
 
-    transformState = "1/2";
-
-    // Generate FFmpeg filter with selected background's configuration
+    // Main processing
+    transformState = "PROCESSING";
     const greenscreenFilter = DATA.generateCRTFilter(
       selectedBackground.overlayConfig,
       fileSettings.greenscreenFillType,
@@ -313,8 +303,6 @@
       fileSettings.enableRGB,
       fileSettings.paddingColor,
     );
-    debug("Generated FFmpeg filter:", greenscreenFilter);
-
     await ffmpeg.exec([
       "-i",
       selectedBackground.id + ".png",
@@ -341,74 +329,73 @@
     );
     _i++;
 
-    transformState = "2/2";
+    // Optional Boczek and intro
+    if (fileSettings.addBoczek || fileSettings.addIntro) {
+      transformState = "APPENDING";
 
-    if (fileSettings.addBoczek) {
-      debug("Appending Boczek reaction");
-      await ffmpeg.writeFile(
-        DATA.NAME_TEMPLATE_VIDEO,
-        await fetchFile(DATA.PATH_TEMPLATE_VIDEO),
-      );
+      if (fileSettings.addBoczek) {
+        await ffmpeg.writeFile(
+          DATA.NAME_TEMPLATE_VIDEO,
+          await fetchFile(DATA.PATH_TEMPLATE_VIDEO),
+        );
+        const boczekFilter = DATA.generateBoczekFilter(
+          selectedBackground.overlayConfig.maxWidth,
+          selectedBackground.overlayConfig.maxHeight,
+          fileSettings.boczekFillType,
+          fileSettings.boczekScale,
+        );
+        await ffmpeg.exec([
+          "-i",
+          outputs[_i - 1],
+          "-i",
+          DATA.NAME_TEMPLATE_VIDEO,
+          "-filter_complex",
+          boczekFilter,
+          "-map",
+          "[v]",
+          "-c:v",
+          "libx264",
+          "-preset",
+          "ultrafast",
+          `output${_i}.mp4`,
+        ]);
+        outputs.push(`output${_i}.mp4`);
+        debug(
+          "[*] Current Virtual FS after adding Boczek:",
+          await ffmpeg.listDir("/"),
+        );
 
-      // Use background dimensions for Boczek filter
-      const boczekFilter = DATA.generateBoczekFilter(
-        selectedBackground.overlayConfig.maxWidth,
-        selectedBackground.overlayConfig.maxHeight,
-        fileSettings.boczekFillType,
-        fileSettings.boczekScale,
-      );
-      debug("Generated Boczek filter:", boczekFilter);
+        _i++;
+      }
 
-      await ffmpeg.exec([
-        "-i",
-        outputs[_i - 1],
-        "-i",
-        DATA.NAME_TEMPLATE_VIDEO,
-        "-filter_complex",
-        boczekFilter,
-        "-map",
-        "[v]",
-        "-c:v",
-        "libx264",
-        "-preset",
-        "ultrafast",
-        `output${_i}.mp4`,
-      ]);
-      outputs.push(`output${_i}.mp4`);
-      debug(
-        "[*] Current Virtual FS after adding Boczek:",
-        await ffmpeg.listDir("/"),
-      );
+      if (fileSettings.addIntro) {
+        await ffmpeg.writeFile(
+          DATA.NAME_INTRO_AUDIO,
+          await fetchFile(DATA.NAME_INTRO_AUDIO),
+        );
+        await ffmpeg.exec([
+          "-i",
+          outputs[_i - 1],
+          "-i",
+          DATA.NAME_INTRO_AUDIO,
+          "-filter_complex",
+          DATA.FFMPEG_FILTER_ADD_INTRO,
+          "-c:v",
+          "copy",
+          `output${_i}.mp4`,
+        ]);
+        outputs.push(`output${_i}.mp4`);
+        debug(
+          "[*] Current Virtual FS after adding intro:",
+          await ffmpeg.listDir("/"),
+        );
 
-      _i++;
-    }
-    // Add intro sound
-    if (fileSettings.addIntro) {
-      debug("Adding intro audio sound");
-      await ffmpeg.writeFile(
-        DATA.NAME_INTRO_AUDIO,
-        await fetchFile(DATA.NAME_INTRO_AUDIO),
-      );
-      await ffmpeg.exec([
-        "-i",
-        outputs[_i - 1],
-        "-i",
-        DATA.NAME_INTRO_AUDIO,
-        "-filter_complex",
-        DATA.FFMPEG_FILTER_ADD_INTRO,
-        "-c:v",
-        "copy",
-        `output${_i}.mp4`,
-      ]);
-      outputs.push(`output${_i}.mp4`);
-      debug(
-        "[*] Current Virtual FS after adding intro:",
-        await ffmpeg.listDir("/"),
-      );
-
-      _i++;
+        _i++;
+      }
     }
 
+    // Finalization
+    transformState = "FINALIZING";
     const data = await ffmpeg.readFile(`output${_i - 1}.mp4`);
     const blob = new Blob(
       [data instanceof Uint8Array ? data : new Uint8Array()],

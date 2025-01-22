@@ -43,6 +43,7 @@
 
   // Check if FFmpeg is ready
   $: isFFmpegReady = $ffmpegStore.state === "loaded";
+  $: isFFmpegLoading = $ffmpegStore.state === "loading";
   $: ffmpegError = $ffmpegStore.state === "error";
 </script>
 
@@ -62,13 +63,15 @@
             ? 'pointer'
             : 'not-allowed'} bg-base-100 hover:bg-base-200 transition-colors {!isFFmpegReady
             ? 'opacity-50'
-            : ''}"
+            : ''} {isFFmpegLoading ? 'animate-pulse' : ''}"
         >
           <div class="flex flex-col items-center justify-center pt-5 pb-6">
             <FilmIcon
               class="w-12 h-12 mb-4 {isFFmpegReady
                 ? 'text-primary'
-                : 'text-base-content/50'}"
+                : 'text-base-content/50'} {isFFmpegLoading
+                ? 'animate-pulse'
+                : ''}"
             />
             {#if isFFmpegReady}
               <p class="mb-2 text-lg text-center sm:text-base">
@@ -77,11 +80,17 @@
               <p class="text-xs text-gray-500">MP4 lub WEBM (MAX 2GB)</p>
             {:else}
               <p
-                class="mb-2 text-lg text-center sm:text-base text-base-content/70"
+                class="mb-2 text-lg text-center sm:text-base text-base-content/70 {isFFmpegLoading
+                  ? 'animate-pulse'
+                  : ''}"
               >
                 Poczekaj na załadowanie FFmpeg...
               </p>
-              <p class="text-xs text-base-content/50">
+              <p
+                class="text-xs text-base-content/50 {isFFmpegLoading
+                  ? 'animate-pulse'
+                  : ''}"
+              >
                 Funkcja będzie dostępna po załadowaniu
               </p>
             {/if}
