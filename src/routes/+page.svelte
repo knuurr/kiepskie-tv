@@ -2,8 +2,7 @@
   import NavBar from "../components/NavBar.svelte";
   import Footer from "../components/Footer.svelte";
   import CenteredContainer from "../components/CenteredContainer.svelte";
-  import Header from "./Header.svelte";
-  import AppCard from "../components/AppCard.svelte";
+
   // Import Heroicons
   import ArrowDownIcon from "virtual:icons/heroicons/arrow-down";
   import ChevronDoubleRightIcon from "virtual:icons/heroicons/chevron-double-right";

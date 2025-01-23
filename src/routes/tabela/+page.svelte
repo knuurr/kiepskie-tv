@@ -24,6 +24,27 @@
   import InformationCircleIcon from "virtual:icons/heroicons/information-circle";
   import FunnelIcon from "virtual:icons/heroicons/funnel";
   import ArrowTopRightOnSquareIcon from "virtual:icons/heroicons/arrow-top-right-on-square";
+  import ChartBarIcon from "virtual:icons/heroicons/chart-bar";
+  import {
+    Chart as ChartJS,
+    Title,
+    Tooltip,
+    Legend,
+    BarElement,
+    CategoryScale,
+    LinearScale,
+  } from "chart.js";
+  import { Bar } from "svelte-chartjs";
+
+  // Register ChartJS components
+  ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    BarElement,
+    Title,
+    Tooltip,
+    Legend,
+  );
 
   export let data: PageData;
 
@@ -34,6 +55,7 @@
   let selectedEpisode: EpisodeData | null = null;
   let modalMode: "specific" = "specific";
   let currentView: ViewMode | null = null;
+  let activeTab: "table" | "plot" = "table";
 
   const CHUNK_SIZE_OPTIONS = [
     { value: 10, label: "10 wierszy" },
@@ -225,9 +247,75 @@
 
   function handleViewChange(mode: ViewMode | null) {
     viewPreference.set(mode);
+    currentView = mode;
   }
 
-  $: shouldShowTable = currentView === "table" || (!currentView && !$isMobile);
+  function handleTabChange(tab: "table" | "plot") {
+    activeTab = tab;
+    if (tab === "plot") {
+      currentView = "chart";
+      viewPreference.set("chart");
+    } else {
+      // Restore previous table view or default to null (auto)
+      currentView = null;
+      viewPreference.set(null);
+    }
+  }
+
+  // Add event type for click handler
+  function handleTableRowClick(e: MouseEvent, episode: EpisodeData) {
+    if (e.target instanceof Element && !e.target.closest("td.title-cell")) {
+      handleEpisodeClick(episode);
+    }
+  }
+
+  // Add new view type
+  type ViewMode = "table" | "card" | "chart";
+
+  // Add chart data computation
+  $: chartData = {
+    labels: Array.from(
+      new Set(filteredEpisodes.map((ep) => ep.data_components.year)),
+    ).sort(),
+    datasets: [
+      {
+        label: "Liczba odcinków",
+        data: Array.from(
+          new Set(filteredEpisodes.map((ep) => ep.data_components.year)),
+        )
+          .sort()
+          .map(
+            (year) =>
+              filteredEpisodes.filter((ep) => ep.data_components.year === year)
+                .length,
+          ),
+        backgroundColor: "rgba(75, 192, 192, 0.5)",
+        borderColor: "rgba(75, 192, 192, 1)",
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  // Add chart options
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: "top" as const,
+      },
+      title: {
+        display: true,
+        text: "Liczba odcinków w latach",
+      },
+    },
+  };
+
+  $: shouldShowTable =
+    activeTab === "table" &&
+    (currentView === "table" || (!currentView && !$isMobile));
+  $: shouldShowChart = activeTab === "plot";
+  $: shouldShowCards = activeTab === "table" && currentView === "card";
 </script>
 
 <div class="min-h-screen">
@@ -290,60 +378,90 @@
 
       <div class="bg-base-100 rounded-box shadow-lg">
         {#if filteredEpisodes.length > 0}
-          <div
-            class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 border-b border-base-300 gap-4"
-          >
-            <div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-              <div class="flex items-center gap-2">
-                <span class="text-sm opacity-70">Wyświetl po:</span>
-                <select
-                  class="select select-bordered select-sm"
-                  value={selectedChunkSize}
-                  on:change={handleChunkSizeChange}
-                  disabled={showAllRows}
-                >
-                  {#each CHUNK_SIZE_OPTIONS as option}
-                    <option value={option.value}>{option.label}</option>
-                  {/each}
-                </select>
-              </div>
-
-              {#if !showAllRows && filteredEpisodes.length > visibleRows}
-                <button class="btn btn-sm w-full sm:w-auto" on:click={showAll}>
-                  Pokaż wszystkie ({filteredEpisodes.length})
-                </button>
-              {/if}
-            </div>
-
-            <div class="join w-full sm:w-auto">
+          <div class="border-b border-base-300">
+            <!-- Main view tabs -->
+            <div class="tabs tabs-bordered w-full">
               <button
-                class="join-item btn btn-sm flex-1 sm:flex-none {!currentView
-                  ? 'btn-primary'
+                class="tab tab-lg flex-1 {activeTab === 'table'
+                  ? 'tab-active !border-primary text-primary'
                   : ''}"
-                on:click={() => handleViewChange(null)}
+                on:click={() => handleTabChange("table")}
               >
-                <Squares2x2Icon class="h-4 w-4" />
-                Auto
-              </button>
-              <button
-                class="btn btn-ghost btn-sm gap-2 {shouldShowTable
-                  ? 'btn-active'
-                  : ''}"
-                on:click={() => handleViewChange("table")}
-              >
-                <TableCellsIcon class="h-5 w-5" />
+                <TableCellsIcon class="h-5 w-5 mr-2" />
                 Tabela
               </button>
               <button
-                class="btn btn-ghost btn-sm gap-2 {currentView === 'card'
-                  ? 'btn-active'
+                class="tab tab-lg flex-1 {activeTab === 'plot'
+                  ? 'tab-active !border-primary text-primary'
                   : ''}"
-                on:click={() => handleViewChange("card")}
+                on:click={() => handleTabChange("plot")}
               >
-                <Squares2x2Icon class="h-5 w-5" />
-                Siatka
+                <ChartBarIcon class="h-5 w-5 mr-2" />
+                Wykresy
               </button>
             </div>
+
+            <!-- Table-specific controls -->
+            {#if activeTab === "table"}
+              <div
+                class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 gap-4"
+              >
+                <div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm opacity-70">Wyświetl po:</span>
+                    <select
+                      class="select select-bordered select-sm"
+                      value={selectedChunkSize}
+                      on:change={handleChunkSizeChange}
+                      disabled={showAllRows}
+                    >
+                      {#each CHUNK_SIZE_OPTIONS as option}
+                        <option value={option.value}>{option.label}</option>
+                      {/each}
+                    </select>
+                  </div>
+
+                  {#if !showAllRows && filteredEpisodes.length > visibleRows}
+                    <button
+                      class="btn btn-sm w-full sm:w-auto"
+                      on:click={showAll}
+                    >
+                      Pokaż wszystkie ({filteredEpisodes.length})
+                    </button>
+                  {/if}
+                </div>
+
+                <div class="join w-full sm:w-auto">
+                  <button
+                    class="join-item btn btn-sm flex-1 sm:flex-none {!currentView
+                      ? 'btn-primary'
+                      : ''}"
+                    on:click={() => handleViewChange(null)}
+                  >
+                    <Squares2x2Icon class="h-4 w-4" />
+                    Auto
+                  </button>
+                  <button
+                    class="btn btn-ghost btn-sm gap-2 {shouldShowTable
+                      ? 'btn-active'
+                      : ''}"
+                    on:click={() => handleViewChange("table")}
+                  >
+                    <TableCellsIcon class="h-5 w-5" />
+                    Tabela
+                  </button>
+                  <button
+                    class="btn btn-ghost btn-sm gap-2 {currentView === 'card'
+                      ? 'btn-active'
+                      : ''}"
+                    on:click={() => handleViewChange("card")}
+                  >
+                    <Squares2x2Icon class="h-5 w-5" />
+                    Siatka
+                  </button>
+                </div>
+              </div>
+            {/if}
           </div>
         {/if}
 
@@ -373,12 +491,7 @@
                 {#each displayedEpisodes as episode}
                   <tr
                     class="hover cursor-pointer"
-                    on:click={(e) => {
-                      // Only handle click if it's not on or within the title cell
-                      if (!e.target.closest("td.title-cell")) {
-                        handleEpisodeClick(episode);
-                      }
-                    }}
+                    on:click={(e) => handleTableRowClick(e, episode)}
                   >
                     <td class="whitespace-nowrap">{episode.nr}</td>
                     <td
@@ -493,6 +606,34 @@
               </tbody>
             </table>
           </div>
+
+          {#if filteredEpisodes.length > visibleRows && !showAllRows}
+            <div
+              class="flex flex-col items-center py-4 bg-base-200 bg-opacity-50 cursor-pointer hover:bg-opacity-70 transition-all"
+              on:click={loadMore}
+            >
+              <ChevronDownIcon class="h-6 w-6 animate-bounce" />
+              <span class="text-base-content/60">
+                Pokaż kolejne {Math.min(
+                  selectedChunkSize,
+                  filteredEpisodes.length - visibleRows,
+                )} wierszy
+              </span>
+            </div>
+          {/if}
+        {:else if shouldShowChart}
+          <div class="p-6 space-y-4">
+            <div class="prose max-w-none">
+              <h3 class="text-lg font-medium">Rozkład odcinków w czasie</h3>
+              <p class="text-base-content/70">
+                Wykres przedstawia liczbę odcinków w poszczególnych latach
+                emisji. Dane są filtrowane zgodnie z aktywnymi filtrami.
+              </p>
+            </div>
+            <div class="h-[600px] bg-base-100 rounded-lg p-4">
+              <Bar data={chartData} options={chartOptions} />
+            </div>
+          </div>
         {:else}
           <div
             class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4"
@@ -508,20 +649,6 @@
           </div>
         {/if}
 
-        {#if filteredEpisodes.length > visibleRows && !showAllRows}
-          <div
-            class="flex flex-col items-center py-4 bg-base-200 bg-opacity-50 cursor-pointer hover:bg-opacity-70 transition-all"
-            on:click={loadMore}
-          >
-            <ChevronDownIcon class="h-6 w-6 animate-bounce" />
-            <span class="text-base-content/60">
-              Pokaż kolejne {Math.min(
-                selectedChunkSize,
-                filteredEpisodes.length - visibleRows,
-              )} wierszy
-            </span>
-          </div>
-        {/if}
         <div class="p-4 bg-base-200 text-center space-y-4">
           <p class="text-sm opacity-70">
             Podziękowania dla <a

@@ -1,20 +1,21 @@
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
 
-type ViewMode = 'table' | 'card';
+export type ViewMode = 'table' | 'card' | 'chart';
 
 // Get initial value from localStorage if available, otherwise use null (for responsive default)
-const storedPreference = browser ? localStorage.getItem('viewPreference') as ViewMode | null : null;
+const storedValue = browser ? localStorage.getItem('viewPreference') : null;
+const initialValue = storedValue ? storedValue as ViewMode : null;
 
-const viewPreference = writable<ViewMode | null>(storedPreference);
+const viewPreference = writable<ViewMode | null>(initialValue);
 
-// Save preference to localStorage when it changes
+// Subscribe to changes and update localStorage
 if (browser) {
-  viewPreference.subscribe((value) => {
-    if (value) {
-      localStorage.setItem('viewPreference', value);
-    } else {
+  viewPreference.subscribe(value => {
+    if (value === null) {
       localStorage.removeItem('viewPreference');
+    } else {
+      localStorage.setItem('viewPreference', value);
     }
   });
 }
