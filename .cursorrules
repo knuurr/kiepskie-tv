@@ -3,9 +3,11 @@ Technological stack you use:
 - DaisyUI and TailwindCSS for UI styling
 - Heroicons (via unplugin-icons) for icons
 - @ffmpeg/ffmpeg and @ffmpeg/util for local video processing
+- Chart.js (via svelte-chartjs) for data visualization
 
 For any UI elements try to use DaisyUI elements and TailwindCSS for positioning.
 For any icons, use Heroicons through unplugin-icons virtual imports.
+For any data visualization, use Chart.js through svelte-chartjs wrapper.
 
 Entire website is offline-first, statically generated. Ensure any functionality is compatible with SSG.
 

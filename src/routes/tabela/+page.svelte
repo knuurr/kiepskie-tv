@@ -33,18 +33,31 @@
     BarElement,
     CategoryScale,
     LinearScale,
+    PointElement,
+    LineElement,
+    ArcElement,
   } from "chart.js";
-  import { Bar } from "svelte-chartjs";
+  import { Bar, Line, Doughnut } from "svelte-chartjs";
+  import DataLabels from "chartjs-plugin-datalabels";
 
   // Register ChartJS components
   ChartJS.register(
     CategoryScale,
     LinearScale,
     BarElement,
+    PointElement,
+    LineElement,
+    ArcElement,
     Title,
     Tooltip,
     Legend,
+    DataLabels,
   );
+
+  // Helper function to format percentage
+  function formatPercentage(value: number, total: number): string {
+    return `${((value * 100) / total).toFixed(1)}%`;
+  }
 
   export let data: PageData;
 
@@ -297,7 +310,7 @@
   };
 
   // Add chart options
-  const chartOptions = {
+  $: chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -307,6 +320,314 @@
       title: {
         display: true,
         text: "Liczba odcinków w latach",
+      },
+      tooltip: {
+        callbacks: {
+          label: (context: any) => `Liczba odcinków: ${context.parsed.y}`,
+        },
+      },
+      datalabels: {
+        color: "#666",
+        font: {
+          weight: "bold" as const,
+        },
+        anchor: "end" as const,
+        align: "top" as const,
+        formatter: (value: number) => value,
+      },
+    },
+  };
+
+  // Add writer statistics computation
+  $: writerStats = filteredEpisodes.reduce(
+    (acc, episode) => {
+      episode.scenariusz.split(", ").forEach((writer) => {
+        if (!acc[writer]) {
+          acc[writer] = 0;
+        }
+        acc[writer]++;
+      });
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
+
+  $: writerChartData = {
+    labels: Object.entries(writerStats)
+      .sort((a, b) => b[1] - a[1]) // Sort by episode count
+      .slice(0, 10) // Take top 10
+      .map(([writer]) => writer),
+    datasets: [
+      {
+        label: "Liczba odcinków",
+        data: Object.entries(writerStats)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 10)
+          .map(([_, count]) => count),
+        backgroundColor: "rgba(147, 51, 234, 0.5)", // Purple for writers
+        borderColor: "rgba(147, 51, 234, 1)",
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  $: writerChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    indexAxis: "y" as const,
+    plugins: {
+      legend: {
+        display: false,
+      },
+      title: {
+        display: true,
+        text: "Top 10 scenarzystów",
+      },
+      tooltip: {
+        callbacks: {
+          label: (context: any) => `Liczba odcinków: ${context.parsed.x}`,
+        },
+      },
+      datalabels: {
+        color: "#666",
+        font: {
+          weight: "bold" as const,
+        },
+        anchor: "end" as const,
+        align: "right" as const,
+        formatter: (value: number, ctx: any) => {
+          const total = ctx.dataset.data.reduce(
+            (acc: number, curr: number) => acc + curr,
+            0,
+          );
+          return `${value} (${formatPercentage(value, total)})`;
+        },
+      },
+    },
+    scales: {
+      x: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: "Liczba odcinków",
+        },
+      },
+    },
+  };
+
+  // Add director statistics computation
+  $: directorStats = filteredEpisodes.reduce(
+    (acc, episode) => {
+      episode.rezyseria.split(", ").forEach((director) => {
+        if (!acc[director]) {
+          acc[director] = 0;
+        }
+        acc[director]++;
+      });
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
+
+  $: directorChartData = {
+    labels: Object.entries(directorStats)
+      .sort((a, b) => b[1] - a[1]) // Sort by episode count
+      .slice(0, 10) // Take top 10
+      .map(([director]) => director),
+    datasets: [
+      {
+        label: "Liczba odcinków",
+        data: Object.entries(directorStats)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 10)
+          .map(([_, count]) => count),
+        backgroundColor: [
+          "rgba(255, 99, 132, 0.5)", // Red
+          "rgba(54, 162, 235, 0.5)", // Blue
+          "rgba(255, 206, 86, 0.5)", // Yellow
+          "rgba(75, 192, 192, 0.5)", // Teal
+          "rgba(153, 102, 255, 0.5)", // Purple
+          "rgba(255, 159, 64, 0.5)", // Orange
+          "rgba(199, 199, 199, 0.5)", // Gray
+          "rgba(83, 102, 255, 0.5)", // Indigo
+          "rgba(255, 99, 255, 0.5)", // Pink
+          "rgba(159, 159, 64, 0.5)", // Olive
+        ],
+        borderColor: [
+          "rgba(255, 99, 132, 1)",
+          "rgba(54, 162, 235, 1)",
+          "rgba(255, 206, 86, 1)",
+          "rgba(75, 192, 192, 1)",
+          "rgba(153, 102, 255, 1)",
+          "rgba(255, 159, 64, 1)",
+          "rgba(199, 199, 199, 1)",
+          "rgba(83, 102, 255, 1)",
+          "rgba(255, 99, 255, 1)",
+          "rgba(159, 159, 64, 1)",
+        ],
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  $: directorChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: "right" as const,
+        labels: {
+          boxWidth: 15,
+          padding: 15,
+        },
+      },
+      title: {
+        display: true,
+        text: "Top 10 reżyserów",
+      },
+      tooltip: {
+        callbacks: {
+          label: (context: any) => {
+            const label = context.label || "";
+            const value = context.parsed || 0;
+            const total = context.dataset.data.reduce(
+              (acc: number, curr: number) => acc + curr,
+              0,
+            );
+            return `${label}: ${value} odcinków (${formatPercentage(value, total)})`;
+          },
+        },
+      },
+      datalabels: {
+        color: "#fff",
+        font: {
+          weight: "bold" as const,
+          size: 11,
+        },
+        formatter: (value: number, ctx: any) => {
+          const total = ctx.dataset.data.reduce(
+            (acc: number, curr: number) => acc + curr,
+            0,
+          );
+          return formatPercentage(value, total);
+        },
+      },
+    },
+  };
+
+  // Add season size evolution computation
+  $: seasonSizes = filteredEpisodes.reduce(
+    (acc, episode) => {
+      if (!acc[episode.sezon]) {
+        acc[episode.sezon] = 0;
+      }
+      acc[episode.sezon]++;
+      return acc;
+    },
+    {} as Record<number, number>,
+  );
+
+  $: seasonEvolutionData = {
+    labels: Object.keys(seasonSizes).sort((a, b) => Number(a) - Number(b)),
+    datasets: [
+      {
+        label: "Liczba odcinków",
+        data: Object.entries(seasonSizes)
+          .sort((a, b) => Number(a[0]) - Number(b[0]))
+          .map(([_, count]) => count),
+        borderColor: "rgba(75, 192, 192, 1)",
+        backgroundColor: "rgba(75, 192, 192, 0.2)",
+        tension: 0.4,
+        fill: true,
+      },
+    ],
+  };
+
+  $: seasonEvolutionOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: "top" as const,
+      },
+      title: {
+        display: true,
+        text: "Ewolucja wielkości sezonów",
+      },
+      tooltip: {
+        callbacks: {
+          label: (context: any) => `Liczba odcinków: ${context.parsed.y}`,
+        },
+      },
+      datalabels: {
+        color: "#666",
+        font: {
+          weight: "bold" as const,
+        },
+        anchor: "end" as const,
+        align: "top" as const,
+        formatter: (value: number) => value,
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: "Liczba odcinków",
+        },
+      },
+      x: {
+        title: {
+          display: true,
+          text: "Numer sezonu",
+        },
+      },
+    },
+  };
+
+  // Add creative team size comparison
+  $: creativeTeamStats = filteredEpisodes.reduce(
+    (acc, episode) => {
+      const directors = episode.rezyseria.split(", ");
+      const writers = episode.scenariusz.split(", ");
+      directors.forEach((d) => acc.directors.add(d));
+      writers.forEach((w) => acc.writers.add(w));
+      return acc;
+    },
+    { directors: new Set<string>(), writers: new Set<string>() },
+  );
+
+  $: creativeTeamData = {
+    labels: ["Reżyserzy", "Scenarzyści"],
+    datasets: [
+      {
+        data: [
+          creativeTeamStats.directors.size,
+          creativeTeamStats.writers.size,
+        ],
+        backgroundColor: ["rgba(255, 99, 132, 0.5)", "rgba(147, 51, 234, 0.5)"],
+        borderColor: ["rgba(255, 99, 132, 1)", "rgba(147, 51, 234, 1)"],
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  $: creativeTeamOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: "top" as const,
+      },
+      title: {
+        display: true,
+        text: "Wielkość ekipy kreatywnej",
+      },
+      tooltip: {
+        callbacks: {
+          label: (context: any) => `${context.label}: ${context.parsed} osób`,
+        },
       },
     },
   };
@@ -622,16 +943,71 @@
             </div>
           {/if}
         {:else if shouldShowChart}
-          <div class="p-6 space-y-4">
-            <div class="prose max-w-none">
-              <h3 class="text-lg font-medium">Rozkład odcinków w czasie</h3>
-              <p class="text-base-content/70">
-                Wykres przedstawia liczbę odcinków w poszczególnych latach
-                emisji. Dane są filtrowane zgodnie z aktywnymi filtrami.
-              </p>
+          <div class="p-6 space-y-8">
+            <!-- Episodes per year chart -->
+            <div class="space-y-4">
+              <div class="prose max-w-none">
+                <h3 class="text-lg font-medium">Rozkład odcinków w czasie</h3>
+                <p class="text-base-content/70">
+                  Wykres przedstawia liczbę odcinków w poszczególnych latach
+                  emisji. Dane są filtrowane zgodnie z aktywnymi filtrami.
+                </p>
+              </div>
+              <div class="h-[400px] bg-base-100 rounded-lg p-4">
+                <Bar data={chartData} options={chartOptions} />
+              </div>
             </div>
-            <div class="h-[600px] bg-base-100 rounded-lg p-4">
-              <Bar data={chartData} options={chartOptions} />
+
+            <!-- Season evolution chart -->
+            <div class="space-y-4">
+              <div class="prose max-w-none">
+                <h3 class="text-lg font-medium">Ewolucja wielkości sezonów</h3>
+                <p class="text-base-content/70">
+                  Wykres pokazuje jak zmieniała się liczba odcinków w kolejnych
+                  sezonach serialu. Pozwala zauważyć trendy w produkcji.
+                </p>
+              </div>
+              <div class="h-[400px] bg-base-100 rounded-lg p-4">
+                <Line
+                  data={seasonEvolutionData}
+                  options={seasonEvolutionOptions}
+                />
+              </div>
+            </div>
+
+            <!-- Creative team size chart -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <!-- Writers statistics chart -->
+              <div class="space-y-4">
+                <div class="prose max-w-none">
+                  <h3 class="text-lg font-medium">Statystyki scenarzystów</h3>
+                  <p class="text-base-content/70">
+                    Wykres przedstawia 10 najbardziej aktywnych scenarzystów pod
+                    względem liczby napisanych odcinków. Dane uwzględniają
+                    aktywne filtry.
+                  </p>
+                </div>
+                <div class="h-[500px] bg-base-100 rounded-lg p-4">
+                  <Bar data={writerChartData} options={writerChartOptions} />
+                </div>
+              </div>
+
+              <!-- Director statistics chart -->
+              <div class="space-y-4">
+                <div class="prose max-w-none">
+                  <h3 class="text-lg font-medium">Statystyki reżyserów</h3>
+                  <p class="text-base-content/70">
+                    Wykres przedstawia udział 10 najbardziej aktywnych reżyserów
+                    w produkcji serialu. Dane uwzględniają aktywne filtry.
+                  </p>
+                </div>
+                <div class="h-[500px] bg-base-100 rounded-lg p-4">
+                  <Doughnut
+                    data={directorChartData}
+                    options={directorChartOptions}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         {:else}

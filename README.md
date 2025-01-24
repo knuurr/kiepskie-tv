@@ -18,6 +18,7 @@ https://github.com/knuurr/kiepskie-tv/assets/135069967/700ad5d5-4a7f-4f3a-8f78-1
 - **Icons**: [Heroicons](https://heroicons.com/) (via [unplugin-icons](https://github.com/unplugin/unplugin-icons)) - for consistent, beautiful icons
 - **Video Processing**: [@ffmpeg/ffmpeg](https://github.com/ffmpegwasm/ffmpeg.wasm) - for client-side video manipulation
 - **Loading States**: [Animated Loading Skeletons](https://delba.dev/blog/animated-loading-skeletons-with-tailwind) - for elegant shimmer effects using TailwindCSS
+- **Data Visualization**: [Chart.js](https://www.chartjs.org/) (via [svelte-chartjs](https://github.com/SauravKanchan/svelte-chartjs)) - for interactive and responsive charts
 
 ## Key Features
 
@@ -26,6 +27,7 @@ https://github.com/knuurr/kiepskie-tv/assets/135069967/700ad5d5-4a7f-4f3a-8f78-1
 - 🔄 Offline-first functionality
 - 📱 Mobile-friendly design
 - ⚡ Fast, static site generation
+- 📊 Interactive data visualization
 
 ---
 
