@@ -6,6 +6,12 @@
   // Import Heroicons
   import ArrowDownIcon from "virtual:icons/heroicons/arrow-down";
   import ChevronDoubleRightIcon from "virtual:icons/heroicons/chevron-double-right";
+  // Import icons for apps
+  import TvIcon from "virtual:icons/heroicons/tv";
+  import FunnelIcon from "virtual:icons/heroicons/funnel";
+  import ChartBarIcon from "virtual:icons/heroicons/chart-bar";
+  import ArrowPathIcon from "virtual:icons/heroicons/arrow-path";
+  import VideoCameraIcon from "virtual:icons/heroicons/video-camera";
 
   const apps = [
     {
@@ -16,6 +22,7 @@
       // additionalInfo:
       //   "Podziel się wideo ze znajomymi na TikTok, Messenger, WhatsApp i inne, lub zapisz na urządzeniu",
       imageUrl: "/home/placeholder-tiwi.png",
+      icon: TvIcon,
     },
     {
       title: "🥃 Toasty",
@@ -25,6 +32,7 @@
       // additionalInfo:
       //   "Z łatwością skopiuj swój ulubiony wylosowany toast do schowka",
       imageUrl: "/home/placeholder-toasty.png",
+      icon: FunnelIcon,
     },
     {
       title: "📊 Tabela",
@@ -34,12 +42,14 @@
       // additionalInfo:
       //   "Użyj zaawansowanego filtrowania by precyzyjnie wyszukać odcinki",
       imageUrl: "/home/placeholder-tabela.png",
+      icon: ChartBarIcon,
     },
     {
       title: "🎲 Generator",
       description: "Wylosuj odcinek Świata według Kiepskich do oglądania",
       link: "/generator",
       imageUrl: "/home/placeholder-generator.png",
+      icon: ArrowPathIcon,
     },
     {
       title: "🌍 Judup",
@@ -49,6 +59,7 @@
       additionalInfo: "(coming soon)",
       disabled: true,
       imageUrl: "/home/placeholder-judup.png",
+      icon: VideoCameraIcon,
     },
   ];
 </script>
@@ -88,19 +99,33 @@
       {#each apps as app}
         <a
           href={app.disabled ? "#" : app.link}
-          class="block card bg-base-200 shadow-xl transition-all duration-300 {app.disabled
+          class="block card bg-base-200 shadow-xl transition-all duration-300 overflow-hidden {app.disabled
             ? 'pointer-events-none'
             : 'hover:scale-[1.02] hover:shadow-[0_0_15px_rgba(var(--p),0.5)] hover:shadow-primary/40'}"
           aria-disabled={app.disabled}
           tabindex={app.disabled ? -1 : 0}
         >
-          <figure class="px-4 pt-4">
-            <img
-              src={app.imageUrl}
-              alt={app.title}
-              class="rounded-xl h-48 w-full object-cover"
-            />
-          </figure>
+          <div class="relative h-48 flex">
+            <!-- Left side with image and gradient -->
+            <div class="w-1/2 relative">
+              <img
+                src={app.imageUrl}
+                alt={app.title}
+                class="h-full w-full object-cover"
+              />
+              <div
+                class="absolute inset-0 bg-gradient-to-r from-transparent to-base-200"
+              />
+            </div>
+
+            <!-- Right side with centered large icon -->
+            <div class="w-1/2 flex items-center justify-center bg-base-200">
+              <svelte:component
+                this={app.icon}
+                class="w-24 h-24 opacity-80 text-primary"
+              />
+            </div>
+          </div>
           <div class="card-body">
             <h2 class="card-title font-kiepscy">{app.title}</h2>
             <p>{app.description}</p>
