@@ -1,7 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
   import type { Filter, FilterType, EpisodeData } from "$lib/types";
-
+  import XIcon from "virtual:icons/heroicons/x-mark";
   export let episodes: EpisodeData[] = [];
   export let activeFilters: Filter[] = [];
 
@@ -278,32 +278,7 @@
       <h2 class="card-title text-lg">Filtry wyszukiwania</h2>
 
       <div class="form-control relative">
-        <div class="input-group">
-          {#if searchInput}
-            <button
-              class="btn btn-error btn-square"
-              on:click={() => {
-                searchInput = "";
-                showSuggestions = false;
-              }}
-              aria-label="Wyczyść wyszukiwanie"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          {/if}
+        <div class="relative">
           <label class="input input-bordered flex items-center gap-2 w-full">
             <input
               id="search-input"
@@ -314,6 +289,18 @@
             />
             <kbd class="kbd kbd-sm">/</kbd>
           </label>
+          {#if searchInput}
+            <button
+              class="absolute right-12 top-1/2 -translate-y-1/2 btn btn-ghost btn-sm btn-circle hover:bg-error hover:text-error-content transition-colors"
+              on:click={() => {
+                searchInput = "";
+                showSuggestions = false;
+              }}
+              aria-label="Wyczyść wyszukiwanie"
+            >
+              <XIcon class="h-4 w-4" />
+            </button>
+          {/if}
         </div>
 
         {#if searchInput && suggestions.length > 0 && showSuggestions}

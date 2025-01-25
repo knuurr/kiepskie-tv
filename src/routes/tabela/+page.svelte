@@ -9,6 +9,7 @@
   import HighlightText from "../../components/HighlightText.svelte";
   import EpisodeModal from "../../components/EpisodeModal.svelte";
   import { page } from "$app/stores";
+  import { pushState, replaceState } from "$app/navigation";
   // import { goto } from "$app/navigation";
   import { onMount } from "svelte";
   import ClickableFilterValue from "../../components/ClickableFilterValue.svelte";
@@ -206,18 +207,18 @@
     modalMode = "specific";
     isEpisodeModalOpen = true;
     // Update URL without reload and without scrolling
-    const url = new URL(window.location.href);
+    const url = new URL($page.url);
     url.searchParams.set("episode", episode.nr.toString());
-    window.history.pushState({}, "", url);
+    pushState(url, { scrollToTop: false });
   }
 
   function handleModalClose() {
     isEpisodeModalOpen = false;
     if (modalMode === "specific") {
       // Remove episode parameter from URL without scrolling
-      const url = new URL(window.location.href);
+      const url = new URL($page.url);
       url.searchParams.delete("episode");
-      window.history.pushState({}, "", url);
+      pushState(url, { scrollToTop: false });
     }
     selectedEpisode = null;
   }
