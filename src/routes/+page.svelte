@@ -9,7 +9,7 @@
   // Import icons for apps
   import TvIcon from "virtual:icons/heroicons/tv";
   import FunnelIcon from "virtual:icons/heroicons/funnel";
-  import ChartBarIcon from "virtual:icons/heroicons/chart-bar";
+  import TableCellsIcon from "virtual:icons/heroicons/table-cells";
   import ArrowPathIcon from "virtual:icons/heroicons/arrow-path";
   import VideoCameraIcon from "virtual:icons/heroicons/video-camera";
 
@@ -42,7 +42,7 @@
       // additionalInfo:
       //   "Użyj zaawansowanego filtrowania by precyzyjnie wyszukać odcinki",
       imageUrl: "/home/placeholder-tabela.png",
-      icon: ChartBarIcon,
+      icon: TableCellsIcon,
     },
     {
       title: "🎲 Generator",
