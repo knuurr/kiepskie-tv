@@ -701,11 +701,11 @@
         {#if filteredEpisodes.length > 0}
           <div class="border-b border-base-300">
             <!-- Main view tabs -->
-            <div class="tabs tabs-bordered w-full">
+            <div class="tabs tabs-lifted w-full">
               <button
                 class="tab tab-lg flex-1 {activeTab === 'table'
-                  ? 'tab-active !border-primary text-primary'
-                  : ''}"
+                  ? 'tab-active text-primary [--tab-bg:hsl(var(--p)/0.1)] [--tab-border-color:hsl(var(--p))]'
+                  : 'bg-base-200'}"
                 on:click={() => handleTabChange("table")}
               >
                 <TableCellsIcon class="h-5 w-5 mr-2" />
@@ -713,8 +713,8 @@
               </button>
               <button
                 class="tab tab-lg flex-1 {activeTab === 'plot'
-                  ? 'tab-active !border-primary text-primary'
-                  : ''}"
+                  ? 'tab-active text-primary [--tab-bg:hsl(var(--p)/0.1)] [--tab-border-color:hsl(var(--p))]'
+                  : 'bg-base-200'}"
                 on:click={() => handleTabChange("plot")}
               >
                 <ChartBarIcon class="h-5 w-5 mr-2" />
