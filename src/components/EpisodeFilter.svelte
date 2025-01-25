@@ -204,11 +204,13 @@
         event.preventDefault();
         selectedSuggestionIndex =
           (selectedSuggestionIndex + 1) % suggestions.length;
+        scrollSelectedIntoView();
       } else if (event.key === "ArrowUp") {
         event.preventDefault();
         selectedSuggestionIndex =
           (selectedSuggestionIndex - 1 + suggestions.length) %
           suggestions.length;
+        scrollSelectedIntoView();
       } else if (event.key === "Enter" && showSuggestions) {
         event.preventDefault();
         const suggestion = suggestions[selectedSuggestionIndex];
@@ -216,6 +218,37 @@
         showSuggestions = false;
       }
     }
+  }
+
+  // Add this new function to handle scrolling
+  function scrollSelectedIntoView() {
+    // Wait for the next tick to ensure the DOM is updated
+    setTimeout(() => {
+      const container = document.getElementById("suggestions-list");
+      const selectedElement = container?.querySelector(
+        `[data-index="${selectedSuggestionIndex}"]`,
+      );
+
+      if (container && selectedElement) {
+        const containerRect = container.getBoundingClientRect();
+        const elementRect = selectedElement.getBoundingClientRect();
+
+        // Check if element is outside the visible area
+        if (elementRect.bottom > containerRect.bottom) {
+          // Scroll down if element is below
+          selectedElement.scrollIntoView({
+            block: "nearest",
+            behavior: "smooth",
+          });
+        } else if (elementRect.top < containerRect.top) {
+          // Scroll up if element is above
+          selectedElement.scrollIntoView({
+            block: "nearest",
+            behavior: "smooth",
+          });
+        }
+      }
+    }, 0);
   }
 
   $: {
@@ -228,7 +261,11 @@
   // Add this helper function to get icons for each type
   function getSuggestionIcon(type: FilterType, isNegated: boolean) {
     switch (type) {
-      case "date":
+      case "year":
+        return `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />`;
+      case "month":
+        return `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />`;
+      case "day":
         return `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />`;
       case "director":
         return `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />`;
@@ -304,66 +341,105 @@
         </div>
 
         {#if searchInput && suggestions.length > 0 && showSuggestions}
-          <ul
-            class="menu bg-base-200 w-full mt-1 rounded-box shadow-lg divide-y divide-gray-300/25 absolute top-full left-0 z-50"
+          <div
+            class="absolute top-full left-0 w-full mt-1 bg-base-200 rounded-box shadow-lg z-50 border border-base-300"
           >
-            <li
-              class="bg-base-300/30 px-4 py-1 text-sm font-medium text-base-content/70"
+            <div
+              class="bg-base-300/30 px-4 py-2 text-sm font-medium text-base-content/70 border-b border-base-300 flex justify-between items-center"
             >
-              Użyj Enter aby wybrać filtr
-            </li>
-            {#each suggestions as suggestion, i}
-              {@const isNegatedSection =
-                suggestion.isNegated && !suggestions[i - 1]?.isNegated}
-              {#if isNegatedSection}
-                <li
-                  class="bg-base-300/30 px-4 py-1 text-sm font-medium text-base-content/70"
-                >
-                  Wyklucz z wyników
-                </li>
-              {/if}
-              <li>
-                <button
-                  class="flex items-center gap-2 {i === selectedSuggestionIndex
+              <span>Użyj Enter aby wybrać filtr</span>
+              <span class="badge badge-sm badge-neutral"
+                >{suggestions.length} opcji</span
+              >
+            </div>
+            <!-- Scrollable suggestions container with fixed height -->
+            <div
+              class="max-h-[300px] overflow-y-auto overflow-x-hidden"
+              role="listbox"
+              tabindex="-1"
+              id="suggestions-list"
+            >
+              <!-- Regular suggestions -->
+              {#each suggestions.filter((s) => !s.isNegated) as suggestion, i (suggestion.type + suggestion.value)}
+                <div
+                  role="option"
+                  aria-selected={i === selectedSuggestionIndex}
+                  class="suggestion-item {i === selectedSuggestionIndex
                     ? 'bg-primary text-primary-content'
-                    : ''} {suggestion.isNegated
-                    ? 'text-error hover:text-error'
-                    : ''}"
+                    : 'hover:bg-base-300'}"
                   on:click={() => addFilter(suggestion)}
+                  data-index={i}
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    {@html getSuggestionIcon(suggestion.type, false)}
-                  </svg>
-                  {#if suggestion.isNegated}
+                  <div class="flex items-center gap-2 px-4 py-2">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      class="h-4 w-4"
+                      class="h-4 w-4 flex-shrink-0"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
                     >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M6 18L18 6M6 6l12 12"
-                      />
+                      {@html getSuggestionIcon(suggestion.type, false)}
                     </svg>
-                  {/if}
-                  <span
-                    >{suggestion.display}
-                    <!-- >{suggestion.display} <kbd class="kbd kbd-sm">Enter</kbd> -->
-                  </span>
-                </button>
-              </li>
-            {/each}
-          </ul>
+                    <span class="truncate">{suggestion.display}</span>
+                  </div>
+                </div>
+              {/each}
+
+              <!-- Negated section header -->
+              {#if suggestions.some((s) => s.isNegated)}
+                <div
+                  class="bg-base-300/30 px-4 py-2 text-sm font-medium text-base-content/70 border-y border-base-300"
+                >
+                  Wyklucz z wyników
+                </div>
+
+                <!-- Negated suggestions -->
+                {#each suggestions.filter((s) => s.isNegated) as suggestion, i (suggestion.type + suggestion.value)}
+                  <div
+                    role="option"
+                    aria-selected={i +
+                      suggestions.filter((s) => !s.isNegated).length ===
+                      selectedSuggestionIndex}
+                    class="suggestion-item {i +
+                      suggestions.filter((s) => !s.isNegated).length ===
+                    selectedSuggestionIndex
+                      ? 'bg-primary text-primary-content'
+                      : 'hover:bg-base-300'} text-error hover:text-error"
+                    on:click={() => addFilter(suggestion)}
+                    data-index={i +
+                      suggestions.filter((s) => !s.isNegated).length}
+                  >
+                    <div class="flex items-center gap-2 px-4 py-2">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-4 w-4 flex-shrink-0"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        {@html getSuggestionIcon(suggestion.type, false)}
+                      </svg>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-4 w-4 flex-shrink-0"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                      <span class="truncate">{suggestion.display}</span>
+                    </div>
+                  </div>
+                {/each}
+              {/if}
+            </div>
+          </div>
         {/if}
       </div>
 
