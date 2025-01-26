@@ -77,21 +77,6 @@
 
     // Date suggestions
     if (/^\d{1,4}$/.test(input)) {
-      // Year suggestions
-      const matchingYears = years
-        .filter((year) => year.toString().startsWith(input))
-        .map((year) => year.toString());
-
-      if (matchingYears.length > 0) {
-        matchingYears.forEach((year) => {
-          regularSuggestions.push({
-            type: "year",
-            value: year,
-            display: `Rok: ${year}`,
-          });
-        });
-      }
-
       // Day suggestions (1-31)
       const dayNum = parseInt(input);
       if (dayNum >= 1 && dayNum <= 31 && days.includes(dayNum)) {
@@ -111,6 +96,11 @@
           display: `Miesiąc: ${MONTHS[monthStr as keyof typeof MONTHS]}`,
         });
       }
+
+      // Year suggestions moved to the end
+      const matchingYears = years
+        .filter((year) => year.toString().startsWith(input))
+        .map((year) => year.toString());
     }
 
     // Month suggestions by name
@@ -160,6 +150,21 @@
           display: `Szukaj w opisie: ${input}`,
         },
       );
+    }
+
+    // Add year suggestions at the very end
+    if (/^\d{1,4}$/.test(input)) {
+      const matchingYears = years
+        .filter((year) => year.toString().startsWith(input))
+        .map((year) => year.toString());
+
+      matchingYears.forEach((year) => {
+        regularSuggestions.push({
+          type: "year",
+          value: year,
+          display: `Rok: ${year}`,
+        });
+      });
     }
 
     // Create final suggestions array with negated versions at the bottom
@@ -347,9 +352,14 @@
             <div
               class="bg-base-300/30 px-4 py-2 text-sm font-medium text-base-content/70 border-b border-base-300 flex justify-between items-center"
             >
-              <span>Użyj Enter aby wybrać filtr</span>
-              <span class="badge badge-sm badge-neutral"
-                >{suggestions.length} opcji</span
+              <div class="flex items-center gap-2">
+                <span>Użyj Enter aby wybrać filtr</span>
+                <span class="badge badge-sm badge-secondary"
+                  >{selectedSuggestionIndex + 1}/{suggestions.length}</span
+                >
+              </div>
+              <span class="text-sm text-base-content/50"
+                >Liczba wyników: {suggestions.length}</span
               >
             </div>
             <!-- Scrollable suggestions container with fixed height -->
@@ -365,7 +375,7 @@
                   role="option"
                   aria-selected={i === selectedSuggestionIndex}
                   class="suggestion-item {i === selectedSuggestionIndex
-                    ? 'bg-primary text-primary-content'
+                    ? 'bg-primary/20 '
                     : 'hover:bg-base-300'}"
                   on:click={() => addFilter(suggestion)}
                   data-index={i}
@@ -403,7 +413,7 @@
                     class="suggestion-item {i +
                       suggestions.filter((s) => !s.isNegated).length ===
                     selectedSuggestionIndex
-                      ? 'bg-primary text-primary-content'
+                      ? 'bg-primary/20'
                       : 'hover:bg-base-300'} text-error hover:text-error"
                     on:click={() => addFilter(suggestion)}
                     data-index={i +
