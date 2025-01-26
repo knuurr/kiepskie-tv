@@ -1057,6 +1057,20 @@
             </div>
           </div>
         {:else}
+          <!-- Card view with pagination -->
+          {#if totalPages > 1}
+            <div
+              class="flex justify-center items-center gap-2 py-4 bg-base-200 bg-opacity-50 border-b border-base-300"
+            >
+              <Pagination
+                {currentPage}
+                {totalPages}
+                {visiblePages}
+                on:changePage={({ detail }) => changePage(detail)}
+              />
+            </div>
+          {/if}
+
           <Shimmer active={isChangingPage}>
             <div
               class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4"
@@ -1071,6 +1085,20 @@
               {/each}
             </div>
           </Shimmer>
+
+          <!-- Bottom pagination for cards -->
+          {#if totalPages > 1}
+            <div
+              class="flex justify-center items-center gap-2 py-4 bg-base-200 bg-opacity-50 border-t border-base-300"
+            >
+              <Pagination
+                {currentPage}
+                {totalPages}
+                {visiblePages}
+                on:changePage={({ detail }) => changePage(detail)}
+              />
+            </div>
+          {/if}
         {/if}
 
         <div class="p-4 bg-base-200 text-center space-y-4">
