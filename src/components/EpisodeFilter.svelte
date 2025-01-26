@@ -2,6 +2,13 @@
   import { createEventDispatcher } from "svelte";
   import type { Filter, FilterType, EpisodeData } from "$lib/types";
   import XIcon from "virtual:icons/heroicons/x-mark";
+  import CalendarIcon from "virtual:icons/heroicons/calendar";
+  import VideoCameraIcon from "virtual:icons/heroicons/video-camera";
+  import PencilIcon from "virtual:icons/heroicons/pencil";
+  import BoltIcon from "virtual:icons/heroicons/bolt";
+  import Bars3Icon from "virtual:icons/heroicons/bars-3";
+  import ArchiveBoxIcon from "virtual:icons/heroicons/archive-box";
+  import TrashIcon from "virtual:icons/heroicons/trash";
   export let episodes: EpisodeData[] = [];
   export let activeFilters: Filter[] = [];
 
@@ -263,27 +270,25 @@
     }
   }
 
-  // Add this helper function to get icons for each type
+  // Update the helper function to use imported icons
   function getSuggestionIcon(type: FilterType, isNegated: boolean) {
     switch (type) {
       case "year":
-        return `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />`;
       case "month":
-        return `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />`;
       case "day":
-        return `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />`;
+        return CalendarIcon;
       case "director":
-        return `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />`;
+        return VideoCameraIcon;
       case "writer":
-        return `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />`;
+        return PencilIcon;
       case "title":
-        return `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />`;
+        return BoltIcon;
       case "description":
-        return `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />`;
+        return Bars3Icon;
       case "season":
-        return `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />`;
+        return ArchiveBoxIcon;
       default:
-        return "";
+        return null;
     }
   }
 
@@ -362,14 +367,12 @@
                 >Liczba wyników: {suggestions.length}</span
               >
             </div>
-            <!-- Scrollable suggestions container with fixed height -->
             <div
               class="max-h-[300px] overflow-y-auto overflow-x-hidden"
               role="listbox"
               tabindex="-1"
               id="suggestions-list"
             >
-              <!-- Regular suggestions -->
               {#each suggestions.filter((s) => !s.isNegated) as suggestion, i (suggestion.type + suggestion.value)}
                 <div
                   role="option"
@@ -381,21 +384,15 @@
                   data-index={i}
                 >
                   <div class="flex items-center gap-2 px-4 py-2">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
+                    <svelte:component
+                      this={getSuggestionIcon(suggestion.type, false)}
                       class="h-4 w-4 flex-shrink-0"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      {@html getSuggestionIcon(suggestion.type, false)}
-                    </svg>
+                    />
                     <span class="truncate">{suggestion.display}</span>
                   </div>
                 </div>
               {/each}
 
-              <!-- Negated section header -->
               {#if suggestions.some((s) => s.isNegated)}
                 <div
                   class="bg-base-300/30 px-4 py-2 text-sm font-medium text-base-content/70 border-y border-base-300"
@@ -403,7 +400,6 @@
                   Wyklucz z wyników
                 </div>
 
-                <!-- Negated suggestions -->
                 {#each suggestions.filter((s) => s.isNegated) as suggestion, i (suggestion.type + suggestion.value)}
                   <div
                     role="option"
@@ -420,29 +416,11 @@
                       suggestions.filter((s) => !s.isNegated).length}
                   >
                     <div class="flex items-center gap-2 px-4 py-2">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
+                      <svelte:component
+                        this={getSuggestionIcon(suggestion.type, false)}
                         class="h-4 w-4 flex-shrink-0"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        {@html getSuggestionIcon(suggestion.type, false)}
-                      </svg>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="h-4 w-4 flex-shrink-0"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
+                      />
+                      <XIcon class="h-4 w-4 flex-shrink-0" />
                       <span class="truncate">{suggestion.display}</span>
                     </div>
                   </div>
@@ -461,20 +439,7 @@
               class="btn btn-sm btn-error btn-outline gap-2"
               on:click={() => dispatch("removeAllFilters")}
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                />
-              </svg>
+              <TrashIcon class="h-4 w-4" />
               Wyczyść filtry
             </button>
           {/if}
