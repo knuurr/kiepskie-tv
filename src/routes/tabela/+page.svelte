@@ -40,6 +40,8 @@
   } from "chart.js";
   import { Bar, Line, Doughnut } from "svelte-chartjs";
   import DataLabels from "chartjs-plugin-datalabels";
+  import Pagination from "../../components/Pagination.svelte";
+  import Shimmer from "../../components/ui/Shimmer.svelte";
 
   // Register ChartJS components
   ChartJS.register(
@@ -107,18 +109,19 @@
     currentPage = 1;
   }
 
+  let isChangingPage = false;
+
   function changePage(page: number) {
     if (page >= 1 && page <= totalPages) {
-      currentPage = page;
-      // Wait for the next tick to ensure the DOM is updated
+      isChangingPage = true;
+
+      // Delay the actual page change to see the shimmer effect
       setTimeout(() => {
-        const tableContainer = document.getElementById(
-          "episode-table-container",
-        );
-        if (tableContainer) {
-          tableContainer.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
-      }, 0);
+        currentPage = page;
+        setTimeout(() => {
+          isChangingPage = false;
+        }, 700);
+      }, 500);
     }
   }
 
@@ -675,39 +678,6 @@
     (currentView === "table" || (!currentView && !$isMobile));
   $: shouldShowChart = activeTab === "plot";
   $: shouldShowCards = activeTab === "table" && currentView === "card";
-
-  let showJumpToPage = false;
-  let jumpToPageNumber = "";
-  let jumpToPageInput: HTMLInputElement | null = null;
-
-  function handleJumpToPage() {
-    const pageNum = parseInt(jumpToPageNumber);
-    if (pageNum && pageNum >= 1 && pageNum <= totalPages) {
-      changePage(pageNum);
-      closeJumpToPage();
-    }
-  }
-
-  function closeJumpToPage() {
-    showJumpToPage = false;
-    jumpToPageNumber = "";
-  }
-
-  function toggleJumpToPage() {
-    showJumpToPage = !showJumpToPage;
-    if (showJumpToPage) {
-      // Wait for the input to be rendered
-      setTimeout(() => jumpToPageInput?.focus(), 0);
-    }
-  }
-
-  function handleJumpToPageKeydown(e: KeyboardEvent) {
-    if (e.key === "Escape") {
-      closeJumpToPage();
-    } else if (e.key === "Enter") {
-      handleJumpToPage();
-    }
-  }
 </script>
 
 <div class="min-h-screen">
@@ -848,226 +818,174 @@
         {/if}
 
         {#if shouldShowTable}
-          <div class="overflow-x-auto" id="episode-table-container">
-            <table class="table table-zebra w-full">
-              <thead>
-                <tr>
-                  {#each Object.entries(data.tableData.metadata.header_metadata) as [key, header]}
-                    <th
-                      class="{key === 'opis_odcinka'
-                        ? 'min-w-[300px] max-w-[400px] whitespace-normal'
-                        : ''} 
-                               {key === 'tytul'
-                        ? 'max-w-[150px] whitespace-normal'
-                        : ''}
-                               {['rezyseria', 'scenariusz'].includes(key)
-                        ? 'whitespace-normal min-w-[200px]'
-                        : 'whitespace-nowrap'}"
-                    >
-                      {header}
-                    </th>
-                  {/each}
-                </tr>
-              </thead>
-              <tbody>
-                {#each displayedEpisodes as episode}
-                  <tr
-                    class="hover cursor-pointer"
-                    on:click={(e) => handleTableRowClick(e, episode)}
-                  >
-                    <td class="whitespace-nowrap">{episode.nr}</td>
-                    <td
-                      class="whitespace-normal max-w-[150px] group title-cell"
-                    >
-                      <a
-                        href={episode.link_wiki}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="link link-hover hover:text-primary transition-colors"
-                        data-tip="artykuł na wiki"
+          <!-- Add top pagination -->
+          {#if totalPages > 1}
+            <div
+              class="flex justify-center items-center gap-2 py-4 bg-base-200 bg-opacity-50 border-b border-base-300"
+            >
+              <Pagination
+                {currentPage}
+                {totalPages}
+                {visiblePages}
+                on:changePage={({ detail }) => changePage(detail)}
+              />
+            </div>
+          {/if}
+
+          <Shimmer active={isChangingPage}>
+            <div class="overflow-x-auto" id="episode-table-container">
+              <table class="table table-zebra w-full">
+                <thead>
+                  <tr>
+                    {#each Object.entries(data.tableData.metadata.header_metadata) as [key, header]}
+                      <th
+                        class="{key === 'opis_odcinka'
+                          ? 'min-w-[300px] max-w-[400px] whitespace-normal'
+                          : ''} 
+                                 {key === 'tytul'
+                          ? 'max-w-[150px] whitespace-normal'
+                          : ''}
+                                 {['rezyseria', 'scenariusz'].includes(key)
+                          ? 'whitespace-normal min-w-[200px]'
+                          : 'whitespace-nowrap'}"
                       >
+                        {header}
+                      </th>
+                    {/each}
+                  </tr>
+                </thead>
+                <tbody>
+                  {#each displayedEpisodes as episode}
+                    <tr
+                      class="hover cursor-pointer"
+                      on:click={(e) => handleTableRowClick(e, episode)}
+                    >
+                      <td class="whitespace-nowrap">{episode.nr}</td>
+                      <td
+                        class="whitespace-normal max-w-[150px] group title-cell"
+                      >
+                        <a
+                          href={episode.link_wiki}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="link link-hover hover:text-primary transition-colors"
+                          data-tip="artykuł na wiki"
+                        >
+                          <HighlightText
+                            text={episode.tytul}
+                            highlight={searchTerms.find((term) =>
+                              episode.tytul
+                                .toLowerCase()
+                                .includes(term.toLowerCase()),
+                            )}
+                          />
+                          <ArrowTopRightOnSquareIcon
+                            class="w-4 h-4 opacity-50 group-hover:opacity-100"
+                          />
+                        </a>
+                      </td>
+                      <td class="min-w-[300px] max-w-[400px] whitespace-normal">
                         <HighlightText
-                          text={episode.tytul}
+                          text={episode.opis_odcinka}
                           highlight={searchTerms.find((term) =>
-                            episode.tytul
+                            episode.opis_odcinka
                               .toLowerCase()
                               .includes(term.toLowerCase()),
                           )}
                         />
-                        <ArrowTopRightOnSquareIcon
-                          class="w-4 h-4 opacity-50 group-hover:opacity-100"
+                      </td>
+                      <td class="whitespace-nowrap">
+                        <ClickableFilterValue
+                          value={episode.data_components.day
+                            .toString()
+                            .padStart(2, "0")}
+                          type="day"
+                          on:filter={handleFilterClick}
+                        /> /
+                        <ClickableFilterValue
+                          value={episode.data_components.month
+                            .toString()
+                            .padStart(2, "0")}
+                          type="month"
+                          on:filter={handleFilterClick}
+                        /> /
+                        <ClickableFilterValue
+                          value={episode.data_components.year.toString()}
+                          type="year"
+                          on:filter={handleFilterClick}
                         />
-                      </a>
-                    </td>
-                    <td class="min-w-[300px] max-w-[400px] whitespace-normal">
-                      <HighlightText
-                        text={episode.opis_odcinka}
-                        highlight={searchTerms.find((term) =>
-                          episode.opis_odcinka
-                            .toLowerCase()
-                            .includes(term.toLowerCase()),
-                        )}
-                      />
-                    </td>
-                    <td class="whitespace-nowrap">
-                      <ClickableFilterValue
-                        value={episode.data_components.day
-                          .toString()
-                          .padStart(2, "0")}
-                        type="day"
-                        on:filter={handleFilterClick}
-                      /> /
-                      <ClickableFilterValue
-                        value={episode.data_components.month
-                          .toString()
-                          .padStart(2, "0")}
-                        type="month"
-                        on:filter={handleFilterClick}
-                      /> /
-                      <ClickableFilterValue
-                        value={episode.data_components.year.toString()}
-                        type="year"
-                        on:filter={handleFilterClick}
-                      />
-                    </td>
-                    <td class="whitespace-normal">
-                      {#each episode.rezyseria.split(", ") as director, i}
-                        <div class="flex">
-                          <ClickableFilterValue
-                            value={director}
-                            type="director"
-                            on:filter={handleFilterClick}
-                          >
-                            <HighlightText
-                              text={director}
-                              highlight={searchTerms.find((term) =>
-                                director
-                                  .toLowerCase()
-                                  .includes(term.toLowerCase()),
-                              )}
-                            />
-                          </ClickableFilterValue>
-                          {#if i < episode.rezyseria.split(", ").length - 1}
-                            <span class="text-base-content/50">,</span>
-                          {/if}
-                        </div>
-                      {/each}
-                    </td>
-                    <td class="whitespace-normal">
-                      {#each episode.scenariusz.split(", ") as writer, i}
-                        <div class="flex">
-                          <ClickableFilterValue
-                            value={writer}
-                            type="writer"
-                            on:filter={handleFilterClick}
-                          >
-                            <HighlightText
-                              text={writer}
-                              highlight={searchTerms.find((term) =>
-                                writer
-                                  .toLowerCase()
-                                  .includes(term.toLowerCase()),
-                              )}
-                            />
-                          </ClickableFilterValue>
-                          {#if i < episode.scenariusz.split(", ").length - 1}
-                            <span class="text-base-content/50">,</span>
-                          {/if}
-                        </div>
-                      {/each}
-                    </td>
-                    <td class="whitespace-nowrap">
-                      <ClickableFilterValue
-                        value={episode.sezon.toString()}
-                        type="season"
-                        on:filter={handleFilterClick}
-                      />
-                    </td>
-                  </tr>
-                {/each}
-              </tbody>
-            </table>
-          </div>
+                      </td>
+                      <td class="whitespace-normal">
+                        {#each episode.rezyseria.split(", ") as director, i}
+                          <div class="flex">
+                            <ClickableFilterValue
+                              value={director}
+                              type="director"
+                              on:filter={handleFilterClick}
+                            >
+                              <HighlightText
+                                text={director}
+                                highlight={searchTerms.find((term) =>
+                                  director
+                                    .toLowerCase()
+                                    .includes(term.toLowerCase()),
+                                )}
+                              />
+                            </ClickableFilterValue>
+                            {#if i < episode.rezyseria.split(", ").length - 1}
+                              <span class="text-base-content/50">,</span>
+                            {/if}
+                          </div>
+                        {/each}
+                      </td>
+                      <td class="whitespace-normal">
+                        {#each episode.scenariusz.split(", ") as writer, i}
+                          <div class="flex">
+                            <ClickableFilterValue
+                              value={writer}
+                              type="writer"
+                              on:filter={handleFilterClick}
+                            >
+                              <HighlightText
+                                text={writer}
+                                highlight={searchTerms.find((term) =>
+                                  writer
+                                    .toLowerCase()
+                                    .includes(term.toLowerCase()),
+                                )}
+                              />
+                            </ClickableFilterValue>
+                            {#if i < episode.scenariusz.split(", ").length - 1}
+                              <span class="text-base-content/50">,</span>
+                            {/if}
+                          </div>
+                        {/each}
+                      </td>
+                      <td class="whitespace-nowrap">
+                        <ClickableFilterValue
+                          value={episode.sezon.toString()}
+                          type="season"
+                          on:filter={handleFilterClick}
+                        />
+                      </td>
+                    </tr>
+                  {/each}
+                </tbody>
+              </table>
+            </div>
+          </Shimmer>
 
-          <!-- Replace the load more button with pagination -->
+          <!-- Bottom pagination -->
           {#if totalPages > 1}
             <div
-              class="flex justify-center items-center gap-2 py-4 bg-base-200 bg-opacity-50"
+              class="flex justify-center items-center gap-2 py-4 bg-base-200 bg-opacity-50 border-t border-base-300"
             >
-              <div class="join">
-                <button
-                  class="join-item btn btn-sm"
-                  disabled={currentPage === 1}
-                  on:click={() => changePage(currentPage - 1)}
-                >
-                  «
-                </button>
-
-                {#each visiblePages as page}
-                  {#if page === "..."}
-                    <div class="dropdown dropdown-top">
-                      <button
-                        class="join-item btn btn-sm"
-                        on:click={toggleJumpToPage}
-                        tabindex="0"
-                      >
-                        ...
-                      </button>
-                      {#if showJumpToPage}
-                        <div
-                          class="dropdown-content z-50 card card-compact bg-base-200 shadow-xl p-2"
-                          tabindex="0"
-                          on:keydown={handleJumpToPageKeydown}
-                        >
-                          <div class="card-body p-2 gap-2">
-                            <h3 class="text-sm font-medium">
-                              Przejdź do strony
-                            </h3>
-                            <div class="join">
-                              <input
-                                type="number"
-                                class="join-item input input-bordered input-sm w-20"
-                                min="1"
-                                max={totalPages}
-                                bind:value={jumpToPageNumber}
-                                placeholder="Nr strony"
-                                bind:this={jumpToPageInput}
-                                on:keydown={handleJumpToPageKeydown}
-                              />
-                              <button
-                                class="join-item btn btn-sm btn-primary"
-                                on:click={handleJumpToPage}
-                              >
-                                Idź
-                              </button>
-                            </div>
-                            <p class="text-xs text-base-content/70">
-                              Strony 1-{totalPages}
-                            </p>
-                          </div>
-                        </div>
-                      {/if}
-                    </div>
-                  {:else}
-                    <button
-                      class="join-item btn btn-sm {Number(page) === currentPage
-                        ? 'btn-primary'
-                        : ''}"
-                      on:click={() => changePage(Number(page))}
-                    >
-                      {page}
-                    </button>
-                  {/if}
-                {/each}
-
-                <button
-                  class="join-item btn btn-sm"
-                  disabled={currentPage === totalPages}
-                  on:click={() => changePage(currentPage + 1)}
-                >
-                  »
-                </button>
-              </div>
+              <Pagination
+                {currentPage}
+                {totalPages}
+                {visiblePages}
+                on:changePage={({ detail }) => changePage(detail)}
+              />
             </div>
           {/if}
         {:else if shouldShowChart}
@@ -1139,18 +1057,20 @@
             </div>
           </div>
         {:else}
-          <div
-            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4"
-          >
-            {#each displayedEpisodes as episode}
-              <EpisodeCard
-                {episode}
-                {searchTerms}
-                onEpisodeClick={handleEpisodeClick}
-                onFilterClick={handleFilterClick}
-              />
-            {/each}
-          </div>
+          <Shimmer active={isChangingPage}>
+            <div
+              class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4"
+            >
+              {#each displayedEpisodes as episode}
+                <EpisodeCard
+                  {episode}
+                  {searchTerms}
+                  onEpisodeClick={handleEpisodeClick}
+                  onFilterClick={handleFilterClick}
+                />
+              {/each}
+            </div>
+          </Shimmer>
         {/if}
 
         <div class="p-4 bg-base-200 text-center space-y-4">
