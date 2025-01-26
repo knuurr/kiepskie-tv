@@ -76,13 +76,87 @@
     { value: 25, label: "25 wierszy" },
     { value: 50, label: "50 wierszy" },
     { value: 100, label: "100 wierszy" },
+    { value: 999, label: "Pokaż wszystkie" },
   ];
 
   let selectedChunkSize = CHUNK_SIZE_OPTIONS[0].value;
-  let visibleRows = selectedChunkSize;
+  let currentPage = 1;
   let showAllRows = false;
 
   let showScrollTop = false;
+
+  // Calculate total pages based on filtered episodes and chunk size
+  $: totalPages = Math.ceil(filteredEpisodes.length / selectedChunkSize);
+
+  // Calculate displayed episodes based on current page and chunk size
+  $: displayedEpisodes = filteredEpisodes.slice(
+    (currentPage - 1) * selectedChunkSize,
+    currentPage * selectedChunkSize,
+  );
+
+  // Reset to first page when filters or chunk size changes
+  $: {
+    if (filteredEpisodes || selectedChunkSize) {
+      currentPage = 1;
+    }
+  }
+
+  function handleChunkSizeChange(event: Event) {
+    const select = event.target as HTMLSelectElement;
+    selectedChunkSize = parseInt(select.value);
+    currentPage = 1;
+  }
+
+  function changePage(page: number) {
+    if (page >= 1 && page <= totalPages) {
+      currentPage = page;
+      // Wait for the next tick to ensure the DOM is updated
+      setTimeout(() => {
+        const tableContainer = document.getElementById(
+          "episode-table-container",
+        );
+        if (tableContainer) {
+          tableContainer.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 0);
+    }
+  }
+
+  // Generate array of page numbers to display
+  $: visiblePages = getVisiblePages(currentPage, totalPages);
+
+  function getVisiblePages(current: number, total: number) {
+    const delta = 2;
+    const range = [];
+    const rangeWithDots = [];
+    let l;
+
+    range.push(1);
+
+    for (let i = current - delta; i <= current + delta; i++) {
+      if (i < total && i > 1) {
+        range.push(i);
+      }
+    }
+
+    if (total > 1) {
+      range.push(total);
+    }
+
+    for (let i of range) {
+      if (l) {
+        if (i - l === 2) {
+          rangeWithDots.push(l + 1);
+        } else if (i - l !== 1) {
+          rangeWithDots.push("...");
+        }
+      }
+      rangeWithDots.push(i);
+      l = i;
+    }
+
+    return rangeWithDots;
+  }
 
   $: {
     filteredEpisodes = data.tableData.data.filter((episode) => {
@@ -143,10 +217,6 @@
     });
   }
 
-  $: displayedEpisodes = showAllRows
-    ? filteredEpisodes
-    : filteredEpisodes.slice(0, visibleRows);
-
   $: searchTerms = activeFilters
     .filter((f) =>
       ["title", "description", "director", "writer"].includes(f.type),
@@ -163,39 +233,6 @@
 
   function handleRemoveFilter(event: CustomEvent<number>) {
     activeFilters = activeFilters.filter((_, i) => i !== event.detail);
-  }
-
-  function loadMore() {
-    if (showAllRows) return;
-    if (visibleRows + selectedChunkSize >= filteredEpisodes.length) {
-      showAllRows = true;
-    } else {
-      visibleRows += selectedChunkSize;
-    }
-  }
-
-  function showAll() {
-    showAllRows = true;
-    visibleRows = filteredEpisodes.length;
-  }
-
-  function handleChunkSizeChange(event: Event) {
-    const select = event.target as HTMLSelectElement;
-    selectedChunkSize = parseInt(select.value);
-    if (!showAllRows) {
-      visibleRows = Math.min(selectedChunkSize, filteredEpisodes.length);
-    }
-  }
-
-  function scrollToTop() {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  // Add scroll listener
-  if (typeof window !== "undefined") {
-    window.addEventListener("scroll", () => {
-      showScrollTop = window.scrollY > 500;
-    });
   }
 
   function handleRemoveAllFilters() {
@@ -638,6 +675,39 @@
     (currentView === "table" || (!currentView && !$isMobile));
   $: shouldShowChart = activeTab === "plot";
   $: shouldShowCards = activeTab === "table" && currentView === "card";
+
+  let showJumpToPage = false;
+  let jumpToPageNumber = "";
+  let jumpToPageInput: HTMLInputElement | null = null;
+
+  function handleJumpToPage() {
+    const pageNum = parseInt(jumpToPageNumber);
+    if (pageNum && pageNum >= 1 && pageNum <= totalPages) {
+      changePage(pageNum);
+      closeJumpToPage();
+    }
+  }
+
+  function closeJumpToPage() {
+    showJumpToPage = false;
+    jumpToPageNumber = "";
+  }
+
+  function toggleJumpToPage() {
+    showJumpToPage = !showJumpToPage;
+    if (showJumpToPage) {
+      // Wait for the input to be rendered
+      setTimeout(() => jumpToPageInput?.focus(), 0);
+    }
+  }
+
+  function handleJumpToPageKeydown(e: KeyboardEvent) {
+    if (e.key === "Escape") {
+      closeJumpToPage();
+    } else if (e.key === "Enter") {
+      handleJumpToPage();
+    }
+  }
 </script>
 
 <div class="min-h-screen">
@@ -646,7 +716,7 @@
   {#if showScrollTop}
     <button
       class="fixed bottom-8 right-8 btn btn-circle btn-primary shadow-lg z-50"
-      on:click={scrollToTop}
+      on:click={() => window.scrollTo({ top: 0, behavior: "smooth" })}
       aria-label="Przewiń do góry"
     >
       <ChevronUpIcon class="h-6 w-6" />
@@ -735,22 +805,12 @@
                       class="select select-bordered select-sm"
                       value={selectedChunkSize}
                       on:change={handleChunkSizeChange}
-                      disabled={showAllRows}
                     >
                       {#each CHUNK_SIZE_OPTIONS as option}
                         <option value={option.value}>{option.label}</option>
                       {/each}
                     </select>
                   </div>
-
-                  {#if !showAllRows && filteredEpisodes.length > visibleRows}
-                    <button
-                      class="btn btn-sm w-full sm:w-auto"
-                      on:click={showAll}
-                    >
-                      Pokaż wszystkie ({filteredEpisodes.length})
-                    </button>
-                  {/if}
                 </div>
 
                 <div class="join w-full sm:w-auto">
@@ -788,7 +848,7 @@
         {/if}
 
         {#if shouldShowTable}
-          <div class="overflow-x-auto">
+          <div class="overflow-x-auto" id="episode-table-container">
             <table class="table table-zebra w-full">
               <thead>
                 <tr>
@@ -929,18 +989,85 @@
             </table>
           </div>
 
-          {#if filteredEpisodes.length > visibleRows && !showAllRows}
+          <!-- Replace the load more button with pagination -->
+          {#if totalPages > 1}
             <div
-              class="flex flex-col items-center py-4 bg-base-200 bg-opacity-50 cursor-pointer hover:bg-opacity-70 transition-all"
-              on:click={loadMore}
+              class="flex justify-center items-center gap-2 py-4 bg-base-200 bg-opacity-50"
             >
-              <ChevronDownIcon class="h-6 w-6 animate-bounce" />
-              <span class="text-base-content/60">
-                Pokaż kolejne {Math.min(
-                  selectedChunkSize,
-                  filteredEpisodes.length - visibleRows,
-                )} wierszy
-              </span>
+              <div class="join">
+                <button
+                  class="join-item btn btn-sm"
+                  disabled={currentPage === 1}
+                  on:click={() => changePage(currentPage - 1)}
+                >
+                  «
+                </button>
+
+                {#each visiblePages as page}
+                  {#if page === "..."}
+                    <div class="dropdown dropdown-top">
+                      <button
+                        class="join-item btn btn-sm"
+                        on:click={toggleJumpToPage}
+                        tabindex="0"
+                      >
+                        ...
+                      </button>
+                      {#if showJumpToPage}
+                        <div
+                          class="dropdown-content z-50 card card-compact bg-base-200 shadow-xl p-2"
+                          tabindex="0"
+                          on:keydown={handleJumpToPageKeydown}
+                        >
+                          <div class="card-body p-2 gap-2">
+                            <h3 class="text-sm font-medium">
+                              Przejdź do strony
+                            </h3>
+                            <div class="join">
+                              <input
+                                type="number"
+                                class="join-item input input-bordered input-sm w-20"
+                                min="1"
+                                max={totalPages}
+                                bind:value={jumpToPageNumber}
+                                placeholder="Nr strony"
+                                bind:this={jumpToPageInput}
+                                on:keydown={handleJumpToPageKeydown}
+                              />
+                              <button
+                                class="join-item btn btn-sm btn-primary"
+                                on:click={handleJumpToPage}
+                              >
+                                Idź
+                              </button>
+                            </div>
+                            <p class="text-xs text-base-content/70">
+                              Strony 1-{totalPages}
+                            </p>
+                          </div>
+                        </div>
+                      {/if}
+                    </div>
+                  {:else}
+                    <button
+                      class="join-item btn btn-sm {Number(page) === currentPage
+                        ? 'btn-primary'
+                        : ''}"
+                      on:click={() => changePage(Number(page))}
+                    >
+                      {page}
+                    </button>
+                  {/if}
+                {/each}
+
+                <button
+                  class="join-item btn btn-sm"
+                  disabled={currentPage === totalPages}
+                  on:click={() => changePage(currentPage + 1)}
+                >
+                  »
+                </button>
+              </div>
             </div>
           {/if}
         {:else if shouldShowChart}
