@@ -3,6 +3,8 @@
   import HighlightText from "./HighlightText.svelte";
   import ClickableFilterValue from "./ClickableFilterValue.svelte";
   import ArrowTopRightOnSquareIcon from "virtual:icons/heroicons/arrow-top-right-on-square";
+  import TitleBackground from "./TitleBackground.svelte";
+  import cardBackground from "$lib/table/cardbg.jpeg";
 
   export let episode: EpisodeData;
   export let searchTerms: string[] = [];
@@ -13,7 +15,7 @@
 </script>
 
 <div
-  class="card bg-base-100 shadow-lg h-full transition-all duration-200 hover:scale-[1.02] hover:shadow-xl cursor-pointer"
+  class="card bg-base-100 shadow-lg h-full transition-all duration-200 hover:scale-[1.02] hover:shadow-xl cursor-pointer overflow-hidden"
   on:click={() => onEpisodeClick(episode)}
   on:keydown={(e) => {
     if (e.key === "Enter" || e.key === " ") {
@@ -39,6 +41,9 @@
         />
       </div>
     </div>
+
+    <!-- Title background -->
+    <TitleBackground title={episode.tytul} baseSize={0.8} />
 
     <!-- Title with wiki link -->
     <h2 class="card-title text-lg group flex-none">

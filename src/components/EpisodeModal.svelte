@@ -10,6 +10,7 @@
   import DocumentTextIcon from "~icons/heroicons/document-text";
   import ArrowTopRightOnSquareIcon from "~icons/heroicons/arrow-top-right-on-square";
   import ShareIcon from "~icons/heroicons/share";
+  import TitleBackground from "./TitleBackground.svelte";
 
   // Animation configuration
   const ANIMATION_TIMING = {
@@ -138,6 +139,15 @@
         Szczegóły odcinka
       {/if}
     </h3>
+
+    {#if selectedEpisode}
+      <TitleBackground
+        title={selectedEpisode.tytul}
+        height="h-48"
+        baseSize={2}
+      />
+      <div class="mb-2" />
+    {/if}
 
     {#if mode === "random"}
       <!-- Keep existing random episode UI -->
