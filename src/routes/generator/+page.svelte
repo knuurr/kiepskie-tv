@@ -7,6 +7,7 @@
   import FeedbackSection from "../../components/FeedbackSection.svelte";
   import AnimatedButton from "../../components/tiwi/AnimatedButton.svelte";
   import EpisodeHistoryDrawer from "../../components/EpisodeHistoryDrawer.svelte";
+  import TitleBackground from "../../components/TitleBackground.svelte";
 
   // icons
   import HashtagIcon from "virtual:icons/heroicons/hashtag";
@@ -19,6 +20,8 @@
   import LinkIcon from "virtual:icons/heroicons/link";
   import ArrowTopRightOnSquareIcon from "virtual:icons/heroicons/arrow-top-right-on-square";
   import ChartBarIcon from "virtual:icons/heroicons/chart-bar";
+  import ChevronDownIcon from "virtual:icons/heroicons/chevron-down";
+  import ChevronUpIcon from "virtual:icons/heroicons/chevron-up";
 
   export let data: PageData;
 
@@ -42,6 +45,9 @@
   const MAX_HISTORY = 6; // Configure maximum history size
   let generationHistory: EpisodeData[] = [];
   let currentHistoryIndex = -1; // -1 means no generation yet
+
+  let isDescriptionExpanded = false;
+  const DESCRIPTION_THRESHOLD = 100; // Characters before truncation on mobile
 
   const FIELDS = [
     {
@@ -187,6 +193,10 @@
     }, ANIMATION_TIMING.DELAY.BEFORE_DETAILS);
   }
 
+  function toggleDescription() {
+    isDescriptionExpanded = !isDescriptionExpanded;
+  }
+
   onMount(() => {
     document.addEventListener("keydown", handleKeydown);
     return () => {
@@ -236,81 +246,146 @@
             </div>
 
             <!-- Episode details section -->
-            <div class="space-y-4 mb-6">
-              <div class="grid grid-cols-[auto,1fr] gap-x-4 gap-y-2">
-                {#each FIELDS as field}
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+              <!-- Left side - Episode details (2/3 on desktop) -->
+              <div class="lg:col-span-2 min-w-[300px] space-y-4">
+                <div class="grid grid-cols-[auto,1fr] gap-x-4 gap-y-2">
+                  {#each FIELDS as field}
+                    <span class="font-semibold flex items-center gap-2">
+                      <svelte:component this={field.icon} class="h-4 w-4" />
+                      {field.label}:
+                    </span>
+                    {#if isLoading}
+                      <div
+                        class="h-6 bg-base-300 animate-pulse rounded w-32 ml-auto"
+                      />
+                    {:else if selectedEpisode && showDetails}
+                      <span
+                        class="typewriter-line text-right"
+                        in:typewriter={{
+                          duration: ANIMATION_TIMING.TYPEWRITER.METADATA,
+                        }}
+                      >
+                        {selectedEpisode[field.key]}
+                      </span>
+                    {:else}
+                      <span class="text-base-content/30 text-right">—</span>
+                    {/if}
+                  {/each}
+
+                  <!-- Links section after Scenariusz -->
                   <span class="font-semibold flex items-center gap-2">
-                    <svelte:component this={field.icon} class="h-4 w-4" />
-                    {field.label}:
+                    <LinkIcon class="w-4 h-4" />
+                    Linki:
                   </span>
+                  <div class="flex gap-2 justify-end">
+                    <a
+                      href={selectedEpisode?.link_wiki}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="gap-2 flex items-center underline"
+                      class:btn-disabled={!selectedEpisode || !showDetails}
+                    >
+                      <ArrowTopRightOnSquareIcon class="w-4 h-4" />
+                      Kiepscy Wiki
+                    </a>
+                    <a
+                      href={selectedEpisode
+                        ? `/tabela?episode=${selectedEpisode.nr}`
+                        : "#"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="gap-2 flex items-center underline"
+                      class:btn-disabled={!selectedEpisode || !showDetails}
+                    >
+                      <ChartBarIcon class="w-4 h-4" />
+                      Zobacz w tabeli
+                    </a>
+                  </div>
+                </div>
+
+                <div class="pt-2">
+                  <span class="font-semibold block mb-2">Opis odcinka:</span>
                   {#if isLoading}
-                    <div class="h-6 bg-base-300 animate-pulse rounded w-32" />
+                    <div class="space-y-2">
+                      <div
+                        class="h-4 bg-base-300 animate-pulse rounded w-full"
+                      />
+                      <div
+                        class="h-4 bg-base-300 animate-pulse rounded w-3/4"
+                      />
+                    </div>
                   {:else if selectedEpisode && showDetails}
-                    <span
-                      class="typewriter-line"
+                    <!-- Desktop view - always expanded -->
+                    <p
+                      class="text-base-content/80 typewriter-line hidden lg:block"
                       in:typewriter={{
-                        duration: ANIMATION_TIMING.TYPEWRITER.METADATA,
+                        duration: ANIMATION_TIMING.TYPEWRITER.DESCRIPTION,
                       }}
                     >
-                      {selectedEpisode[field.key]}
-                    </span>
-                  {:else}
-                    <span class="text-base-content/30">—</span>
-                  {/if}
-                {/each}
+                      {selectedEpisode.opis_odcinka}
+                    </p>
 
-                <!-- Links section after Scenariusz -->
-                <span class="font-semibold flex items-center gap-2">
-                  <LinkIcon class="w-4 h-4" />
-                  Linki:
-                </span>
-                <div class="flex gap-2">
-                  <a
-                    href={selectedEpisode?.link_wiki}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="gap-2 flex items-center underline"
-                    class:btn-disabled={!selectedEpisode || !showDetails}
-                  >
-                    <ArrowTopRightOnSquareIcon class="w-4 h-4" />
-                    Kiepscy Wiki
-                  </a>
-                  <a
-                    href={selectedEpisode
-                      ? `/tabela?episode=${selectedEpisode.nr}`
-                      : "#"}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="gap-2 flex items-center underline"
-                    class:btn-disabled={!selectedEpisode || !showDetails}
-                  >
-                    <ChartBarIcon class="w-4 h-4" />
-                    Zobacz w tabeli
-                  </a>
+                    <!-- Mobile view - with expand/collapse -->
+                    <div class="lg:hidden">
+                      <p
+                        class="text-base-content/80 typewriter-line"
+                        class:line-clamp-2={!isDescriptionExpanded &&
+                          selectedEpisode.opis_odcinka.length >
+                            DESCRIPTION_THRESHOLD}
+                        in:typewriter={{
+                          duration: ANIMATION_TIMING.TYPEWRITER.DESCRIPTION,
+                        }}
+                      >
+                        {selectedEpisode.opis_odcinka}
+                      </p>
+
+                      {#if selectedEpisode.opis_odcinka.length > DESCRIPTION_THRESHOLD}
+                        <button
+                          class="btn btn-ghost btn-sm mt-2 w-full flex items-center justify-center gap-2"
+                          on:click={toggleDescription}
+                        >
+                          {#if isDescriptionExpanded}
+                            <ChevronUpIcon class="w-4 h-4" />
+                            Zwiń opis
+                          {:else}
+                            <ChevronDownIcon class="w-4 h-4" />
+                            Rozwiń opis
+                          {/if}
+                        </button>
+                      {/if}
+                    </div>
+                  {:else}
+                    <p class="text-base-content/30">
+                      Opis pojawi się po wylosowaniu odcinka
+                    </p>
+                  {/if}
                 </div>
               </div>
 
-              <div class="pt-2">
-                <span class="font-semibold block mb-2">Opis odcinka:</span>
-                {#if isLoading}
-                  <div class="space-y-2">
-                    <div class="h-4 bg-base-300 animate-pulse rounded w-full" />
-                    <div class="h-4 bg-base-300 animate-pulse rounded w-3/4" />
-                  </div>
-                {:else if selectedEpisode && showDetails}
-                  <p
-                    class="text-base-content/80 typewriter-line"
-                    in:typewriter={{
-                      duration: ANIMATION_TIMING.TYPEWRITER.DESCRIPTION,
-                    }}
-                  >
-                    {selectedEpisode.opis_odcinka}
-                  </p>
-                {:else}
-                  <p class="text-base-content/30">
-                    Opis pojawi się po wylosowaniu odcinka
-                  </p>
-                {/if}
+              <!-- Right side - Title visualization (1/3 on desktop) -->
+              <div class="hidden lg:block lg:col-span-1">
+                <div class="relative w-full" style="padding-top: 56.25%;">
+                  {#if selectedEpisode && showDetails}
+                    <div class="absolute inset-0">
+                      <TitleBackground
+                        title={selectedEpisode.tytul}
+                        height="h-full"
+                        baseSize={0.7}
+                      />
+                    </div>
+                  {:else if isLoading}
+                    <div
+                      class="absolute inset-0 bg-base-300 animate-pulse rounded"
+                    />
+                  {:else}
+                    <div
+                      class="absolute inset-0 bg-base-200 rounded flex items-center justify-center text-base-content/30"
+                    >
+                      Tytuł pojawi się po wylosowaniu
+                    </div>
+                  {/if}
+                </div>
               </div>
             </div>
 
