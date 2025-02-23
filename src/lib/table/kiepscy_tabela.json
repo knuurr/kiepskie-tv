@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated_at": "2024-12-01T08:31:53Z",
+    "generated_at": "2025-02-23T20:26:41Z",
     "header_metadata": {
       "nr": "Odcinek",
       "tytul": "Tytuł",
@@ -223,7 +223,7 @@
     },
     {
       "nr": 10,
-      "tytul": "Kiepscy mordercy[uwaga 1]",
+      "tytul": "Kiepscy mordercy",
       "opis_odcinka": "Ferdek z synem podają Babce płyn na rozwolnienie.",
       "data_premiery": "16.10.1999",
       "data_components": {
@@ -748,7 +748,7 @@
     },
     {
       "nr": 45,
-      "tytul": "Przezorny zawsze ubezpieczony[uwaga 2]",
+      "tytul": "Przezorny zawsze ubezpieczony",
       "opis_odcinka": "Ferdek wykupuje ubezpieczenie dla całej rodziny. Próbuje wyłudzić wysokie odszkodowanie.",
       "data_premiery": "23.09.2000",
       "data_components": {
@@ -763,7 +763,7 @@
     },
     {
       "nr": 46,
-      "tytul": "Wzorowy obywatel[uwaga 3]",
+      "tytul": "Wzorowy obywatel",
       "opis_odcinka": "Radio Kiepskich odbiera dziwną stację. Okazuje się, że są to rozmowy służb specjalnych.",
       "data_premiery": "27.09.2000",
       "data_components": {
@@ -838,7 +838,7 @@
     },
     {
       "nr": 51,
-      "tytul": "Zrób sobie babkę[uwaga 4]",
+      "tytul": "Zrób sobie babkę",
       "opis_odcinka": "Walduś i Ferdek postanawiają skonstruować sobowtóra Babki, który mógłby odebrać jej rentę.",
       "data_premiery": "14.10.2000",
       "data_components": {
@@ -1003,7 +1003,7 @@
     },
     {
       "nr": 62,
-      "tytul": "Margaryna gagaryna[uwaga 5]",
+      "tytul": "Margaryna gagaryna",
       "opis_odcinka": "Kiepscy wygrywają podróż w kosmos. Według losowania ma pojechać Babka. Ferdek się z tym nie zgadza.",
       "data_premiery": "25.11.2000",
       "data_components": {
@@ -1018,7 +1018,7 @@
     },
     {
       "nr": 63,
-      "tytul": "Kiepski magnes[uwaga 6]",
+      "tytul": "Kiepski magnes",
       "opis_odcinka": "Aby opanować nerwowe tiki i ból głowy, Ferdek za namową sąsiada zjada duże ilości magnesu. Zaczyna przyciągać metale, postanowił zarabiać na tym.",
       "data_premiery": "29.11.2000",
       "data_components": {
@@ -1108,7 +1108,7 @@
     },
     {
       "nr": 69,
-      "tytul": "Szopka[uwaga 7]",
+      "tytul": "Szopka",
       "opis_odcinka": "Babka chce wziąć udział w konkursie na najpiękniejszą szopkę. Ferdek i Walduś postanawiają jej pomóc.",
       "data_premiery": "20.12.2000",
       "data_components": {
@@ -1138,7 +1138,7 @@
     },
     {
       "nr": 71,
-      "tytul": "Świnia w każdym domu[uwaga 8]",
+      "tytul": "Świnia w każdym domu",
       "opis_odcinka": "Paździoch zakłada w mieszkaniu hodowlę świni miejskiej. Namawia na to Ferdka.",
       "data_premiery": "31.12.2000",
       "data_components": {
@@ -1153,7 +1153,7 @@
     },
     {
       "nr": 72,
-      "tytul": "Ferdynator[uwaga 9]",
+      "tytul": "Ferdynator",
       "opis_odcinka": "Ferdek wyczytuje z gazety, że potrzebni są ochotnicy do tajnej operacji. Zgłasza się na ochotnika.",
       "data_premiery": "01.01.2001",
       "data_components": {
@@ -1243,7 +1243,7 @@
     },
     {
       "nr": 78,
-      "tytul": "Kasa chorych[uwaga 11]",
+      "tytul": "Kasa chorych",
       "opis_odcinka": "Ferdek zakłada własną Prywatną Klinikę Psychiatryczną. Do kliniki zapisują Boczka i Edzia.",
       "data_premiery": "17.10.2001",
       "data_components": {
@@ -1258,7 +1258,7 @@
     },
     {
       "nr": 79,
-      "tytul": "Sposób na blondynkę[uwaga 12]",
+      "tytul": "Sposób na blondynkę",
       "opis_odcinka": "Ferdek i sąsiedzi szukają \"towarzyszki zabaw\" dla Waldka na sylwestrową noc.",
       "data_premiery": "24.10.2001",
       "data_components": {
@@ -1273,7 +1273,7 @@
     },
     {
       "nr": 80,
-      "tytul": "Kamienny krąg[uwaga 13]",
+      "tytul": "Kamienny krąg",
       "opis_odcinka": "Paździoch cierpi na kamicę nerkową, korzysta z niezawodnego sposobu Babki.",
       "data_premiery": "31.10.2001",
       "data_components": {
@@ -1318,7 +1318,7 @@
     },
     {
       "nr": 83,
-      "tytul": "Los, bigos i uroda[uwaga 14]",
+      "tytul": "Los, bigos i uroda",
       "opis_odcinka": "Kiepski zakłada firmę kosmetyczną. Paździoch twierdzi, że to nie jest praca dla prawdziwego mężczyzny. Boczek jednak popiera Kiepskiego. Między sąsiadami dochodzi do konfliktu. Kiepski proponuje im układ.",
       "data_premiery": "21.11.2001",
       "data_components": {
@@ -1408,7 +1408,7 @@
     },
     {
       "nr": 89,
-      "tytul": "Świat, który nie może zaginąć[uwaga 15]",
+      "tytul": "Świat, który nie może zaginąć",
       "opis_odcinka": "Kiepscy, Paździochowie, Boczek i Edzio zostają obiektami muzealnymi.",
       "data_premiery": "29.12.2001",
       "data_components": {
@@ -1453,7 +1453,7 @@
     },
     {
       "nr": 92,
-      "tytul": "Horror models[uwaga 16]",
+      "tytul": "Horror models",
       "opis_odcinka": "Ferdek wraz z synem otwierają agencję modelek.",
       "data_premiery": "19.01.2002",
       "data_components": {
@@ -1513,7 +1513,7 @@
     },
     {
       "nr": 96,
-      "tytul": "Łzy Wasyla[uwaga 17]",
+      "tytul": "Łzy Wasyla",
       "opis_odcinka": "Boczek chce schudnąć. Ferdek pomaga mu w tym za \"niewielką opłatą\".",
       "data_premiery": "16.02.2002",
       "data_components": {
@@ -1783,7 +1783,7 @@
     },
     {
       "nr": 114,
-      "tytul": "Jedenastka pana Ferdynanda[uwaga 18]",
+      "tytul": "Jedenastka pana Ferdynanda",
       "opis_odcinka": "Ferdek odkrywa, że w ich mieszkaniu zamieszkał Ufoludek. Zaprzyjaźniają się.",
       "data_premiery": "06.09.2002",
       "data_components": {
@@ -2443,7 +2443,7 @@
     },
     {
       "nr": 158,
-      "tytul": "Zamianka[uwaga 19]",
+      "tytul": "Zamianka",
       "opis_odcinka": "Paździoch zwierza się Ferdkowi, że nudzi go życie. Sąsiedzi zamieniają się meblami, rodzinami, mieszkaniami... Jedynie Boczek nie ma się z kim zamienić.",
       "data_premiery": "26.03.2004",
       "data_components": {
@@ -2578,7 +2578,7 @@
     },
     {
       "nr": 167,
-      "tytul": "Odlot[uwaga 20]",
+      "tytul": "Odlot",
       "opis_odcinka": "Pewnego dnia na podwórko Kiepskich przyjeżdża cyrk. Niektórzy mieszkańcy są z tego zadowoleni, a inni oburzeni i niechętni.... Sytuacje komplikuje fakt korzystania przez cyrkowców z ich prywatnej publicznej toalety.",
       "data_premiery": "04.06.2004",
       "data_components": {
@@ -5143,7 +5143,7 @@
     },
     {
       "nr": 338,
-      "tytul": "Telewizja marzeń[uwaga 21]",
+      "tytul": "Telewizja marzeń",
       "opis_odcinka": "Ferdynand Kiepski naprawia stary telewizor Mariana Paździocha. W pewnym momencie w tajemniczy sposób przenosi się do jednego z programów telewizyjnych. Gdy prezentuje odkrycie sąsiadowi, przenosi Mariana do Polsatu, gdzie spotyka on prezentera Krzysztofa Ibisza.",
       "data_premiery": "08.09.2010",
       "data_components": {
