@@ -81,14 +81,24 @@
     { value: 999, label: "Pokaż wszystkie" },
   ];
 
-  let selectedChunkSize = CHUNK_SIZE_OPTIONS[0].value;
+  const GRID_CHUNK_SIZE_OPTIONS = [
+    { value: 12, label: "12 elementów" },
+    { value: 24, label: "24 elementy" },
+    { value: 36, label: "36 elementów" },
+    { value: 48, label: "48 elementów" },
+    { value: 999, label: "Pokaż wszystkie" },
+  ];
+
+  let selectedTableChunkSize = CHUNK_SIZE_OPTIONS[0].value;
+  let selectedGridChunkSize = GRID_CHUNK_SIZE_OPTIONS[0].value;
   let currentPage = 1;
   let showAllRows = false;
 
   let showScrollTop = false;
 
   // Calculate effective chunk size based on view mode
-  $: effectiveChunkSize = currentView === "card" ? 12 : selectedChunkSize;
+  $: effectiveChunkSize =
+    currentView === "card" ? selectedGridChunkSize : selectedTableChunkSize;
 
   // Calculate total pages based on filtered episodes and effective chunk size
   $: totalPages = Math.ceil(filteredEpisodes.length / effectiveChunkSize);
@@ -101,14 +111,20 @@
 
   // Reset to first page when filters or chunk size changes
   $: {
-    if (filteredEpisodes || selectedChunkSize) {
+    if (filteredEpisodes || selectedTableChunkSize || selectedGridChunkSize) {
       currentPage = 1;
     }
   }
 
-  function handleChunkSizeChange(event: Event) {
+  function handleTableChunkSizeChange(event: Event) {
     const select = event.target as HTMLSelectElement;
-    selectedChunkSize = parseInt(select.value);
+    selectedTableChunkSize = parseInt(select.value);
+    currentPage = 1;
+  }
+
+  function handleGridChunkSizeChange(event: Event) {
+    const select = event.target as HTMLSelectElement;
+    selectedGridChunkSize = parseInt(select.value);
     currentPage = 1;
   }
 
@@ -774,15 +790,27 @@
                 <div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
                   <div class="flex items-center gap-2">
                     <span class="text-sm opacity-70">Wyświetl po:</span>
-                    <select
-                      class="select select-bordered select-sm"
-                      value={selectedChunkSize}
-                      on:change={handleChunkSizeChange}
-                    >
-                      {#each CHUNK_SIZE_OPTIONS as option}
-                        <option value={option.value}>{option.label}</option>
-                      {/each}
-                    </select>
+                    {#if currentView === "card"}
+                      <select
+                        class="select select-bordered select-sm"
+                        value={selectedGridChunkSize}
+                        on:change={handleGridChunkSizeChange}
+                      >
+                        {#each GRID_CHUNK_SIZE_OPTIONS as option}
+                          <option value={option.value}>{option.label}</option>
+                        {/each}
+                      </select>
+                    {:else}
+                      <select
+                        class="select select-bordered select-sm"
+                        value={selectedTableChunkSize}
+                        on:change={handleTableChunkSizeChange}
+                      >
+                        {#each CHUNK_SIZE_OPTIONS as option}
+                          <option value={option.value}>{option.label}</option>
+                        {/each}
+                      </select>
+                    {/if}
                   </div>
                 </div>
 

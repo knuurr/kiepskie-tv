@@ -70,7 +70,7 @@
       min="1"
       max={totalPages}
       bind:value={jumpToPageNumber}
-      placeholder={currentPage}
+      placeholder={currentPage.toString()}
       bind:this={jumpToPageInput}
       on:keydown={handleJumpToPageKeydown}
     />
