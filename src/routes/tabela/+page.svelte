@@ -87,13 +87,16 @@
 
   let showScrollTop = false;
 
-  // Calculate total pages based on filtered episodes and chunk size
-  $: totalPages = Math.ceil(filteredEpisodes.length / selectedChunkSize);
+  // Calculate effective chunk size based on view mode
+  $: effectiveChunkSize = currentView === "card" ? 12 : selectedChunkSize;
 
-  // Calculate displayed episodes based on current page and chunk size
+  // Calculate total pages based on filtered episodes and effective chunk size
+  $: totalPages = Math.ceil(filteredEpisodes.length / effectiveChunkSize);
+
+  // Calculate displayed episodes based on current page and effective chunk size
   $: displayedEpisodes = filteredEpisodes.slice(
-    (currentPage - 1) * selectedChunkSize,
-    currentPage * selectedChunkSize,
+    (currentPage - 1) * effectiveChunkSize,
+    currentPage * effectiveChunkSize,
   );
 
   // Reset to first page when filters or chunk size changes

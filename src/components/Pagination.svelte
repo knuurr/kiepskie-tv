@@ -5,7 +5,6 @@
   export let totalPages: number;
   export let visiblePages: (number | string)[];
 
-  let showJumpToPage = false;
   let jumpToPageNumber = "";
   let jumpToPageInput: HTMLInputElement | null = null;
 
@@ -17,101 +16,73 @@
     const pageNum = parseInt(jumpToPageNumber);
     if (pageNum && pageNum >= 1 && pageNum <= totalPages) {
       dispatch("changePage", pageNum);
-      closeJumpToPage();
-    }
-  }
-
-  function closeJumpToPage() {
-    showJumpToPage = false;
-    jumpToPageNumber = "";
-  }
-
-  function toggleJumpToPage() {
-    showJumpToPage = !showJumpToPage;
-    if (showJumpToPage) {
-      // Wait for the input to be rendered
-      setTimeout(() => jumpToPageInput?.focus(), 0);
+      jumpToPageNumber = "";
     }
   }
 
   function handleJumpToPageKeydown(e: KeyboardEvent) {
-    if (e.key === "Escape") {
-      closeJumpToPage();
-    } else if (e.key === "Enter") {
+    if (e.key === "Enter") {
       handleJumpToPage();
     }
   }
 </script>
 
-<div class="join">
-  <button
-    class="join-item btn btn-sm"
-    disabled={currentPage === 1}
-    on:click={() => dispatch("changePage", currentPage - 1)}
-  >
-    «
-  </button>
+<div class="flex items-center gap-2">
+  <div class="join">
+    <button
+      class="join-item btn btn-sm"
+      disabled={currentPage === 1}
+      on:click={() => dispatch("changePage", currentPage - 1)}
+    >
+      «
+    </button>
 
-  {#each visiblePages as page}
-    {#if page === "..."}
-      <div class="dropdown dropdown-top">
+    {#each visiblePages as page}
+      {#if page === "..."}
+        <button class="join-item btn btn-sm">...</button>
+      {:else}
         <button
-          class="join-item btn btn-sm"
-          on:click={toggleJumpToPage}
-          tabindex="0"
+          class="join-item btn btn-sm {Number(page) === currentPage
+            ? 'btn-primary'
+            : ''}"
+          on:click={() => dispatch("changePage", Number(page))}
         >
-          ...
+          {page}
         </button>
-        {#if showJumpToPage}
-          <div
-            class="dropdown-content z-50 card card-compact bg-base-200 shadow-xl p-2"
-            tabindex="0"
-            on:keydown={handleJumpToPageKeydown}
-          >
-            <div class="card-body p-2 gap-2">
-              <h3 class="text-sm font-medium">Przejdź do strony</h3>
-              <div class="join">
-                <input
-                  type="number"
-                  class="join-item input input-bordered input-sm w-20"
-                  min="1"
-                  max={totalPages}
-                  bind:value={jumpToPageNumber}
-                  placeholder="Nr strony"
-                  bind:this={jumpToPageInput}
-                  on:keydown={handleJumpToPageKeydown}
-                />
-                <button
-                  class="join-item btn btn-sm btn-primary"
-                  on:click={handleJumpToPage}
-                >
-                  Idź
-                </button>
-              </div>
-              <p class="text-xs text-base-content/70">
-                Strony 1-{totalPages}
-              </p>
-            </div>
-          </div>
-        {/if}
-      </div>
-    {:else}
-      <button
-        class="join-item btn btn-sm {Number(page) === currentPage
-          ? 'btn-primary'
-          : ''}"
-        on:click={() => dispatch("changePage", Number(page))}
-      >
-        {page}
-      </button>
-    {/if}
-  {/each}
+      {/if}
+    {/each}
 
-  <button
-    class="join-item btn btn-sm"
-    disabled={currentPage === totalPages}
-    on:click={() => dispatch("changePage", currentPage + 1)}
-  >
-    »
-  </button>
+    <button
+      class="join-item btn btn-sm"
+      disabled={currentPage === totalPages}
+      on:click={() => dispatch("changePage", currentPage + 1)}
+    >
+      »
+    </button>
+  </div>
+
+  <!-- Direct page input field -->
+  <div class="join items-center">
+    <span class="text-sm text-base-content/70">Strona:</span>
+    <input
+      type="number"
+      class="join-item input input-bordered input-sm w-16 mx-1"
+      min="1"
+      max={totalPages}
+      bind:value={jumpToPageNumber}
+      placeholder={currentPage}
+      bind:this={jumpToPageInput}
+      on:keydown={handleJumpToPageKeydown}
+    />
+    <span class="text-sm text-base-content/70">z {totalPages}</span>
+    <button
+      class="join-item btn btn-sm btn-primary ml-1"
+      on:click={handleJumpToPage}
+      disabled={!jumpToPageNumber ||
+        parseInt(jumpToPageNumber) < 1 ||
+        parseInt(jumpToPageNumber) > totalPages}
+    >
+      Idź
+    </button>
+  </div>
 </div>

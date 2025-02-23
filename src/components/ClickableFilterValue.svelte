@@ -29,7 +29,7 @@
 >
   <slot>{value}</slot>
   <span
-    class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-base-300 text-base-content px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none"
+    class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-base-300 text-base-content px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none z-[9999]"
     >Kliknij aby filtrować</span
   >
 </span>
