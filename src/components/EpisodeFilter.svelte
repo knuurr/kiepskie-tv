@@ -9,6 +9,7 @@
   import Bars3Icon from "virtual:icons/heroicons/bars-3";
   import ArchiveBoxIcon from "virtual:icons/heroicons/archive-box";
   import TrashIcon from "virtual:icons/heroicons/trash";
+  import XMarkIcon from "virtual:icons/heroicons/x-mark";
   export let episodes: EpisodeData[] = [];
   export let activeFilters: Filter[] = [];
 
@@ -434,41 +435,42 @@
       <div class="mt-4">
         <div class="flex items-center justify-between mb-2">
           <h3 class="font-medium">Aktywne filtry</h3>
-          {#if activeFilters.length > 0}
-            <button
-              class="btn btn-sm btn-error btn-outline gap-2"
-              on:click={() => dispatch("removeAllFilters")}
-            >
-              <TrashIcon class="h-4 w-4" />
-              Wyczyść filtry
-            </button>
-          {/if}
+          <button
+            class="btn btn-sm {activeFilters.length > 0
+              ? 'btn-error btn-outline'
+              : 'btn-ghost'} gap-2"
+            on:click={() => dispatch("removeAllFilters")}
+            disabled={activeFilters.length === 0}
+          >
+            <TrashIcon class="h-4 w-4" />
+            Wyczyść filtry
+          </button>
         </div>
 
-        {#if activeFilters.length > 0}
-          <div class="flex flex-wrap gap-2">
+        <div class="min-h-[48px] flex flex-wrap gap-2">
+          {#if activeFilters.length > 0}
             {#each activeFilters as filter, i}
-              <button
-                class="badge badge-lg gap-2 cursor-pointer hover:opacity-80 {filter.isNegated
+              <div
+                class="badge badge-lg gap-2 {filter.isNegated
                   ? 'badge-error'
                   : 'badge-primary'}"
-                on:click={() => removeFilter(i)}
               >
-                <span>
-                  {filter.isNegated ? "Bez: " : ""}
-                  {getFilterLabel(filter)}
-                  {filter.value}
-                </span>
-                <span class="ml-1">✕</span>
-              </button>
+                <span class="opacity-70">{getFilterLabel(filter)}</span>
+                {filter.value}
+                <button
+                  class="btn btn-ghost btn-xs btn-circle"
+                  on:click={() => dispatch("removeFilter", i)}
+                >
+                  <XMarkIcon class="w-4 h-4" />
+                </button>
+              </div>
             {/each}
-          </div>
-        {:else}
-          <p class="text-base-content/50 text-sm">
-            Brak aktywnych filtrów. Użyj pola wyszukiwania powyżej aby dodać
-            filtry.
-          </p>
-        {/if}
+          {:else}
+            <div class="text-base-content/50 text-sm flex items-center">
+              Brak aktywnych filtrów
+            </div>
+          {/if}
+        </div>
       </div>
     </div>
   </div>

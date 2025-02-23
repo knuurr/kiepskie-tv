@@ -4,6 +4,7 @@
   import HighlightText from "./HighlightText.svelte";
   import ClickableFilterValue from "./ClickableFilterValue.svelte";
   import ArrowTopRightOnSquareIcon from "virtual:icons/heroicons/arrow-top-right-on-square";
+  import TitleBackground from "./TitleBackground.svelte";
 
   export let episodes: EpisodeData[];
   export let searchTerms: string[] = [];
@@ -123,8 +124,9 @@
                             class="relative group w-full max-w-2xl grid grid-cols-[1fr,auto,1fr] gap-4 items-center cursor-pointer hover:bg-base-200 rounded-lg p-4 transition-colors"
                             on:click={() => onEpisodeClick(episode)}
                           >
-                            <!-- Left side content -->
+                            <!-- Left side -->
                             {#if getContentSide(Number(season)) === "left"}
+                              <!-- Content -->
                               <div class="text-right space-y-2">
                                 <div
                                   class="flex items-center justify-end gap-2"
@@ -207,7 +209,14 @@
                                 </div>
                               </div>
                             {:else}
-                              <div class="opacity-0">Placeholder</div>
+                              <!-- Title Background -->
+                              <div class="w-full">
+                                <TitleBackground
+                                  title={episode.tytul}
+                                  height="h-32"
+                                  baseSize={0.8}
+                                />
+                              </div>
                             {/if}
 
                             <!-- Timeline dot -->
@@ -219,8 +228,9 @@
                               ></div>
                             </div>
 
-                            <!-- Right side content -->
+                            <!-- Right side -->
                             {#if getContentSide(Number(season)) === "right"}
+                              <!-- Content -->
                               <div class="space-y-2">
                                 <div class="flex items-center gap-2">
                                   <span class="text-xs font-mono opacity-50"
@@ -299,7 +309,14 @@
                                 </div>
                               </div>
                             {:else}
-                              <div class="opacity-0">Placeholder</div>
+                              <!-- Title Background -->
+                              <div class="w-full">
+                                <TitleBackground
+                                  title={episode.tytul}
+                                  height="h-32"
+                                  baseSize={0.8}
+                                />
+                              </div>
                             {/if}
                           </div>
                         </div>
