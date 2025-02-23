@@ -42,6 +42,8 @@
   import DataLabels from "chartjs-plugin-datalabels";
   import Pagination from "../../components/Pagination.svelte";
   import Shimmer from "../../components/ui/Shimmer.svelte";
+  import TimelineView from "../../components/TimelineView.svelte";
+  import ClockIcon from "virtual:icons/heroicons/clock";
 
   // Register ChartJS components
   ChartJS.register(
@@ -343,7 +345,7 @@
   }
 
   // Add new view type
-  type ViewMode = "table" | "card" | "chart";
+  type ViewMode = "table" | "card" | "chart" | "timeline";
 
   // Add chart data computation
   $: chartData = {
@@ -697,6 +699,7 @@
     (currentView === "table" || (!currentView && !$isMobile));
   $: shouldShowChart = activeTab === "plot";
   $: shouldShowCards = activeTab === "table" && currentView === "card";
+  $: shouldShowTimeline = activeTab === "table" && currentView === "timeline";
 </script>
 
 <div class="min-h-screen">
@@ -841,6 +844,16 @@
                   >
                     <Squares2x2Icon class="h-5 w-5" />
                     Siatka
+                  </button>
+                  <button
+                    class="btn btn-ghost btn-sm gap-2 {currentView ===
+                    'timeline'
+                      ? 'btn-active'
+                      : ''}"
+                    on:click={() => handleViewChange("timeline")}
+                  >
+                    <ClockIcon class="h-5 w-5" />
+                    Oś czasu
                   </button>
                 </div>
               </div>
@@ -1086,6 +1099,15 @@
                 </div>
               </div>
             </div>
+          </div>
+        {:else if shouldShowTimeline}
+          <div class="bg-base-100">
+            <TimelineView
+              episodes={filteredEpisodes}
+              {searchTerms}
+              onEpisodeClick={handleEpisodeClick}
+              onFilterClick={handleFilterClick}
+            />
           </div>
         {:else}
           <!-- Card view with pagination -->

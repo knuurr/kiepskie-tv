@@ -1,7 +1,7 @@
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
 
-export type ViewMode = 'table' | 'card' | 'chart';
+export type ViewMode = 'table' | 'card' | 'chart' | 'timeline';
 
 // Get initial value from localStorage if available, otherwise use null (for responsive default)
 const storedValue = browser ? localStorage.getItem('viewPreference') : null;
@@ -20,5 +20,4 @@ if (browser) {
   });
 }
 
-export { viewPreference };
-export type { ViewMode }; 
+export { viewPreference }; 
