@@ -1,3 +1,7 @@
+---
+description: Entire project, always
+globs: 
+---
 Technological stack you use: 
 - SvelteKit for framework
 - DaisyUI and TailwindCSS for UI styling

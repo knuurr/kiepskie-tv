@@ -3,7 +3,6 @@
   import type { FFmpeg } from "@ffmpeg/ffmpeg";
   import type { PreviewFrame, VideoFrame } from "../../types/video";
   import { writable, type Writable } from "svelte/store";
-  import { toasts } from "$lib/stores/toastStore";
   import { videoSettings } from "$lib/stores/videoSettingsStore";
   import AnimatedButton from "./AnimatedButton.svelte";
   import { onMount } from "svelte";
@@ -23,6 +22,7 @@
   import InformationCircleIcon from "virtual:icons/heroicons/information-circle";
   import { ffmpegStore } from "$lib/stores/ffmpegStore";
   import Shimmer from "../ui/Shimmer.svelte";
+  import { Toast } from "$lib/toast";
 
   const PLACEHOLDER_MIN_LOADING_TIME = 300; // milliseconds
 
@@ -164,7 +164,7 @@
       backgrounds = data.backgrounds;
     } catch (error) {
       console.error("Error loading backgrounds:", error);
-      toasts.add("Błąd ładowania konfiguracji teł", "error");
+      Toast.error("Błąd ładowania konfiguracji teł");
     } finally {
       isLoadingBackgrounds = false;
     }
@@ -194,7 +194,7 @@
     if (selectedFileIndex !== undefined) {
       const file = files[selectedFileIndex];
       await regeneratePreview(file);
-      toasts.add("Ustawienia zostały zapisane", "success");
+      Toast.success("Ustawienia zostały zapisane");
     }
   }
 
@@ -228,10 +228,10 @@
 
       // Set new frames
       $previewFrames = newFrames;
-      toasts.add("Podgląd został zaktualizowany", "success");
+      Toast.success("Podgląd został zaktualizowany");
     } catch (error) {
       console.error("Error regenerating preview:", error);
-      toasts.add("Błąd podczas generowania podglądu", "error");
+      Toast.error("Błąd podczas generowania podglądu");
     }
   }
 

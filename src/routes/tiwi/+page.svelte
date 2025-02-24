@@ -18,8 +18,8 @@
 
   import BottomNav from "../../components/BottomNav.svelte";
 
-  import Toast from "../../components/Toast.svelte";
-  import { toasts } from "$lib/stores/toastStore";
+  import { Toast } from "$lib/toast";
+  import { toast } from "@zerodevx/svelte-toast";
 
   import HowItWorks from "../../components/tiwi/HowItWorks.svelte";
   import SelectFiles from "../../components/tiwi/SelectFiles.svelte";
@@ -71,6 +71,7 @@
 
   let ffmpeg: FFmpeg;
   let progress = tweened(0);
+  let ffmpegLoadingToastId: number | null = null;
 
   type PreviewFrame = {
     timestamp: number;
@@ -213,7 +214,9 @@
   import FFmpegStatus from "../../components/tiwi/FFmpegStatus.svelte";
 
   onMount(async () => {
+    // Initialize FFmpeg
     loadFfmpeg();
+
     // Load backgrounds data
     try {
       const response = await fetch(DATA.PATH_BACKGROUNDS_JSON);
@@ -222,13 +225,13 @@
     } catch (err) {
       const error = err as Error;
       console.error("Error loading backgrounds:", error);
-      toasts.add("Błąd ładowania konfiguracji teł: " + error.message, "error");
+      Toast.error("Błąd ładowania konfiguracji teł: " + error.message);
     }
   });
 
   async function convertVideos(files: FileList) {
     debug("Started batch video converting");
-    toasts.add("Rozpoczęto przetwarzanie plików", "info", 3000, true);
+    Toast.info("Rozpoczęto przetwarzanie plików");
     debug(files);
     videoDataList = new Array(files.length); // Pre-allocate array
     state = "convert.start";
@@ -240,22 +243,19 @@
       currentProcessingIndex.set(i);
       const file = files[i];
       debug("About to convert: " + file.name);
-      toasts.add(`Przetwarzanie: ${file.name}`, "info");
+      Toast.info(`Przetwarzanie: ${file.name}`);
       const duration = await getVideoDuration(file);
       debug("Video duration:", duration);
       await convertVideo(file, duration);
-      toasts.add(`Zakończono przetwarzanie: ${file.name}`, "success");
+      Toast.success(`Zakończono przetwarzanie: ${file.name}`);
     }
 
     debug("Converts done. Setting state.");
     transformState = "0/2";
     state = "convert.done";
     currentProcessingIndex.set(null);
-    toasts.add(
+    Toast.success(
       `Zakończono przetwarzanie wszystkich plików (${files.length})`,
-      "success",
-      5000,
-      true,
     );
     debug("Finishing batch video converting");
   }
@@ -279,7 +279,7 @@
         "Selected background not found:",
         fileSettings.selectedBackground,
       );
-      toasts.add("Błąd: Nie znaleziono wybranego tła", "error");
+      Toast.error("Błąd: Nie znaleziono wybranego tła");
       return;
     }
 
@@ -719,6 +719,17 @@
 
   async function loadFfmpeg() {
     try {
+      // Show neutral loading toast
+      ffmpegLoadingToastId = Toast.custom("Ładowanie FFmpeg...", {
+        duration: 0, // Make it persistent
+        dismissable: false,
+        theme: {
+          "--toastBackground": "#94A3B8", // Neutral gray color
+          "--toastColor": "white",
+          "--toastBarBackground": "#64748B",
+        },
+      });
+
       ffmpegStore.setState("loading");
       const baseUrl = "https://unpkg.com/@ffmpeg/core@0.12.4/dist/esm";
       ffmpeg = new FFmpeg();
@@ -744,29 +755,41 @@
 
       state = "loaded";
       ffmpegStore.setState("loaded");
+
+      // Update the loading toast to success
+      if (ffmpegLoadingToastId !== null) {
+        // First remove the loading toast
+        toast.pop(ffmpegLoadingToastId);
+        // Then show a success toast that will auto-dismiss
+        Toast.success("FFmpeg załadowany pomyślnie");
+      }
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
       console.error("[FFmpeg Load Error]", error);
       ffmpegStore.setState("error");
-      toasts.add(
-        "Wystąpił błąd podczas ładowania. Sprawdź połączenie i spróbuj ponownie.",
-        "error",
-        5000,
-        true,
-      );
+
+      // Update the loading toast to error
+      if (ffmpegLoadingToastId !== null) {
+        toast.pop(ffmpegLoadingToastId);
+        Toast.error(
+          "Wystąpił błąd podczas ładowania. Sprawdź połączenie i spróbuj ponownie.",
+        );
+      }
     }
   }
 
   async function resetFfmpeg() {
+    // Clear any existing loading toast
+    if (ffmpegLoadingToastId !== null) {
+      toast.pop(ffmpegLoadingToastId);
+      ffmpegLoadingToastId = null;
+    }
+
     state = "loading";
     processingStarted.set(false); // Reset processing flag
     ffmpeg.terminate();
     loadFfmpeg();
   }
-
-  onMount(() => {
-    loadFfmpeg();
-  });
 
   $: console.log({ state });
 
@@ -784,11 +807,8 @@
       videoSettings.addFile(file.name);
     });
     if (files.length > 0) {
-      toasts.add(
+      Toast.success(
         `Dodano ${files.length} ${files.length === 1 ? "plik" : "plików"} do przetworzenia`,
-        "success",
-        3000,
-        false, // Regular events don't need OS notifications
       );
     }
   }
@@ -799,7 +819,7 @@
     const fileToRemove = filesArr[index];
     if (fileToRemove) {
       removeCachedPreview(fileToRemove);
-      toasts.add(`Usunięto plik: ${fileToRemove.name}`, "info");
+      Toast.info(`Usunięto plik: ${fileToRemove.name}`);
     }
     filesArr.splice(index, 1);
     const _dataTransfer = new DataTransfer();
@@ -955,15 +975,12 @@
     const _dataTransfer = new DataTransfer();
     files = _dataTransfer.files;
     selectedFileIndex = undefined;
-    toasts.add("Wyczyszczono listę plików", "info");
+    Toast.info("Wyczyszczono listę plików");
   }
 
   let showPreviewModal = false;
   let selectedPreviewUrl: string | null = null;
 </script>
-
-<!-- Add Toast component at the top level of your markup -->
-<Toast />
 
 <!-- Preview Modal -->
 {#if showPreviewModal && selectedPreviewUrl}
@@ -1111,7 +1128,7 @@
           const dataTransfer = new DataTransfer();
           files = dataTransfer.files;
           selectedFileIndex = undefined;
-          toasts.add("Wyczyszczono listę plików", "info");
+          Toast.info("Wyczyszczono listę plików");
         }}
         on:filesChange={(e) => {
           files = e.detail.files;

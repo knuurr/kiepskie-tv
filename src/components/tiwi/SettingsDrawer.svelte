@@ -6,7 +6,7 @@
     FEATURES,
     GREENSCREEN_SCALE_PRESETS,
   } from "$lib/constants";
-  import { toasts } from "$lib/stores/toastStore";
+  import { Toast } from "$lib/toast";
   import BackgroundSelector from "./BackgroundSelector.svelte";
   import * as DATA from "../../routes/Constans.svelte";
   import backgroundsData from "$lib/tiwi/backgrounds.json";
@@ -96,7 +96,7 @@
     if (selectedFileIndex !== undefined) {
       const file = files[selectedFileIndex];
       await regeneratePreview(file);
-      toasts.add("Ustawienia zostały zapisane", "success");
+      Toast.success("Ustawienia zostały zapisane");
     }
   }
 
@@ -178,7 +178,7 @@
       backgrounds = data.backgrounds;
     } catch (error) {
       console.error("Error loading backgrounds:", error);
-      toasts.add("Błąd ładowania konfiguracji teł", "error");
+      Toast.error("Błąd ładowania konfiguracji teł");
     } finally {
       isLoadingBackgrounds = false;
     }
