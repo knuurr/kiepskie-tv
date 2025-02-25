@@ -9,12 +9,57 @@
   import ClipboardIcon from "virtual:icons/heroicons/clipboard";
   import ShareIcon from "virtual:icons/heroicons/share";
   import NoSymbolIcon from "virtual:icons/heroicons/no-symbol";
+  import HashtagIcon from "virtual:icons/heroicons/hashtag";
+  import ClockIcon from "virtual:icons/heroicons/clock";
+  import ExclamationTriangleIcon from "virtual:icons/heroicons/exclamation-triangle";
+  import TrashIcon from "virtual:icons/heroicons/trash";
+  import CalendarIcon from "virtual:icons/heroicons/calendar";
+  import { Toast as ToastNotification } from "$lib/toast";
+  import { ToastService } from "$lib/services/toasts";
 
   export let showDrawer = false;
   export let toastHistory: { toast: Toast; episodeTimestamp: number }[] = [];
   export let copyStates: { [key: number]: boolean } = {};
   export let shareStates: { [key: number]: boolean } = {};
   export let canShareOnDevice = false;
+
+  let isClearingHistory = false;
+  const toastService = ToastService.getInstance();
+
+  // Format date with timezone consideration
+  function formatDate(timestamp: number): string {
+    const date = new Date(timestamp);
+    return new Intl.DateTimeFormat("pl-PL", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      timeZoneName: "short",
+    }).format(date);
+  }
+
+  async function handleClearHistory() {
+    if (!isClearingHistory) {
+      isClearingHistory = true;
+      return;
+    }
+
+    try {
+      await toastService.clearHistory();
+      toastHistory = [];
+      copyStates = {};
+      shareStates = {};
+      showDrawer = false; // Close drawer after successful cleanup
+      ToastNotification.success("Historia została wyczyszczona");
+    } catch (error) {
+      console.error("Failed to clear history:", error);
+      ToastNotification.error("Błąd podczas czyszczenia historii");
+    } finally {
+      isClearingHistory = false;
+    }
+  }
 
   // Handle escape key press
   function handleKeydown(event: KeyboardEvent) {
@@ -95,103 +140,135 @@
     <div
       class="p-4 w-80 min-h-full bg-base-200 text-base-content flex flex-col"
     >
-      <!-- Sticky Drawer header -->
-      <div class="sticky top-0 bg-base-200 z-[101] pb-4">
-        <div class="flex justify-between items-center">
-          <div>
-            <h3 class="font-bold text-lg">Historia toastów</h3>
-            <p class="text-xs opacity-50">max. 5 ostatnich losowań</p>
-          </div>
-          <button
-            class="btn btn-square btn-sm"
-            on:click={() => (showDrawer = false)}
-          >
-            <XMarkIcon class="h-6 w-6" />
-          </button>
-        </div>
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold">Historia toastów</h3>
+        <button
+          class="btn btn-ghost btn-sm"
+          on:click={() => (showDrawer = false)}
+          aria-label="Zamknij"
+        >
+          <XMarkIcon class="h-5 w-5" />
+        </button>
       </div>
 
-      <!-- Scrollable content -->
-      <div class="flex-1 overflow-y-auto">
-        {#if toastHistory.length > 0}
-          <div class="flex flex-col gap-4">
-            {#each toastHistory as entry}
-              <div class="card bg-base-100">
-                <div class="card-body p-4">
-                  <div class="flex flex-col gap-2">
-                    <div class="flex justify-between items-start">
-                      <div class="badge badge-neutral">
-                        Odcinek: {entry.toast.episodeNumber ?? "???"}
-                      </div>
-                      <div class="badge badge-neutral">
-                        Czas: {entry.toast.episodeTimestamp ?? "??:??"}
-                      </div>
+      <!-- Clear history button -->
+      <button
+        class="btn btn-error btn-sm mb-4 gap-2 {isClearingHistory
+          ? 'btn-outline'
+          : ''}"
+        on:click={handleClearHistory}
+      >
+        <TrashIcon class="h-4 w-4" />
+        {isClearingHistory ? "Na pewno?" : "Wyczyść historię"}
+      </button>
+
+      {#if toastHistory.length === 0}
+        <div
+          class="flex flex-col items-center justify-center flex-1 opacity-50"
+        >
+          <p>Historia jest pusta</p>
+        </div>
+      {:else}
+        <div class="flex flex-col gap-4">
+          {#each toastHistory as entry}
+            <div class="card bg-base-100 shadow-sm">
+              <div class="card-body p-4">
+                <div class="flex flex-col gap-2">
+                  <div class="flex justify-between items-start">
+                    <div class="badge badge-neutral gap-1">
+                      <HashtagIcon class="h-4 w-4" />
+                      {entry.toast.episodeNumber ?? "???"}
                     </div>
+                    <div class="badge badge-neutral gap-1">
+                      <ClockIcon class="h-4 w-4" />
+                      {entry.toast.episodeTimestamp ?? "??:??"}
+                    </div>
+                  </div>
 
-                    <p class="text-lg">{entry.toast.text}</p>
+                  {#if entry.toast.rollTimestamp}
+                    <div
+                      class="text-xs text-base-content/60 flex items-center gap-1"
+                    >
+                      <CalendarIcon class="h-4 w-4" />
+                      <span
+                        >Wylosowano: {formatDate(
+                          entry.toast.rollTimestamp,
+                        )}</span
+                      >
+                    </div>
+                  {/if}
 
-                    <AudioWavePlayer
-                      audioFile={entry.toast.audioFile}
-                      showText={false}
-                    />
+                  <p class="text-lg">{entry.toast.text}</p>
 
-                    <div class="grid grid-cols-2 gap-2">
+                  <AudioWavePlayer
+                    audioFile={entry.toast.audioFile}
+                    showText={false}
+                  />
+
+                  <div class="grid grid-cols-2 gap-2">
+                    <button
+                      on:click={() => copyHistoryToast(entry.episodeTimestamp)}
+                      class="btn btn-sm {copyStates[entry.episodeTimestamp]
+                        ? 'btn-success'
+                        : 'btn-ghost'}"
+                      aria-label="Kopiuj do schowka"
+                    >
+                      {#if copyStates[entry.episodeTimestamp]}
+                        <CheckIcon class="h-4 w-4" />
+                      {:else}
+                        <ClipboardIcon class="h-4 w-4" />
+                      {/if}
+                    </button>
+
+                    <div
+                      class="tooltip tooltip-bottom"
+                      data-tip={!canShareOnDevice
+                        ? "Udostępnianie nie jest dostępne w tej przeglądarce"
+                        : ""}
+                    >
                       <button
-                        on:click={() =>
-                          copyHistoryToast(entry.episodeTimestamp)}
-                        class="btn btn-sm {copyStates[entry.episodeTimestamp]
+                        on:click={() => shareHistoryToast(entry)}
+                        class="btn btn-sm w-full {shareStates[
+                          entry.episodeTimestamp
+                        ]
                           ? 'btn-success'
                           : 'btn-ghost'}"
-                        aria-label="Kopiuj do schowka"
+                        disabled={!canShareOnDevice}
+                        aria-label="Udostępnij"
                       >
-                        {#if copyStates[entry.episodeTimestamp]}
+                        {#if shareStates[entry.episodeTimestamp]}
                           <CheckIcon class="h-4 w-4" />
                         {:else}
-                          <ClipboardIcon class="h-4 w-4" />
+                          <ShareIcon class="h-4 w-4" />
                         {/if}
                       </button>
-
-                      <div
-                        class="tooltip tooltip-bottom"
-                        data-tip={!canShareOnDevice
-                          ? "Udostępnianie nie jest dostępne w tej przeglądarce"
-                          : ""}
-                      >
-                        <button
-                          on:click={() => shareHistoryToast(entry)}
-                          class="btn btn-sm w-full {shareStates[
-                            entry.episodeTimestamp
-                          ]
-                            ? 'btn-success'
-                            : 'btn-ghost'}"
-                          disabled={!canShareOnDevice}
-                          aria-label="Udostępnij"
-                        >
-                          {#if shareStates[entry.episodeTimestamp]}
-                            <CheckIcon class="h-4 w-4" />
-                          {:else}
-                            <ShareIcon class="h-4 w-4" />
-                          {/if}
-                        </button>
-                      </div>
                     </div>
-
-                    <MissingMetadataInfo toast={entry.toast} compact={true} />
                   </div>
+
+                  {#if !entry.toast.audioFile || !entry.toast.episodeNumber || !entry.toast.episodeTimestamp}
+                    <div
+                      class="text-xs text-base-content/60 flex gap-1 items-center"
+                    >
+                      <ExclamationTriangleIcon class="h-4 w-4 text-warning" />
+                      <span
+                        >Brakujące dane: {[
+                          !entry.toast.audioFile && "dźwięk",
+                          (!entry.toast.episodeNumber ||
+                            entry.toast.episodeNumber === null) &&
+                            "numer odcinka",
+                          !entry.toast.episodeTimestamp && "timestamp",
+                        ]
+                          .filter(Boolean)
+                          .join(", ")}</span
+                      >
+                    </div>
+                  {/if}
                 </div>
               </div>
-            {/each}
-          </div>
-        {:else}
-          <div class="text-center py-8">
-            <NoSymbolIcon class="h-12 w-12 mx-auto mb-3 opacity-50" />
-            <h3 class="font-medium mb-2">Brak historii</h3>
-            <p class="text-sm opacity-50">
-              Kliknij "No to jedziem! 🍻" aby wylosować pierwszy toast
-            </p>
-          </div>
-        {/if}
-      </div>
+            </div>
+          {/each}
+        </div>
+      {/if}
     </div>
   </div>
 </div>

@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { PageData } from "./$types";
-  import type { EpisodeData } from "$lib/types";
+  import type { EpisodeData } from "$lib/types/Episode";
   import NavBar from "../../components/NavBar.svelte";
   import Footer from "../../components/Footer.svelte";
   import { onMount } from "svelte";
@@ -8,6 +8,20 @@
   import AnimatedButton from "../../components/tiwi/AnimatedButton.svelte";
   import EpisodeHistoryDrawer from "../../components/EpisodeHistoryDrawer.svelte";
   import TitleBackground from "../../components/TitleBackground.svelte";
+  import { Toast } from "$lib/toast";
+  import { EpisodeService } from "$lib/services/episodes";
+  import { DatabaseService } from "$lib/services/db";
+
+  // Format date helper
+  function formatDate(timestamp: number): string {
+    return new Date(timestamp).toLocaleString("pl-PL", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
 
   // icons
   import HashtagIcon from "virtual:icons/heroicons/hashtag";
@@ -42,12 +56,16 @@
   let showDetails = false;
   let showDrawer = false;
 
-  const MAX_HISTORY = 6; // Configure maximum history size
+  const MAX_HISTORY = 6;
   let generationHistory: EpisodeData[] = [];
-  let currentHistoryIndex = -1; // -1 means no generation yet
+  let currentHistoryIndex = -1;
 
   let isDescriptionExpanded = false;
-  const DESCRIPTION_THRESHOLD = 100; // Characters before truncation on mobile
+  const DESCRIPTION_THRESHOLD = 100;
+
+  // Initialize services
+  const episodeService = EpisodeService.getInstance();
+  const dbService = DatabaseService.getInstance();
 
   const FIELDS = [
     {
@@ -107,30 +125,127 @@
     };
   }
 
+  // Load history from IndexedDB
+  async function loadHistory() {
+    try {
+      const history = await episodeService.getHistory("/generator");
+      console.debug("Main: Loading history:", {
+        count: history.length,
+        episodes: history.map((ep) => ({ uuid: ep.uuid, nr: ep.nr })),
+      });
+
+      if (history.length > 0) {
+        generationHistory = history;
+        currentHistoryIndex = history.length - 1;
+        Toast.success("Wczytano historię odcinków");
+      }
+    } catch (error) {
+      console.error("Failed to load history:", error);
+      Toast.error("Błąd podczas wczytywania historii");
+    }
+  }
+
+  // Migrate existing history to IndexedDB
+  async function migrateHistory() {
+    if (generationHistory.length === 0) return;
+
+    try {
+      // Get existing history to check for duplicates
+      const existingHistory = await episodeService.getHistory("/generator");
+      console.debug("Migration: Existing history:", {
+        count: existingHistory.length,
+        episodes: existingHistory.map((ep) => ({
+          uuid: ep.uuid || "unknown",
+          nr: ep.nr,
+          timestamp: ep.rollTimestamp,
+        })),
+      });
+
+      // Only migrate episodes that don't exist in IndexedDB
+      for (const episode of generationHistory) {
+        const episodeWithUUID = {
+          ...episode,
+          uuid: episode.uuid || crypto.randomUUID(), // Use crypto.randomUUID() directly
+        };
+
+        const isDuplicate = existingHistory.some(
+          (existingEp) =>
+            existingEp.uuid === episodeWithUUID.uuid ||
+            (existingEp.nr === episodeWithUUID.nr &&
+              existingEp.rollTimestamp === episodeWithUUID.rollTimestamp),
+        );
+
+        if (!isDuplicate) {
+          console.debug("Migration: Adding episode:", {
+            uuid: episodeWithUUID.uuid,
+            nr: episodeWithUUID.nr,
+            timestamp: episodeWithUUID.rollTimestamp,
+          });
+          await episodeService.addToHistory(episodeWithUUID, "/generator");
+        } else {
+          console.debug("Migration: Skipping duplicate episode:", {
+            uuid: episodeWithUUID.uuid,
+            nr: episodeWithUUID.nr,
+            timestamp: episodeWithUUID.rollTimestamp,
+          });
+        }
+      }
+      console.debug("Successfully migrated history to IndexedDB");
+    } catch (error) {
+      console.error("Failed to migrate history:", error);
+      Toast.error("Błąd podczas migracji historii");
+    }
+  }
+
+  // Modified randomizeEpisode to use service
   function randomizeEpisode() {
     isLoading = true;
     showDetails = false;
     selectedEpisode = null;
 
-    setTimeout(() => {
-      const episodes = data.tableData.data;
-      const randomIndex = Math.floor(Math.random() * episodes.length);
-      const newEpisode = episodes[randomIndex];
+    setTimeout(async () => {
+      try {
+        // Add UUIDs to table data if missing
+        const episodesWithUUID = data.tableData.data.map((ep) => ({
+          ...ep,
+          uuid: crypto.randomUUID(),
+        }));
 
-      // Update history
-      if (generationHistory.length >= MAX_HISTORY) {
-        generationHistory = [...generationHistory.slice(1), newEpisode];
-      } else {
-        generationHistory = [...generationHistory, newEpisode];
+        const newEpisode = episodeService.getRandomEpisode(
+          episodesWithUUID,
+          selectedEpisode || undefined,
+        );
+
+        // Add timestamp to the episode
+        const episodeWithTimestamp = {
+          ...newEpisode,
+          rollTimestamp: Date.now(),
+        };
+
+        // Update local state
+        if (generationHistory.length >= MAX_HISTORY) {
+          generationHistory = [
+            ...generationHistory.slice(1),
+            episodeWithTimestamp,
+          ];
+        } else {
+          generationHistory = [...generationHistory, episodeWithTimestamp];
+        }
+        currentHistoryIndex = generationHistory.length - 1;
+        selectedEpisode = episodeWithTimestamp;
+
+        // Add to IndexedDB
+        await episodeService.addToHistory(episodeWithTimestamp, "/generator");
+
+        isLoading = false;
+        setTimeout(() => {
+          showDetails = true;
+        }, ANIMATION_TIMING.DELAY.BEFORE_DETAILS);
+      } catch (error) {
+        console.error("Failed to randomize episode:", error);
+        Toast.error("Błąd podczas losowania odcinka");
+        isLoading = false;
       }
-      currentHistoryIndex = generationHistory.length - 1;
-      selectedEpisode = newEpisode;
-
-      isLoading = false;
-
-      setTimeout(() => {
-        showDetails = true;
-      }, ANIMATION_TIMING.DELAY.BEFORE_DETAILS);
     }, ANIMATION_TIMING.DELAY.LOADING);
   }
 
@@ -197,18 +312,70 @@
     isDescriptionExpanded = !isDescriptionExpanded;
   }
 
+  async function handleClearHistory() {
+    try {
+      await episodeService.clearHistory("/generator");
+      generationHistory = [];
+      currentHistoryIndex = -1;
+      selectedEpisode = null;
+      showDetails = false;
+      Toast.success("Historia została wyczyszczona");
+    } catch (error) {
+      console.error("Failed to clear history:", error);
+      Toast.error("Błąd podczas czyszczenia historii");
+    }
+  }
+
+  // Initialize database and load history
   onMount(() => {
-    document.addEventListener("keydown", handleKeydown);
-    return () => {
-      document.removeEventListener("keydown", handleKeydown);
+    let cleanup: (() => void) | undefined;
+
+    const init = async () => {
+      try {
+        // Initialize database first
+        await dbService.init();
+
+        // Load history once
+        const history = await episodeService.getHistory("/generator");
+        console.debug("Main: Initial history load:", {
+          count: history.length,
+          episodes: history.map((ep) => ({ uuid: ep.uuid, nr: ep.nr })),
+        });
+
+        // Update local state
+        generationHistory = history;
+
+        // If there's history, set the current episode
+        if (history.length > 0) {
+          selectedEpisode = history[history.length - 1];
+          currentHistoryIndex = history.length - 1;
+          showDetails = true; // Show details immediately
+          console.debug("Main: Set initial episode:", {
+            uuid: selectedEpisode.uuid,
+            nr: selectedEpisode.nr,
+          });
+        }
+
+        // Setup keyboard shortcuts
+        document.addEventListener("keydown", handleKeydown);
+        cleanup = () => document.removeEventListener("keydown", handleKeydown);
+      } catch (error) {
+        console.error("Failed to initialize:", error);
+        Toast.error("Błąd podczas inicjalizacji");
+      } finally {
+        isLoading = false;
+      }
     };
+
+    init();
+    return () => cleanup?.();
   });
 </script>
 
 <div class="min-h-screen">
   <NavBar />
 
-  <main class="container mx-auto px-4 py-8 max-w-5xl">
+  <main class="container mx-auto md:px-4 py-8 max-w-5xl">
     <div class="prose max-w-none mb-8 text-center">
       <h1 class="text-2xl md:text-4xl font-bold font-kiepscy">
         Generator losowego odcinka
@@ -227,9 +394,21 @@
         <div class="card bg-base-100 shadow-xl">
           <div class="card-body">
             <!-- Mobile history button -->
-            <div class="flex justify-between items-center mb-4">
-              <div class="badge badge-outline badge-lg">
-                Losowań: {generationHistory.length}
+            <div class="flex justify-between items-start mb-4">
+              <div class="flex flex-col gap-1">
+                <div class="badge badge-outline badge-lg">
+                  Losowań: {generationHistory.length}
+                </div>
+                <div
+                  class="text-xs text-base-content/60 flex items-center gap-1"
+                >
+                  <CalendarIcon class="h-4 w-4" />
+                  <span>
+                    Wylosowano: {selectedEpisode?.rollTimestamp
+                      ? formatDate(selectedEpisode.rollTimestamp)
+                      : "nigdy"}
+                  </span>
+                </div>
               </div>
               <button
                 class="btn btn-ghost btn-sm gap-2"
@@ -249,61 +428,247 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
               <!-- Left side - Episode details (2/3 on desktop) -->
               <div class="lg:col-span-2 min-w-[300px] space-y-4">
-                <div class="grid grid-cols-[auto,1fr] gap-x-4 gap-y-2">
-                  {#each FIELDS as field}
-                    <span class="font-semibold flex items-center gap-2">
-                      <svelte:component this={field.icon} class="h-4 w-4" />
-                      {field.label}:
-                    </span>
-                    {#if isLoading}
+                <!-- Title visualization on mobile -->
+                <div class="block lg:hidden">
+                  <div class="relative w-full" style="padding-top: 40%;">
+                    {#if selectedEpisode && showDetails}
+                      <div class="absolute inset-0">
+                        <TitleBackground
+                          title={selectedEpisode.tytul}
+                          height="h-12"
+                          baseSize={1}
+                        />
+                      </div>
+                    {:else if isLoading}
                       <div
-                        class="h-6 bg-base-300 animate-pulse rounded w-32 ml-auto"
+                        class="absolute inset-0 bg-base-300 animate-pulse rounded"
                       />
-                    {:else if selectedEpisode && showDetails}
-                      <span
-                        class="typewriter-line text-right"
-                        in:typewriter={{
-                          duration: ANIMATION_TIMING.TYPEWRITER.METADATA,
-                        }}
-                      >
-                        {selectedEpisode[field.key]}
-                      </span>
                     {:else}
-                      <span class="text-base-content/30 text-right">—</span>
+                      <div
+                        class="absolute inset-0 bg-base-200 rounded flex items-center justify-center text-base-content/30"
+                      >
+                        Tytuł pojawi się po wylosowaniu
+                      </div>
                     {/if}
-                  {/each}
-
-                  <!-- Links section after Scenariusz -->
-                  <span class="font-semibold flex items-center gap-2">
-                    <LinkIcon class="w-4 h-4" />
-                    Linki:
-                  </span>
-                  <div class="flex gap-2 justify-end">
-                    <a
-                      href={selectedEpisode?.link_wiki}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="gap-2 flex items-center underline"
-                      class:btn-disabled={!selectedEpisode || !showDetails}
-                    >
-                      <ArrowTopRightOnSquareIcon class="w-4 h-4" />
-                      Kiepscy Wiki
-                    </a>
-                    <a
-                      href={selectedEpisode
-                        ? `/tabela?episode=${selectedEpisode.nr}`
-                        : "#"}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="gap-2 flex items-center underline"
-                      class:btn-disabled={!selectedEpisode || !showDetails}
-                    >
-                      <ChartBarIcon class="w-4 h-4" />
-                      Zobacz w tabeli
-                    </a>
                   </div>
                 </div>
 
+                <div
+                  class="grid grid-cols-[auto,1fr] gap-x-4 gap-y-2 divide-y divide-base-200"
+                >
+                  {#each FIELDS.slice(0, 4) as field, i}
+                    <div
+                      class="col-span-2 {i === 0
+                        ? ''
+                        : 'pt-2'} flex justify-between items-center"
+                    >
+                      <span class="font-semibold flex items-center gap-2">
+                        <svelte:component this={field.icon} class="h-4 w-4" />
+                        {field.label}:
+                      </span>
+                      {#if isLoading}
+                        <div
+                          class="h-6 bg-base-300 animate-pulse rounded w-32 ml-auto"
+                        />
+                      {:else if selectedEpisode && showDetails}
+                        <span
+                          class="typewriter-line text-right"
+                          in:typewriter={{
+                            duration: ANIMATION_TIMING.TYPEWRITER.METADATA,
+                          }}
+                        >
+                          {selectedEpisode[field.key]}
+                        </span>
+                      {:else}
+                        <span class="text-base-content/30 text-right">—</span>
+                      {/if}
+                    </div>
+                  {/each}
+
+                  <!-- Mobile collapse for additional details -->
+                  <div class="col-span-2 lg:hidden">
+                    <div class="collapse bg-base-200/50 mt-2">
+                      <input type="checkbox" />
+                      <div
+                        class="collapse-title flex items-center gap-2 text-sm font-medium"
+                      >
+                        <ChevronDownIcon class="w-4 h-4" />
+                        Więcej szczegółów
+                      </div>
+                      <div class="collapse-content">
+                        <div
+                          class="grid grid-cols-[auto,1fr] gap-x-4 gap-y-2 divide-y divide-base-200/50 pt-2"
+                        >
+                          {#each FIELDS.slice(4) as field, i}
+                            <div
+                              class="col-span-2 {i === 0
+                                ? ''
+                                : 'pt-2'} flex justify-between items-center"
+                            >
+                              <span
+                                class="font-semibold flex items-center gap-2"
+                              >
+                                <svelte:component
+                                  this={field.icon}
+                                  class="h-4 w-4"
+                                />
+                                {field.label}:
+                              </span>
+                              {#if isLoading}
+                                <div
+                                  class="h-6 bg-base-300 animate-pulse rounded w-32 ml-auto"
+                                />
+                              {:else if selectedEpisode && showDetails}
+                                <span
+                                  class="typewriter-line text-right"
+                                  in:typewriter={{
+                                    duration:
+                                      ANIMATION_TIMING.TYPEWRITER.METADATA,
+                                  }}
+                                >
+                                  {selectedEpisode[field.key]}
+                                </span>
+                              {:else}
+                                <span class="text-base-content/30 text-right"
+                                  >—</span
+                                >
+                              {/if}
+                            </div>
+                          {/each}
+
+                          <!-- Links section -->
+                          <div
+                            class="col-span-2 pt-2 flex justify-between items-center"
+                          >
+                            <span class="font-semibold flex items-center gap-2">
+                              <LinkIcon class="w-4 h-4" />
+                              Linki:
+                            </span>
+                            <div class="flex gap-2 justify-end text-right">
+                              <a
+                                href={selectedEpisode?.link_wiki}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="gap-2 flex items-center underline"
+                                class:btn-disabled={!selectedEpisode ||
+                                  !showDetails}
+                              >
+                                <ArrowTopRightOnSquareIcon class="w-4 h-4" />
+                                Kiepscy Wiki
+                              </a>
+                              <a
+                                href={selectedEpisode
+                                  ? `/tabela?episode=${selectedEpisode.nr}`
+                                  : "#"}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="gap-2 flex items-center underline"
+                                class:btn-disabled={!selectedEpisode ||
+                                  !showDetails}
+                              >
+                                <ChartBarIcon class="w-4 h-4" />
+                                Zobacz w tabeli
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Desktop only - additional fields -->
+                  <div class="hidden lg:contents">
+                    {#each FIELDS.slice(4) as field, i}
+                      <div
+                        class="col-span-2 pt-2 flex justify-between items-center"
+                      >
+                        <span class="font-semibold flex items-center gap-2">
+                          <svelte:component this={field.icon} class="h-4 w-4" />
+                          {field.label}:
+                        </span>
+                        {#if isLoading}
+                          <div
+                            class="h-6 bg-base-300 animate-pulse rounded w-32 ml-auto"
+                          />
+                        {:else if selectedEpisode && showDetails}
+                          <span
+                            class="typewriter-line text-right"
+                            in:typewriter={{
+                              duration: ANIMATION_TIMING.TYPEWRITER.METADATA,
+                            }}
+                          >
+                            {selectedEpisode[field.key]}
+                          </span>
+                        {:else}
+                          <span class="text-base-content/30 text-right">—</span>
+                        {/if}
+                      </div>
+                    {/each}
+
+                    <!-- Desktop only - Links section -->
+                    <div
+                      class="col-span-2 pt-2 flex justify-between items-center"
+                    >
+                      <span class="font-semibold flex items-center gap-2">
+                        <LinkIcon class="w-4 h-4" />
+                        Linki:
+                      </span>
+                      <div class="flex gap-2 justify-end">
+                        <a
+                          href={selectedEpisode?.link_wiki}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="gap-2 flex items-center underline"
+                          class:btn-disabled={!selectedEpisode || !showDetails}
+                        >
+                          <ArrowTopRightOnSquareIcon class="w-4 h-4" />
+                          Kiepscy Wiki
+                        </a>
+                        <a
+                          href={selectedEpisode
+                            ? `/tabela?episode=${selectedEpisode.nr}`
+                            : "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="gap-2 flex items-center underline"
+                          class:btn-disabled={!selectedEpisode || !showDetails}
+                        >
+                          <ChartBarIcon class="w-4 h-4" />
+                          Zobacz w tabeli
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right side - Title visualization (1/3 on desktop) -->
+              <div class="hidden lg:block lg:col-span-1">
+                <div class="relative w-full" style="padding-top: 56.25%;">
+                  {#if selectedEpisode && showDetails}
+                    <div class="absolute inset-0">
+                      <TitleBackground
+                        title={selectedEpisode.tytul}
+                        height="h-full"
+                        baseSize={0.7}
+                      />
+                    </div>
+                  {:else if isLoading}
+                    <div
+                      class="absolute inset-0 bg-base-300 animate-pulse rounded"
+                    />
+                  {:else}
+                    <div
+                      class="absolute inset-0 bg-base-200 rounded flex items-center justify-center text-base-content/30"
+                    >
+                      Tytuł pojawi się po wylosowaniu
+                    </div>
+                  {/if}
+                </div>
+              </div>
+
+              <!-- Description section (full width on desktop) -->
+              <div class="lg:col-span-3">
                 <div class="pt-2">
                   <span class="font-semibold block mb-2">Opis odcinka:</span>
                   {#if isLoading}
@@ -362,37 +727,10 @@
                   {/if}
                 </div>
               </div>
-
-              <!-- Right side - Title visualization (1/3 on desktop) -->
-              <div class="hidden lg:block lg:col-span-1">
-                <div class="relative w-full" style="padding-top: 56.25%;">
-                  {#if selectedEpisode && showDetails}
-                    <div class="absolute inset-0">
-                      <TitleBackground
-                        title={selectedEpisode.tytul}
-                        height="h-full"
-                        baseSize={0.7}
-                      />
-                    </div>
-                  {:else if isLoading}
-                    <div
-                      class="absolute inset-0 bg-base-300 animate-pulse rounded"
-                    />
-                  {:else}
-                    <div
-                      class="absolute inset-0 bg-base-200 rounded flex items-center justify-center text-base-content/30"
-                    >
-                      Tytuł pojawi się po wylosowaniu
-                    </div>
-                  {/if}
-                </div>
-              </div>
             </div>
 
             <!-- Draw button -->
-            <div
-              class="card-actions flex justify-center items-center w-full mb-8"
-            >
+            <div class="card-actions flex justify-center items-center w-full">
               <div class="flex gap-2 items-center w-full">
                 <AnimatedButton
                   on:click={randomizeEpisode}
@@ -425,6 +763,7 @@
     {MAX_HISTORY}
     onEpisodeSelect={handleEpisodeSelect}
     onRandomize={randomizeEpisode}
+    onClearHistory={handleClearHistory}
   />
 
   <FeedbackSection />

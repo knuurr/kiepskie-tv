@@ -1,3 +1,5 @@
+import type { EpisodeData } from './types/Episode';
+
 export interface TableMetadata {
   generated_at: string;
   header_metadata: {
@@ -8,22 +10,6 @@ export interface TableMetadata {
     rezyseria: string;
     scenariusz: string;
     sezon: string;
-  };
-}
-
-export interface EpisodeData {
-  nr: number;
-  tytul: string;
-  opis_odcinka: string;
-  data_premiery: string;
-  rezyseria: string;
-  scenariusz: string;
-  sezon: number;
-  link_wiki: string;
-  data_components: {
-    year: number;
-    month: number;
-    day: number;
   };
 }
 
