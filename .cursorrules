@@ -5,6 +5,58 @@ Technological stack you use:
 - @ffmpeg/ffmpeg and @ffmpeg/util for local video processing
 - Chart.js (via svelte-chartjs) for data visualization
 - @zerodevx/svelte-toast for toast notifications with custom wrapper
+- Dexie.js for IndexedDB management (browser-based persistent storage)
+- UUID for unique identifier generation
+
+Episode Management System:
+Types (src/lib/types/Episode.ts):
+- EpisodeData: Base episode interface with uuid, metadata, and timestamps
+- EpisodeWithMetadata: Extends EpisodeData with UI states
+- EpisodeHistoryEntry: History entry with episode data and route info
+
+IndexedDB Storage Manager (src/lib/services/db.ts):
+- DatabaseService: Manages browser's IndexedDB for persistent data storage
+  Purpose: Handles all direct database operations, ensuring data persistence between sessions
+  Tables:
+    - history: Stores episode and toast history with timestamps
+    - stats: Stores route-specific statistics (e.g., roll counts)
+  Key Operations:
+    - addToHistory(route, data): Store new history entry with auto-cleanup of old entries
+    - getHistory(route): Retrieve route-specific history entries
+    - clearHistory(route): Remove all history for specific route
+    - getRollCount(route): Get total number of rolls for route
+    - incrementRollCount(route): Increase roll counter by 1
+    - clearStats(route): Reset statistics for route
+  Features:
+    - Automatic cleanup of old entries (keeps last 6)
+    - Error handling for offline/storage quota
+    - Debug logging for all operations
+
+Episode Business Logic Manager (src/lib/services/episodes.ts):
+- EpisodeService: Handles episode-specific operations and business logic
+  Purpose: Manages episode operations, ensuring data integrity and proper state management
+  Key Features:
+    - UUID management for episode tracking
+    - Duplicate prevention in history
+    - Episode filtering and search
+    - Roll count tracking
+  Core Operations:
+    - getRandomEpisode(episodes, exclude): Select random episode with unique UUID
+    - getHistory(route): Get and validate episode history
+    - addToHistory(episode, route): Add episode with duplicate checking
+    - clearHistory(route): Remove episode history
+    - filterEpisodes(episodes, terms): Search episodes by criteria
+    - getRollCount/incrementRollCount: Track episode roll statistics
+  Integration:
+    - Works with DatabaseService for persistence
+    - Handles data validation and transformation
+    - Manages episode state in memory
+
+Components:
+- EpisodeHistoryDrawer (src/components/EpisodeHistoryDrawer.svelte):
+  Manages episode history display and navigation
+- HistoryDrawer (src/components/HistoryDrawer.svelte):
+  Generic history drawer with copy/share functionality
 
 For any UI elements try to use DaisyUI elements and TailwindCSS for positioning.
 For any icons, use Heroicons through unplugin-icons virtual imports.
@@ -18,6 +70,9 @@ For toast notifications, use the custom Toast object from $lib/toast which provi
 Key files:
 - src/lib/toast.ts - Main toast implementation
 - src/routes/+layout.svelte - Global toast container setup
+- src/lib/types/Episode.ts - Episode type definitions
+- src/lib/services/db.ts - IndexedDB storage manager
+- src/lib/services/episodes.ts - Episode business logic manager
 
 Usage examples:
 ```ts

@@ -717,7 +717,7 @@
     </button>
   {/if}
 
-  <main class="container mx-auto px-0 sm:px-4 py-8">
+  <main class="container mx-auto px-4 py-8">
     <div class="space-y-6">
       <div class="prose max-w-none mb-8">
         <h1 class="text-2xl font-bold font-kiepscy">
@@ -790,73 +790,78 @@
             <!-- Table-specific controls -->
             {#if activeTab === "table"}
               <div
-                class="flex flex-col items-center sm:flex-row sm:justify-between sm:items-center p-4 gap-4"
+                class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 gap-4"
               >
-                <div
-                  class="flex flex-col items-center sm:items-start gap-4 w-full"
-                >
-                  <div class="flex flex-col items-center sm:flex-row gap-4">
-                    <div class="flex flex-col sm:flex-row items-center gap-2">
-                      <span class="text-sm opacity-70">Widok:</span>
-                      <div class="join shadow-lg">
-                        <button
-                          class="join-item btn btn-sm gap-2 {currentView ===
-                            'card' || !currentView
-                            ? 'btn-primary'
-                            : 'btn-ghost hover:btn-primary/20'}"
-                          on:click={() => handleViewChange("card")}
-                        >
-                          <Squares2x2Icon class="h-5 w-5" />
-                          Siatka
-                        </button>
-                        <button
-                          class="join-item btn btn-sm gap-2 {currentView ===
-                          'table'
-                            ? 'btn-primary'
-                            : 'btn-ghost hover:btn-primary/20'}"
-                          on:click={() => handleViewChange("table")}
-                        >
-                          <TableCellsIcon class="h-5 w-5" />
-                          Tabela
-                        </button>
-                        <button
-                          class="join-item btn btn-sm gap-2 {currentView ===
-                          'timeline'
-                            ? 'btn-primary'
-                            : 'btn-ghost hover:btn-primary/20'}"
-                          on:click={() => handleViewChange("timeline")}
-                        >
-                          <ClockIcon class="h-5 w-5" />
-                          Oś czasu
-                        </button>
-                      </div>
+                <div class="flex flex-col sm:flex-row gap-4 w-full">
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm opacity-70">Widok:</span>
+                    <div class="join shadow-lg">
+                      <button
+                        class="join-item btn btn-sm gap-2 {currentView ===
+                          'card' || !currentView
+                          ? 'btn-primary'
+                          : 'btn-ghost hover:btn-primary/20'}"
+                        on:click={() => handleViewChange("card")}
+                      >
+                        <Squares2x2Icon class="h-5 w-5" />
+                        Siatka
+                      </button>
+                      <button
+                        class="join-item btn btn-sm gap-2 {currentView ===
+                        'table'
+                          ? 'btn-primary'
+                          : 'btn-ghost hover:btn-primary/20'}"
+                        on:click={() => handleViewChange("table")}
+                      >
+                        <TableCellsIcon class="h-5 w-5" />
+                        Tabela
+                      </button>
+                      <button
+                        class="join-item btn btn-sm gap-2 {currentView ===
+                        'timeline'
+                          ? 'btn-primary'
+                          : 'btn-ghost hover:btn-primary/20'}"
+                        on:click={() => handleViewChange("timeline")}
+                      >
+                        <ClockIcon class="h-5 w-5" />
+                        Oś czasu
+                      </button>
                     </div>
+                    <button
+                      class="btn btn-ghost btn-sm text-base-content/70 hover:text-primary"
+                      on:click={() => (isViewsModalOpen = true)}
+                    >
+                      <InformationCircleIcon class="h-5 w-5" />
+                      <span class="hidden sm:inline"
+                        >Dowiedz się więcej o widokach</span
+                      >
+                    </button>
+                  </div>
 
-                    <!-- Move chunk size selector to the right -->
-                    <div class="flex items-center gap-2">
-                      <span class="text-sm opacity-70">Wyświetl po:</span>
-                      {#if currentView === "card"}
-                        <select
-                          class="select select-bordered select-sm"
-                          value={selectedGridChunkSize}
-                          on:change={handleGridChunkSizeChange}
-                        >
-                          {#each GRID_CHUNK_SIZE_OPTIONS as option}
-                            <option value={option.value}>{option.label}</option>
-                          {/each}
-                        </select>
-                      {:else}
-                        <select
-                          class="select select-bordered select-sm"
-                          value={selectedTableChunkSize}
-                          on:change={handleTableChunkSizeChange}
-                        >
-                          {#each CHUNK_SIZE_OPTIONS as option}
-                            <option value={option.value}>{option.label}</option>
-                          {/each}
-                        </select>
-                      {/if}
-                    </div>
+                  <!-- Move chunk size selector to the right -->
+                  <div class="flex items-center gap-2 ml-auto">
+                    <span class="text-sm opacity-70">Wyświetl po:</span>
+                    {#if currentView === "card"}
+                      <select
+                        class="select select-bordered select-sm"
+                        value={selectedGridChunkSize}
+                        on:change={handleGridChunkSizeChange}
+                      >
+                        {#each GRID_CHUNK_SIZE_OPTIONS as option}
+                          <option value={option.value}>{option.label}</option>
+                        {/each}
+                      </select>
+                    {:else}
+                      <select
+                        class="select select-bordered select-sm"
+                        value={selectedTableChunkSize}
+                        on:change={handleTableChunkSizeChange}
+                      >
+                        {#each CHUNK_SIZE_OPTIONS as option}
+                          <option value={option.value}>{option.label}</option>
+                        {/each}
+                      </select>
+                    {/if}
                   </div>
                 </div>
               </div>
@@ -1025,7 +1030,7 @@
           <!-- Bottom pagination -->
           {#if totalPages > 1}
             <div
-              class="flex flex-col sm:flex-row justify-center items-center gap-2 py-4 bg-base-200 bg-opacity-50 border-t border-base-300"
+              class="flex justify-center items-center gap-2 py-4 bg-base-200 bg-opacity-50 border-t border-base-300"
             >
               <Pagination
                 {currentPage}
@@ -1116,7 +1121,7 @@
           <!-- Card view with pagination -->
           {#if totalPages > 1}
             <div
-              class="flex flex-col sm:flex-row justify-center items-center gap-2 py-4 bg-base-200 bg-opacity-50 border-b border-base-300"
+              class="flex justify-center items-center gap-2 py-4 bg-base-200 bg-opacity-50 border-b border-base-300"
             >
               <Pagination
                 {currentPage}
@@ -1145,7 +1150,7 @@
           <!-- Bottom pagination for cards -->
           {#if totalPages > 1}
             <div
-              class="flex flex-col sm:flex-row justify-center items-center gap-2 py-4 bg-base-200 bg-opacity-50 border-t border-base-300"
+              class="flex justify-center items-center gap-2 py-4 bg-base-200 bg-opacity-50 border-t border-base-300"
             >
               <Pagination
                 {currentPage}
