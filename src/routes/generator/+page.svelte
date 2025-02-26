@@ -644,7 +644,7 @@
                         <TitleBackground
                           title={selectedEpisode.tytul}
                           height="h-20"
-                          baseSize={0.5}
+                          baseSize={0.9}
                         />
                       </div>
                     {:else if isLoading}
@@ -858,7 +858,6 @@
                       <TitleBackground
                         title={selectedEpisode.tytul}
                         height="h-full"
-                        baseSize={0.7}
                       />
                     </div>
                   {:else if isLoading}
@@ -997,7 +996,7 @@
         {/if}
 
         <!-- Mobile roll button -->
-        <div class="flex-[2]">
+        <div class="flex w-full">
           <AnimatedButton
             on:click={randomizeEpisode}
             disabled={isLoading}
