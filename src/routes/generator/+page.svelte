@@ -11,6 +11,8 @@
   import { Toast } from "$lib/toast";
   import { EpisodeService } from "$lib/services/episodes";
   import { DatabaseService } from "$lib/services/db";
+  import { slide } from "svelte/transition";
+  import { quintOut } from "svelte/easing";
 
   // Format date helper
   function formatDate(timestamp: number): string {
@@ -36,6 +38,8 @@
   import ChartBarIcon from "virtual:icons/heroicons/chart-bar";
   import ChevronDownIcon from "virtual:icons/heroicons/chevron-down";
   import ChevronUpIcon from "virtual:icons/heroicons/chevron-up";
+  import ChevronLeftIcon from "virtual:icons/heroicons/chevron-left";
+  import ChevronRightIcon from "virtual:icons/heroicons/chevron-right";
 
   export let data: PageData;
 
@@ -48,6 +52,9 @@
     DELAY: {
       BEFORE_DETAILS: 150,
       LOADING: 800,
+    },
+    SWIPE: {
+      DURATION: 300,
     },
   } as const;
 
@@ -204,7 +211,7 @@
   //   }
   // }
 
-  // Modified randomizeEpisode to track roll count
+  // Modified randomizeEpisode to track roll count and handle view updates
   function randomizeEpisode() {
     isLoading = true;
     showDetails = false;
@@ -232,13 +239,15 @@
         // Update local state
         if (generationHistory.length >= MAX_HISTORY) {
           generationHistory = [
-            ...generationHistory.slice(1),
             episodeWithTimestamp,
+            ...generationHistory.slice(0, -1),
           ];
         } else {
-          generationHistory = [...generationHistory, episodeWithTimestamp];
+          generationHistory = [episodeWithTimestamp, ...generationHistory];
         }
-        currentHistoryIndex = generationHistory.length - 1;
+
+        // Always set index to 0 since new episode is at the top
+        currentHistoryIndex = 0;
         selectedEpisode = episodeWithTimestamp;
 
         // Increment roll count and add to history
@@ -336,6 +345,57 @@
       console.error("Failed to clear history:", error);
       Toast.error("Błąd podczas czyszczenia historii");
     }
+  }
+
+  let touchStartX = 0;
+  let touchEndX = 0;
+  let touchStartTime = 0;
+  let isActuallyScrolling = false;
+  const SWIPE_THRESHOLD = 50; // Minimum distance for a swipe
+  const SWIPE_TIME_THRESHOLD = 300; // Maximum time in ms for a swipe
+
+  function handleTouchStart(event: TouchEvent) {
+    touchStartX = event.touches[0].clientX;
+    touchStartTime = Date.now();
+    isActuallyScrolling = false;
+  }
+
+  function handleTouchMove(event: TouchEvent) {
+    touchEndX = event.touches[0].clientX;
+    // If we've moved more than 10px horizontally, we're probably trying to swipe
+    if (Math.abs(touchEndX - touchStartX) > 10) {
+      isActuallyScrolling = true;
+    }
+  }
+
+  function handleTouchEnd() {
+    const touchEndTime = Date.now();
+    const swipeTime = touchEndTime - touchStartTime;
+    const swipeDistance = touchEndX - touchStartX;
+
+    // Only handle swipe if:
+    // 1. We've detected actual scrolling movement
+    // 2. The swipe was fast enough
+    // 3. The distance was significant enough
+    if (
+      isActuallyScrolling &&
+      swipeTime < SWIPE_TIME_THRESHOLD &&
+      Math.abs(swipeDistance) > SWIPE_THRESHOLD
+    ) {
+      if (swipeDistance > 0) {
+        // Swipe right -> go to previous
+        navigateHistory("prev");
+      } else {
+        // Swipe left -> go to next
+        navigateHistory("next");
+      }
+    }
+
+    // Reset touch state
+    touchStartX = 0;
+    touchEndX = 0;
+    touchStartTime = 0;
+    isActuallyScrolling = false;
   }
 
   // Initialize database and load history
@@ -460,8 +520,120 @@
               </button>
             </div>
 
+            <!-- Navigation controls -->
+            {#if generationHistory.length > 1}
+              <!-- Desktop navigation -->
+              <div
+                class="hidden md:flex justify-between items-center mb-6 gap-4"
+              >
+                <!-- Left arrow -->
+                <button
+                  class="btn btn-circle btn-ghost {currentHistoryIndex === 0
+                    ? 'btn-disabled opacity-50'
+                    : 'hover:bg-base-200'}"
+                  on:click={() => navigateHistory("prev")}
+                  disabled={currentHistoryIndex === 0 || isLoading}
+                  aria-label="Previous episode"
+                >
+                  <ChevronLeftIcon
+                    class="h-6 w-6 {currentHistoryIndex === 0
+                      ? ''
+                      : 'animate-bounce-x'}"
+                  />
+                </button>
+
+                <!-- Position indicator -->
+                <div class="flex-1 text-center">
+                  <div class="text-sm text-base-content/70">
+                    {currentHistoryIndex + 1} z {generationHistory.length}
+                  </div>
+                  <div class="flex justify-center gap-1 mt-1">
+                    {#each Array(generationHistory.length) as _, i}
+                      <div
+                        class="w-2 h-2 rounded-full transition-all duration-200 {i ===
+                        currentHistoryIndex
+                          ? 'bg-primary scale-125'
+                          : 'bg-base-300'}"
+                      />
+                    {/each}
+                  </div>
+                </div>
+
+                <!-- Right arrow -->
+                <button
+                  class="btn btn-circle btn-ghost {currentHistoryIndex ===
+                  generationHistory.length - 1
+                    ? 'btn-disabled opacity-50'
+                    : 'hover:bg-base-200'}"
+                  on:click={() => navigateHistory("next")}
+                  disabled={currentHistoryIndex ===
+                    generationHistory.length - 1 || isLoading}
+                  aria-label="Next episode"
+                >
+                  <ChevronRightIcon
+                    class="h-6 w-6 {currentHistoryIndex ===
+                    generationHistory.length - 1
+                      ? ''
+                      : 'animate-bounce-x'}"
+                  />
+                </button>
+              </div>
+
+              <!-- Mobile navigation arrows (centered) -->
+              <div class="md:hidden">
+                <!-- Left arrow -->
+                <button
+                  class="fixed left-2 top-1/2 -translate-y-1/2 btn btn-circle btn-ghost {currentHistoryIndex ===
+                  0
+                    ? 'btn-disabled opacity-50'
+                    : 'hover:bg-base-200'} shadow-lg bg-base-100"
+                  on:click={() => navigateHistory("prev")}
+                  disabled={currentHistoryIndex === 0 || isLoading}
+                  aria-label="Previous episode"
+                >
+                  <ChevronLeftIcon
+                    class="h-6 w-6 {currentHistoryIndex === 0
+                      ? ''
+                      : 'animate-bounce-x'}"
+                  />
+                </button>
+
+                <!-- Right arrow -->
+                <button
+                  class="fixed right-2 top-1/2 -translate-y-1/2 btn btn-circle btn-ghost {currentHistoryIndex ===
+                  generationHistory.length - 1
+                    ? 'btn-disabled opacity-50'
+                    : 'hover:bg-base-200'} shadow-lg bg-base-100"
+                  on:click={() => navigateHistory("next")}
+                  disabled={currentHistoryIndex ===
+                    generationHistory.length - 1 || isLoading}
+                  aria-label="Next episode"
+                >
+                  <ChevronRightIcon
+                    class="h-6 w-6 {currentHistoryIndex ===
+                    generationHistory.length - 1
+                      ? ''
+                      : 'animate-bounce-x'}"
+                  />
+                </button>
+              </div>
+            {/if}
+
             <!-- Episode details section -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <div
+              class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6"
+              in:slide|local={{
+                duration: ANIMATION_TIMING.SWIPE.DURATION,
+                easing: quintOut,
+              }}
+              out:slide|local={{
+                duration: ANIMATION_TIMING.SWIPE.DURATION,
+                easing: quintOut,
+              }}
+              on:touchstart={handleTouchStart}
+              on:touchmove={handleTouchMove}
+              on:touchend={handleTouchEnd}
+            >
               <!-- Left side - Episode details (2/3 on desktop) -->
               <div class="lg:col-span-2 space-y-4">
                 <!-- Title visualization on mobile -->
@@ -729,32 +901,39 @@
 
                     <!-- Mobile view - with expand/collapse -->
                     <div class="lg:hidden">
-                      <p
-                        class="text-base-content/80 typewriter-line"
-                        class:line-clamp-2={!isDescriptionExpanded &&
-                          selectedEpisode.opis_odcinka.length >
-                            DESCRIPTION_THRESHOLD}
-                        in:typewriter={{
-                          duration: ANIMATION_TIMING.TYPEWRITER.DESCRIPTION,
-                        }}
+                      <button
+                        class="w-full text-left"
+                        on:click={toggleDescription}
+                        aria-expanded={isDescriptionExpanded}
+                        aria-controls="episode-description"
                       >
-                        {selectedEpisode.opis_odcinka}
-                      </p>
-
-                      {#if selectedEpisode.opis_odcinka.length > DESCRIPTION_THRESHOLD}
-                        <button
-                          class="btn btn-ghost btn-sm mt-2 w-full flex items-center justify-center gap-2"
-                          on:click={toggleDescription}
+                        <p
+                          id="episode-description"
+                          class="text-base-content/80 typewriter-line"
+                          class:line-clamp-2={!isDescriptionExpanded &&
+                            selectedEpisode.opis_odcinka.length >
+                              DESCRIPTION_THRESHOLD}
+                          in:typewriter={{
+                            duration: ANIMATION_TIMING.TYPEWRITER.DESCRIPTION,
+                          }}
                         >
-                          {#if isDescriptionExpanded}
-                            <ChevronUpIcon class="w-4 h-4" />
-                            Zwiń opis
-                          {:else}
-                            <ChevronDownIcon class="w-4 h-4" />
-                            Rozwiń opis
-                          {/if}
-                        </button>
-                      {/if}
+                          {selectedEpisode.opis_odcinka}
+                        </p>
+
+                        {#if selectedEpisode.opis_odcinka.length > DESCRIPTION_THRESHOLD}
+                          <div
+                            class="mt-2 flex items-center justify-center gap-2 text-sm text-base-content/70 hover:text-base-content transition-colors"
+                          >
+                            {#if isDescriptionExpanded}
+                              <ChevronUpIcon class="w-4 h-4" />
+                              <span>Zwiń opis</span>
+                            {:else}
+                              <ChevronDownIcon class="w-4 h-4" />
+                              <span>Rozwiń opis</span>
+                            {/if}
+                          </div>
+                        {/if}
+                      </button>
                     </div>
                   {:else}
                     <p class="text-base-content/30">
@@ -767,7 +946,8 @@
 
             <!-- Draw button -->
             <div class="card-actions flex justify-center items-center w-full">
-              <div class="flex gap-2 items-center w-full">
+              <!-- Desktop button -->
+              <div class="hidden md:block w-full">
                 <AnimatedButton
                   on:click={randomizeEpisode}
                   disabled={isLoading}
@@ -790,6 +970,49 @@
       </div>
     </div>
   </main>
+
+  <!-- Mobile bottom navigation bar -->
+  <div
+    class="md:hidden fixed bottom-0 left-0 right-0 bg-base-100 border-t border-base-300 shadow-lg z-50"
+  >
+    <div class="container mx-auto px-4 py-2 max-w-5xl">
+      <div class="flex flex-col items-center justify-between gap-4">
+        <!-- Position indicator -->
+        {#if generationHistory.length > 0}
+          <div class="flex-1">
+            <div class="text-sm font-medium text-base-content/70">
+              {currentHistoryIndex + 1} z {generationHistory.length}
+            </div>
+            <div class="flex gap-1 mt-1">
+              {#each Array(generationHistory.length) as _, i}
+                <div
+                  class="w-1.5 h-1.5 rounded-full transition-all duration-200 {i ===
+                  currentHistoryIndex
+                    ? 'bg-primary scale-125'
+                    : 'bg-base-300'}"
+                />
+              {/each}
+            </div>
+          </div>
+        {/if}
+
+        <!-- Mobile roll button -->
+        <div class="flex-[2]">
+          <AnimatedButton
+            on:click={randomizeEpisode}
+            disabled={isLoading}
+            fullWidth={true}
+          >
+            {#if selectedEpisode}
+              Losuj ponownie 🎲
+            {:else}
+              Losuj odcinek 🎲
+            {/if}
+          </AnimatedButton>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <EpisodeHistoryDrawer
     bind:showDrawer
