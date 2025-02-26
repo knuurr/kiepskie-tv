@@ -163,4 +163,27 @@ export class EpisodeService {
 
     return score;
   }
+
+  // Get roll count for route
+  public async getRollCount(route: string): Promise<number> {
+    return this.dbService.getRollCount(route);
+  }
+
+  // Increment roll count for route
+  public async incrementRollCount(route: string): Promise<void> {
+    await this.dbService.incrementRollCount(route);
+  }
+
+  // Clear stats for route
+  public async clearStats(route: string): Promise<void> {
+    await this.dbService.clearStats(route);
+  }
+
+  // Clear history and stats for route
+  public async clearAll(route: string): Promise<void> {
+    await Promise.all([
+      this.clearHistory(route),
+      this.clearStats(route)
+    ]);
+  }
 } 

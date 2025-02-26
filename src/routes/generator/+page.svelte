@@ -55,10 +55,12 @@
   let isLoading = false;
   let showDetails = false;
   let showDrawer = false;
+  let isInitializing = true; // Add initializing state
 
   const MAX_HISTORY = 6;
   let generationHistory: EpisodeData[] = [];
   let currentHistoryIndex = -1;
+  let totalRolls = 0; // Track total rolls
 
   let isDescriptionExpanded = false;
   const DESCRIPTION_THRESHOLD = 100;
@@ -125,79 +127,84 @@
     };
   }
 
-  // Load history from IndexedDB
-  async function loadHistory() {
-    try {
-      const history = await episodeService.getHistory("/generator");
-      console.debug("Main: Loading history:", {
-        count: history.length,
-        episodes: history.map((ep) => ({ uuid: ep.uuid, nr: ep.nr })),
-      });
+  // Load history and stats from IndexedDB
+  // async function loadHistory() {
+  //   try {
+  //     const [history, rollCount] = await Promise.all([
+  //       episodeService.getHistory("/generator"),
+  //       episodeService.getRollCount("/generator"),
+  //     ]);
+  //     console.debug("Main: Loading history and stats:", {
+  //       historyCount: history.length,
+  //       episodes: history.map((ep) => ({ uuid: ep.uuid, nr: ep.nr })),
+  //       totalRolls: rollCount,
+  //     });
 
-      if (history.length > 0) {
-        generationHistory = history;
-        currentHistoryIndex = history.length - 1;
-        Toast.success("Wczytano historię odcinków");
-      }
-    } catch (error) {
-      console.error("Failed to load history:", error);
-      Toast.error("Błąd podczas wczytywania historii");
-    }
-  }
+  //     if (history.length > 0) {
+  //       generationHistory = history;
+  //       currentHistoryIndex = history.length - 1;
+  //       Toast.success("Wczytano historię odcinków");
+  //     }
+  //     totalRolls = rollCount;
+  //   } catch (error) {
+  //     console.error("Failed to load history:", error);
+  //     Toast.error("Błąd podczas wczytywania historii");
+  //   }
+  // }
 
   // Migrate existing history to IndexedDB
-  async function migrateHistory() {
-    if (generationHistory.length === 0) return;
+  // async function migrateHistory() {
+  //   if (generationHistory.length === 0) return;
 
-    try {
-      // Get existing history to check for duplicates
-      const existingHistory = await episodeService.getHistory("/generator");
-      console.debug("Migration: Existing history:", {
-        count: existingHistory.length,
-        episodes: existingHistory.map((ep) => ({
-          uuid: ep.uuid || "unknown",
-          nr: ep.nr,
-          timestamp: ep.rollTimestamp,
-        })),
-      });
+  //   try {
+  //     // Get existing history to check for duplicates
+  //     const existingHistory = await episodeService.getHistory("/generator");
+  //     console.debug("Migration: Existing history:", {
+  //       count: existingHistory.length,
+  //       episodes: existingHistory.map((ep) => ({
+  //         uuid: ep.uuid || "unknown",
+  //         nr: ep.nr,
+  //         timestamp: ep.rollTimestamp,
+  //       })),
+  //     });
 
-      // Only migrate episodes that don't exist in IndexedDB
-      for (const episode of generationHistory) {
-        const episodeWithUUID = {
-          ...episode,
-          uuid: episode.uuid || crypto.randomUUID(), // Use crypto.randomUUID() directly
-        };
+  //     // Only migrate episodes that don't exist in IndexedDB
+  //     for (const episode of generationHistory) {
+  //       const episodeWithUUID = {
+  //         ...episode,
+  //         uuid: episode.uuid || crypto.randomUUID(), // Use crypto.randomUUID() directly
+  //       };
 
-        const isDuplicate = existingHistory.some(
-          (existingEp) =>
-            existingEp.uuid === episodeWithUUID.uuid ||
-            (existingEp.nr === episodeWithUUID.nr &&
-              existingEp.rollTimestamp === episodeWithUUID.rollTimestamp),
-        );
+  //       const isDuplicate = existingHistory.some(
+  //         (existingEp) =>
+  //           existingEp.uuid === episodeWithUUID.uuid ||
+  //           (existingEp.nr === episodeWithUUID.nr &&
+  //             existingEp.rollTimestamp === episodeWithUUID.rollTimestamp),
+  //       );
 
-        if (!isDuplicate) {
-          console.debug("Migration: Adding episode:", {
-            uuid: episodeWithUUID.uuid,
-            nr: episodeWithUUID.nr,
-            timestamp: episodeWithUUID.rollTimestamp,
-          });
-          await episodeService.addToHistory(episodeWithUUID, "/generator");
-        } else {
-          console.debug("Migration: Skipping duplicate episode:", {
-            uuid: episodeWithUUID.uuid,
-            nr: episodeWithUUID.nr,
-            timestamp: episodeWithUUID.rollTimestamp,
-          });
-        }
-      }
-      console.debug("Successfully migrated history to IndexedDB");
-    } catch (error) {
-      console.error("Failed to migrate history:", error);
-      Toast.error("Błąd podczas migracji historii");
-    }
-  }
+  //       if (!isDuplicate) {
+  //         console.debug("Migration: Adding episode:", {
+  //           uuid: episodeWithUUID.uuid,
+  //           nr: episodeWithUUID.nr,
+  //           timestamp: episodeWithUUID.rollTimestamp,
+  //         });
+  //         await episodeService.addToHistory(episodeWithUUID, "/generator");
+  //       } else {
+  //         console.debug("Migration: Skipping duplicate episode:", {
+  //           uuid: episodeWithUUID.uuid,
+  //           nr: episodeWithUUID.nr,
+  //           timestamp: episodeWithUUID.rollTimestamp,
+  //         });
+  //       }
+  //     }
+  //     console.debug("Successfully migrated history to IndexedDB");
+  //   } catch (error) {
+  //     console.error("Failed to migrate history:", error);
+  //     Toast.error("Błąd podczas migracji historii");
+  //   }
+  // }
 
-  // Modified randomizeEpisode to use service
+  // Modified randomizeEpisode to track roll count
   function randomizeEpisode() {
     isLoading = true;
     showDetails = false;
@@ -234,8 +241,12 @@
         currentHistoryIndex = generationHistory.length - 1;
         selectedEpisode = episodeWithTimestamp;
 
-        // Add to IndexedDB
-        await episodeService.addToHistory(episodeWithTimestamp, "/generator");
+        // Increment roll count and add to history
+        await Promise.all([
+          episodeService.addToHistory(episodeWithTimestamp, "/generator"),
+          episodeService.incrementRollCount("/generator"),
+        ]);
+        totalRolls++; // Update local counter
 
         isLoading = false;
         setTimeout(() => {
@@ -314,11 +325,12 @@
 
   async function handleClearHistory() {
     try {
-      await episodeService.clearHistory("/generator");
+      await episodeService.clearAll("/generator");
       generationHistory = [];
       currentHistoryIndex = -1;
       selectedEpisode = null;
       showDetails = false;
+      totalRolls = 0; // Reset total rolls
       Toast.success("Historia została wyczyszczona");
     } catch (error) {
       console.error("Failed to clear history:", error);
@@ -335,21 +347,30 @@
         // Initialize database first
         await dbService.init();
 
-        // Load history once
-        const history = await episodeService.getHistory("/generator");
-        console.debug("Main: Initial history load:", {
-          count: history.length,
+        // Artificial delay for loading state
+        await new Promise((resolve) => setTimeout(resolve, 800));
+
+        // Load both history and roll count
+        const [history, rollCount] = await Promise.all([
+          episodeService.getHistory("/generator"),
+          episodeService.getRollCount("/generator"),
+        ]);
+
+        console.debug("Main: Initial load:", {
+          historyCount: history.length,
           episodes: history.map((ep) => ({ uuid: ep.uuid, nr: ep.nr })),
+          totalRolls: rollCount,
         });
 
         // Update local state
         generationHistory = history;
+        totalRolls = rollCount;
 
         // If there's history, set the current episode
         if (history.length > 0) {
           selectedEpisode = history[history.length - 1];
           currentHistoryIndex = history.length - 1;
-          showDetails = true; // Show details immediately
+          showDetails = true;
           console.debug("Main: Set initial episode:", {
             uuid: selectedEpisode.uuid,
             nr: selectedEpisode.nr,
@@ -363,6 +384,9 @@
         console.error("Failed to initialize:", error);
         Toast.error("Błąd podczas inicjalizacji");
       } finally {
+        // Additional delay before removing loading state
+        await new Promise((resolve) => setTimeout(resolve, 200));
+        isInitializing = false;
         isLoading = false;
       }
     };
@@ -397,16 +421,24 @@
             <div class="flex justify-between items-start mb-4">
               <div class="flex flex-col gap-1">
                 <div class="badge badge-outline badge-lg">
-                  Losowań: {generationHistory.length}
+                  {#if isInitializing}
+                    <div class="loading loading-spinner loading-xs"></div>
+                  {:else}
+                    Losowań: {totalRolls}
+                  {/if}
                 </div>
                 <div
                   class="text-xs text-base-content/60 flex items-center gap-1"
                 >
                   <CalendarIcon class="h-4 w-4" />
                   <span>
-                    Wylosowano: {selectedEpisode?.rollTimestamp
-                      ? formatDate(selectedEpisode.rollTimestamp)
-                      : "nigdy"}
+                    {#if isInitializing}
+                      <div class="loading loading-spinner loading-xs"></div>
+                    {:else}
+                      Wylosowano: {selectedEpisode?.rollTimestamp
+                        ? formatDate(selectedEpisode.rollTimestamp)
+                        : "nigdy"}
+                    {/if}
                   </span>
                 </div>
               </div>
@@ -417,7 +449,11 @@
                 <ClockIcon class="h-5 w-5" />
                 Historia
                 <div class="badge badge-sm badge-primary">
-                  {generationHistory.length}/{MAX_HISTORY}
+                  {#if isInitializing}
+                    <div class="loading loading-spinner loading-xs"></div>
+                  {:else}
+                    {generationHistory.length}/{MAX_HISTORY}
+                  {/if}
                 </div>
                 <kbd class="kbd kbd-sm text-gray-400 hidden md:inline">⇧</kbd>
                 <kbd class="kbd kbd-sm text-gray-400 hidden md:inline">h</kbd>
@@ -427,16 +463,16 @@
             <!-- Episode details section -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
               <!-- Left side - Episode details (2/3 on desktop) -->
-              <div class="lg:col-span-2 min-w-[300px] space-y-4">
+              <div class="lg:col-span-2 space-y-4">
                 <!-- Title visualization on mobile -->
-                <div class="block lg:hidden">
-                  <div class="relative w-full" style="padding-top: 40%;">
+                <div class="block lg:hidden pb-20">
+                  <div class="relative w-full">
                     {#if selectedEpisode && showDetails}
                       <div class="absolute inset-0">
                         <TitleBackground
                           title={selectedEpisode.tytul}
-                          height="h-12"
-                          baseSize={1}
+                          height="h-20"
+                          baseSize={0.5}
                         />
                       </div>
                     {:else if isLoading}

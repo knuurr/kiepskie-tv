@@ -78,10 +78,13 @@
       if (history.length > 0) {
         currentHistoryIndex = history.length - 1;
         logHistoryState("loaded", { source: "loadHistory" });
+        // Only show success toast if there was history to load
+        Toast.success("Historia została pomyślnie wczytana");
       }
     } catch (error) {
       console.error("Failed to load history:", error);
       loadError = error instanceof Error ? error.message : "Unknown error";
+      // Show error toast on failure
       Toast.error("Błąd podczas wczytywania historii");
     } finally {
       isLoadingHistory = false;
