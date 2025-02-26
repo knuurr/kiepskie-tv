@@ -27,6 +27,8 @@
   import ArrowPathIcon from "virtual:icons/heroicons/arrow-path";
   import CalendarIcon from "virtual:icons/heroicons/calendar";
   import HashtagIcon from "virtual:icons/heroicons/hashtag";
+  import ChevronLeftIcon from "virtual:icons/heroicons/chevron-left";
+  import ChevronRightIcon from "virtual:icons/heroicons/chevron-right";
 
   // Initialize services
   const toastService = ToastService.getInstance();
@@ -48,6 +50,7 @@
   let activeHistoryIndex: number = 0;
   let isTypewriterComplete: boolean = false;
   let isInitializing: boolean = true;
+  let showDetails: boolean = false;
 
   const MAX_HISTORY_SIZE = 6;
   const TOAST_LOADING_DELAY_MS = 800;
@@ -119,7 +122,7 @@
     }
   }
 
-  // Keyboard shortcuts handler
+  // Modify keyboard handler to include arrow navigation
   function handleKeydown(event: KeyboardEvent) {
     // Ignore if user is typing in an input
     if (
@@ -134,13 +137,13 @@
 
     // Handle keyboard shortcuts
     if (event.shiftKey && key === "c" && currentToast && !isRolling) {
-      event.preventDefault(); // Prevent default browser behavior
+      event.preventDefault();
       copyToClipboard();
     } else if (event.shiftKey && key === "s" && currentToast && !isRolling) {
-      event.preventDefault(); // Prevent default browser behavior
+      event.preventDefault();
       shareToast();
     } else if (key === "r" && !isRolling) {
-      event.preventDefault(); // Prevent default browser behavior
+      event.preventDefault();
       getRandomToast();
     } else if (event.shiftKey && key === "h") {
       event.preventDefault();
@@ -150,20 +153,23 @@
       getRandomToast();
     } else if (toastHistory.length > 1) {
       // Handle history navigation
-      if (event.key === "ArrowLeft") {
+      if (event.key === "ArrowLeft" && !isRolling && activeHistoryIndex > 0) {
         event.preventDefault();
         navigateHistory("left");
-      } else if (event.key === "ArrowRight") {
+      } else if (
+        event.key === "ArrowRight" &&
+        !isRolling &&
+        activeHistoryIndex < toastHistory.length - 1
+      ) {
         event.preventDefault();
         navigateHistory("right");
       }
     }
   }
 
-  // History navigation function
+  // Add navigation function
   function navigateHistory(direction: "left" | "right") {
-    const historyLength = toastHistory.slice(1).length;
-    if (historyLength <= 1) return; // No navigation needed for single item
+    if (toastHistory.length <= 1) return;
 
     let newIndex = activeHistoryIndex;
 
@@ -171,15 +177,19 @@
       newIndex = activeHistoryIndex - 1;
     } else if (
       direction === "right" &&
-      activeHistoryIndex < historyLength - 1
+      activeHistoryIndex < toastHistory.length - 1
     ) {
       newIndex = activeHistoryIndex + 1;
     }
 
-    // Only navigate if index changed
     if (newIndex !== activeHistoryIndex) {
-      pushState(`#toast-${newIndex}`, { replaceState: true });
-      activeHistoryIndex = newIndex;
+      showDetails = false;
+      setTimeout(() => {
+        activeHistoryIndex = newIndex;
+        currentToast = toastHistory[newIndex].toast;
+        showDetails = true;
+        startTypewriter(currentToast.text);
+      }, 300); // Match ANIMATION_TIMING.SWIPE.DURATION
     }
   }
 
@@ -310,7 +320,60 @@
     }
   }
 
-  // Modified getRandomToast to use service
+  // Add swipe-related variables
+  let touchStartX = 0;
+  let touchEndX = 0;
+  let touchStartTime = 0;
+  let isActuallyScrolling = false;
+  const SWIPE_THRESHOLD = 50;
+  const SWIPE_TIME_THRESHOLD = 300;
+  const ANIMATION_TIMING = {
+    SWIPE: {
+      DURATION: 300,
+    },
+  };
+
+  // Add touch handlers
+  function handleTouchStart(event: TouchEvent) {
+    touchStartX = event.touches[0].clientX;
+    touchStartTime = Date.now();
+    isActuallyScrolling = false;
+  }
+
+  function handleTouchMove(event: TouchEvent) {
+    touchEndX = event.touches[0].clientX;
+    if (Math.abs(touchEndX - touchStartX) > 10) {
+      isActuallyScrolling = true;
+    }
+  }
+
+  function handleTouchEnd() {
+    const touchEndTime = Date.now();
+    const swipeTime = touchEndTime - touchStartTime;
+    const swipeDistance = touchEndX - touchStartX;
+
+    if (
+      isActuallyScrolling &&
+      swipeTime < SWIPE_TIME_THRESHOLD &&
+      Math.abs(swipeDistance) > SWIPE_THRESHOLD
+    ) {
+      if (swipeDistance > 0 && activeHistoryIndex > 0) {
+        navigateHistory("left");
+      } else if (
+        swipeDistance < 0 &&
+        activeHistoryIndex < toastHistory.length - 2
+      ) {
+        navigateHistory("right");
+      }
+    }
+
+    touchStartX = 0;
+    touchEndX = 0;
+    touchStartTime = 0;
+    isActuallyScrolling = false;
+  }
+
+  // Modify getRandomToast to handle history navigation
   async function getRandomToast() {
     if (isRolling) return;
 
@@ -320,16 +383,13 @@
     rollCount++;
 
     try {
-      // Get random toast using service
       const newToast = toastService.getRandomToast(
         toasts,
         currentToast || undefined,
       );
 
-      // Add to history using service
       await toastService.addToHistory(newToast);
 
-      // Update history with proper type
       const history = await toastService.getHistory();
       toastHistory = history.map((toast) => ({
         toast,
@@ -340,13 +400,16 @@
       copyStates = {};
       shareStates = {};
 
-      // Start typewriter effect (isRolling will be reset when typewriter completes)
+      // Always move to the newest toast (index 0)
+      activeHistoryIndex = 0;
+
+      // Start typewriter effect
       startTypewriter(newToast.text);
     } catch (error) {
       console.error("Failed to get random toast:", error);
       ToastNotification.error("Nie udało się wylosować toastu");
-      rollCount--; // Decrement rollCount on error
-      isRolling = false; // Reset rolling state on error
+      rollCount--;
+      isRolling = false;
     }
   }
 
@@ -579,105 +642,220 @@
         </div>
         <div class="card bg-base-100 border-2 border-base-200">
           <div class="card-body">
-            <div class="flex gap-2 mb-4">
-              <div
-                class="badge badge-neutral {!currentToast
-                  ? 'badge-ghost opacity-50'
-                  : ''}"
-              >
-                <HashtagIcon class="h-4 w-4 mr-1" />
-                Odcinek: {currentToast?.episodeNumber ?? "???"}
-              </div>
-              <div
-                class="badge badge-neutral {!currentToast
-                  ? 'badge-ghost opacity-50'
-                  : ''}"
-              >
-                <ClockIcon class="h-4 w-4 mr-1" />
-                Czas: {currentToast?.episodeTimestamp ?? "??:??"}
-              </div>
-            </div>
-            <div class="flex-1">
-              <p class="text-xl opacity-70">No to....</p>
-              <p class="text-2xl font-medium min-h-16">
-                {#if currentToast}
-                  {#if typewriterText === ""}
-                    <div class="flex flex-col gap-3">
-                      <div
-                        class="h-8 bg-base-300 rounded animate-pulse mt-1"
-                      ></div>
-                    </div>
-                  {:else}
-                    {typewriterText}
-                  {/if}
-                {:else}
-                  <span class="opacity-50">Panie, na co pan czekasz...?</span>
-                {/if}
-              </p>
-
-              <div class="mt-4 {!currentToast ? 'opacity-50' : ''}">
-                <AudioWavePlayer
-                  audioFile={currentToast?.audioFile ?? null}
-                  disabled={!currentToast}
-                  showText={true}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="flex flex-col gap-2 mt-4">
-          <AnimatedButton
-            on:click={getRandomToast}
-            disabled={isRolling || isInitializing}
-            fullWidth={true}
-          >
-            No to jedziem! 🍻
-            <kbd class="kbd kbd-sm hidden md:inline-flex text-white">r</kbd>
-          </AnimatedButton>
-          <div class="grid grid-cols-2 gap-2">
-            <button
-              on:click={handleCopyClick}
-              class="btn btn-outline {isCopySuccess
-                ? 'btn-success'
-                : 'btn-info'}"
-              disabled={isRolling || !currentToast}
-              aria-label="Kopiuj do schowka"
-            >
-              {#if isCopySuccess}
-                <CheckIcon class="w-5 h-5" />
-              {:else}
-                <ClipboardIcon class="w-5 h-5" />
-              {/if}
-              <span class="hidden">Kopiuj do schowka</span>
-              <kbd class="kbd kbd-sm hidden md:inline-flex text-white">⇧</kbd>
-              <kbd class="kbd kbd-sm hidden md:inline-flex text-white">c</kbd>
-            </button>
-
-            <!-- Share button -->
-            <div
-              class="tooltip tooltip-bottom"
-              data-tip={!canShareOnDevice
-                ? "Udostępnianie nie jest dostępne w tej przeglądarce"
-                : ""}
-            >
+            <!-- Add action buttons in the top-right corner -->
+            <div class="absolute top-4 right-4 flex gap-2">
               <button
-                on:click={handleShareClick}
-                class="btn btn-outline w-full {isShareSuccess
-                  ? 'btn-success'
-                  : 'btn-accent'}"
-                disabled={isRolling || !currentToast || !canShareOnDevice}
-                aria-label="Udostępnij"
+                on:click={handleCopyClick}
+                class="btn btn-circle btn-sm btn-ghost {isCopySuccess
+                  ? 'text-success'
+                  : 'text-base-content/70 hover:text-base-content'}"
+                disabled={isRolling || !currentToast}
+                aria-label="Kopiuj do schowka"
               >
-                {#if isShareSuccess}
-                  <CheckIcon class="w-5 h-5" />
+                {#if isCopySuccess}
+                  <CheckIcon class="w-4 h-4" />
                 {:else}
-                  <ShareIcon class="w-5 h-5" />
+                  <ClipboardIcon class="w-4 h-4" />
                 {/if}
-                <span class="hidden">Udostępnij</span>
-                <kbd class="kbd kbd-sm hidden md:inline-flex text-white">⇧</kbd>
-                <kbd class="kbd kbd-sm hidden md:inline-flex text-white">s</kbd>
               </button>
+
+              <div
+                class="tooltip tooltip-left"
+                data-tip={!canShareOnDevice
+                  ? "Udostępnianie nie jest dostępne w tej przeglądarce"
+                  : ""}
+              >
+                <button
+                  on:click={handleShareClick}
+                  class="btn btn-circle btn-sm btn-ghost {isShareSuccess
+                    ? 'text-success'
+                    : 'text-base-content/70 hover:text-base-content'}"
+                  disabled={isRolling || !currentToast || !canShareOnDevice}
+                  aria-label="Udostępnij"
+                >
+                  {#if isShareSuccess}
+                    <CheckIcon class="w-4 h-4" />
+                  {:else}
+                    <ShareIcon class="w-4 h-4" />
+                  {/if}
+                </button>
+              </div>
+            </div>
+
+            <!-- Navigation controls -->
+            {#if toastHistory.length > 1}
+              <!-- Desktop navigation -->
+              <div class="hidden md:block">
+                <!-- Left arrow -->
+                <button
+                  class="btn btn-circle btn-ghost absolute left-4 top-1/2 -translate-y-1/2 {activeHistoryIndex ===
+                  0
+                    ? 'btn-disabled opacity-50'
+                    : 'hover:bg-base-200'}"
+                  on:click={() => navigateHistory("left")}
+                  disabled={activeHistoryIndex === 0 || isRolling}
+                  aria-label="Previous toast"
+                >
+                  <ChevronLeftIcon
+                    class="h-6 w-6 {activeHistoryIndex === 0
+                      ? ''
+                      : 'animate-bounce-x'}"
+                  />
+                </button>
+
+                <!-- Position indicator -->
+                <div class="text-center mb-6">
+                  <div class="text-sm text-base-content/70">
+                    {activeHistoryIndex + 1} z {toastHistory.length}
+                  </div>
+                  <div class="flex justify-center gap-1 mt-1">
+                    {#each Array(toastHistory.length) as _, i}
+                      <div
+                        class="w-2 h-2 rounded-full transition-all duration-200 {i ===
+                        activeHistoryIndex
+                          ? 'bg-primary scale-125'
+                          : 'bg-base-300'}"
+                      />
+                    {/each}
+                  </div>
+                </div>
+
+                <!-- Right arrow -->
+                <button
+                  class="btn btn-circle btn-ghost absolute right-4 top-1/2 -translate-y-1/2 {activeHistoryIndex ===
+                  toastHistory.length - 1
+                    ? 'btn-disabled opacity-50'
+                    : 'hover:bg-base-200'}"
+                  on:click={() => navigateHistory("right")}
+                  disabled={activeHistoryIndex === toastHistory.length - 1 ||
+                    isRolling}
+                  aria-label="Next toast"
+                >
+                  <ChevronRightIcon
+                    class="h-6 w-6 {activeHistoryIndex ===
+                    toastHistory.length - 1
+                      ? ''
+                      : 'animate-bounce-x'}"
+                  />
+                </button>
+              </div>
+
+              <!-- Mobile navigation arrows -->
+              <div class="md:hidden">
+                <!-- Left arrow -->
+                <button
+                  class="fixed left-2 top-1/2 -translate-y-1/2 btn btn-circle btn-ghost {activeHistoryIndex ===
+                  0
+                    ? 'btn-disabled opacity-50'
+                    : 'hover:bg-base-200'} shadow-lg bg-base-100"
+                  on:click={() => navigateHistory("left")}
+                  disabled={activeHistoryIndex === 0 || isRolling}
+                  aria-label="Previous toast"
+                >
+                  <ChevronLeftIcon
+                    class="h-6 w-6 {activeHistoryIndex === 0
+                      ? ''
+                      : 'animate-bounce-x'}"
+                  />
+                </button>
+
+                <!-- Right arrow -->
+                <button
+                  class="fixed right-2 top-1/2 -translate-y-1/2 btn btn-circle btn-ghost {activeHistoryIndex ===
+                  toastHistory.length - 1
+                    ? 'btn-disabled opacity-50'
+                    : 'hover:bg-base-200'} shadow-lg bg-base-100"
+                  on:click={() => navigateHistory("right")}
+                  disabled={activeHistoryIndex === toastHistory.length - 1 ||
+                    isRolling}
+                  aria-label="Next toast"
+                >
+                  <ChevronRightIcon
+                    class="h-6 w-6 {activeHistoryIndex ===
+                    toastHistory.length - 1
+                      ? ''
+                      : 'animate-bounce-x'}"
+                  />
+                </button>
+              </div>
+            {/if}
+
+            <!-- Add touch handlers to the main content -->
+            <div
+              on:touchstart={handleTouchStart}
+              on:touchmove={handleTouchMove}
+              on:touchend={handleTouchEnd}
+            >
+              <div class="flex gap-2 mb-4">
+                <div
+                  class="badge badge-neutral {!currentToast
+                    ? 'badge-ghost opacity-50'
+                    : ''}"
+                >
+                  <HashtagIcon class="h-4 w-4" />
+                  <span class="hidden md:inline ml-1">
+                    Odcinek: {currentToast?.episodeNumber ?? "???"}
+                  </span>
+                  <span class="md:hidden">
+                    {currentToast?.episodeNumber ?? "???"}
+                  </span>
+                </div>
+                <div
+                  class="badge badge-neutral {!currentToast
+                    ? 'badge-ghost opacity-50'
+                    : ''}"
+                >
+                  <ClockIcon class="h-4 w-4" />
+                  <span class="hidden md:inline ml-1">
+                    Czas: {currentToast?.episodeTimestamp ?? "??:??"}
+                  </span>
+                  <span class="md:hidden">
+                    {currentToast?.episodeTimestamp ?? "??:??"}
+                  </span>
+                </div>
+              </div>
+              <div class="flex-1">
+                <p class="text-xl opacity-70">No to....</p>
+                <p class="text-2xl font-medium min-h-16">
+                  {#if currentToast}
+                    {#if typewriterText === ""}
+                      <div class="flex flex-col gap-3">
+                        <div
+                          class="h-8 bg-base-300 rounded animate-pulse mt-1"
+                        ></div>
+                      </div>
+                    {:else}
+                      {typewriterText}
+                    {/if}
+                  {:else}
+                    <span class="opacity-50">Panie, na co pan czekasz...?</span>
+                  {/if}
+                </p>
+
+                <div class="mt-4 {!currentToast ? 'opacity-50' : ''}">
+                  <AudioWavePlayer
+                    audioFile={currentToast?.audioFile ?? null}
+                    disabled={!currentToast}
+                    showText={true}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- Desktop roll button - restore to original position -->
+            <div class="hidden md:flex flex-col gap-2 mt-4">
+              <AnimatedButton
+                on:click={getRandomToast}
+                disabled={isRolling || isInitializing}
+                fullWidth={true}
+              >
+                {#if currentToast}
+                  Losuj ponownie 🎲
+                {:else}
+                  No to jedziem! 🍻
+                {/if}
+                <kbd class="kbd kbd-sm text-white">r</kbd>
+              </AnimatedButton>
             </div>
           </div>
         </div>
@@ -694,4 +872,76 @@
     bind:shareStates
     bind:canShareOnDevice
   />
+
+  <!-- Mobile bottom navbar -->
+  <div
+    class="md:hidden fixed bottom-0 left-0 right-0 bg-base-100 border-t border-base-300 shadow-lg z-50"
+  >
+    <div class="container mx-auto px-4 py-4">
+      <div class="flex flex-col items-center justify-between gap-4">
+        <!-- Position indicator -->
+        {#if toastHistory.length > 0}
+          <div class="flex-1 text-center">
+            <div class="text-sm font-medium text-base-content/70">
+              {activeHistoryIndex + 1} z {toastHistory.length}
+            </div>
+            <div class="flex gap-1 mt-1 justify-center">
+              {#each Array(toastHistory.length) as _, i}
+                <div
+                  class="w-1.5 h-1.5 rounded-full transition-all duration-200 {i ===
+                  activeHistoryIndex
+                    ? 'bg-primary scale-125'
+                    : 'bg-base-300'}"
+                />
+              {/each}
+            </div>
+          </div>
+        {/if}
+
+        <!-- Mobile roll button -->
+        <div class="w-full">
+          <AnimatedButton
+            on:click={getRandomToast}
+            disabled={isRolling || isInitializing}
+            fullWidth={true}
+          >
+            {#if currentToast}
+              Losuj ponownie 🎲
+            {:else}
+              No to jedziem! 🍻
+            {/if}
+          </AnimatedButton>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Remove the floating desktop button since we restored it to the card -->
+  <style>
+    /* Add bounce animation for arrows */
+    @keyframes bounce-x {
+      0%,
+      100% {
+        transform: translateX(0);
+      }
+      50% {
+        transform: translateX(25%);
+      }
+    }
+
+    .animate-bounce-x {
+      animation: bounce-x 1s infinite;
+    }
+
+    /* Adjust bottom padding since we removed buttons from navbar */
+    :global(body) {
+      padding-bottom: calc(env(safe-area-inset-bottom) + 8rem);
+    }
+
+    @media (min-width: 768px) {
+      :global(body) {
+        padding-bottom: calc(env(safe-area-inset-bottom) + 5rem);
+      }
+    }
+  </style>
 </CenteredContainer>
