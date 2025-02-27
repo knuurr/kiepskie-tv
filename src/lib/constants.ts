@@ -4,7 +4,7 @@ export const FEATURES = {
   ENABLE_HIGHLIGHT: false, // Set to true to enable highlight effect in UI
   ENABLE_RGB: false, // Set to true to enable RGB filter as one of options in /tiwi
   ENABLE_DONATION_POPUP: true, // Set to true to enable donation popup
-  DEBUG_FORCE_DONATION: true, // Set to true to force donation popup to show every time
+  DEBUG_FORCE_DONATION: false, // Set to true to force donation popup to show every time
 } as const;
 
 // Greenscreen scale presets
