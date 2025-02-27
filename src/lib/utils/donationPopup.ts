@@ -19,6 +19,9 @@ export async function tryShowDonationPopup(callback?: () => void): Promise<boole
 
     if (isDev) console.debug('[DonationPopup] Showing popup');
 
+    // Mark as shown immediately when we decide to show it
+    donationPopupStore.markShown();
+
     // Execute callback if provided
     if (callback) {
       callback();

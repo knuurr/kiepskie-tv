@@ -13,7 +13,6 @@
   function handleClose() {
     if (!canClose) return;
     isOpen = false;
-    donationPopupStore.markShown();
   }
 
   function handleKeydown(event: KeyboardEvent) {

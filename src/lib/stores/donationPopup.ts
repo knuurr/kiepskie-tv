@@ -11,7 +11,7 @@ interface DonationPopupState {
 
 // Create a writable store with initial state
 const createDonationPopupStore = () => {
-  const COOLDOWN_MS = isDev ? 1000 * 10 : 1000 * 60 * 30; // 10 seconds in dev, 30 minutes in prod
+  const COOLDOWN_MS = isDev ? 1000 * 60 * 5 : 1000 * 60 * 10; // 5 minutes in dev, 10 minutes in prod
   const SHOW_CHANCE = isDev ? 0.5 : 0.01; // 50% chance in dev, 1% in prod
 
   const { subscribe, set, update } = writable<DonationPopupState>({
@@ -45,8 +45,18 @@ const createDonationPopupStore = () => {
       const currentState = get(donationPopupStore);
 
       // If never shown or cooldown passed
+      const timeSinceLastShown = currentState.lastShown ? Date.now() - currentState.lastShown : null;
       const cooldownPassed = !currentState.lastShown ||
-        (Date.now() - currentState.lastShown) > currentState.cooldownMs;
+        (timeSinceLastShown && timeSinceLastShown > currentState.cooldownMs);
+
+      if (isDev) {
+        console.debug('[DonationPopup] Cooldown check:', {
+          lastShown: currentState.lastShown ? new Date(currentState.lastShown).toISOString() : null,
+          timeSinceLastShown: timeSinceLastShown ? Math.floor(timeSinceLastShown / 1000) + 's' : null,
+          cooldownMs: currentState.cooldownMs,
+          cooldownPassed
+        });
+      }
 
       if (!cooldownPassed) {
         if (isDev) console.debug('[DonationPopup] Cooldown not passed');
