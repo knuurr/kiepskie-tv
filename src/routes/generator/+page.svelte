@@ -440,6 +440,7 @@
           selectedEpisode = history[history.length - 1];
           currentHistoryIndex = history.length - 1;
           showDetails = true;
+          Toast.success("Wczytano historię odcinków");
           console.debug("Main: Set initial episode:", {
             uuid: selectedEpisode.uuid,
             nr: selectedEpisode.nr,
@@ -456,7 +457,6 @@
         // Additional delay before removing loading state
         await new Promise((resolve) => setTimeout(resolve, 200));
         isInitializing = false;
-        isLoading = false;
       }
     };
 
