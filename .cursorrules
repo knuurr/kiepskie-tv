@@ -107,3 +107,18 @@ Any reusable components should be in the `src/components` folder.
 Any routes are kept in the `src/routes` folder.
 
 ALWAYS add debug statements, code comments and error handling.
+
+Development Environment:
+- Development mode detection: `const isDev = import.meta.env.DEV;`
+  Purpose: Used for debug logging and development-specific behavior
+  Usage:
+    - Debug logging: `if (isDev) console.debug('Debug message');`
+    - Development-specific values: `const timeout = isDev ? 1000 : 5000;`
+    - Feature toggles: Combined with FEATURES flags for granular control
+
+Feature Flags:
+Located in src/lib/constants.ts, controlling various features:
+- ENABLE_SCALE_CONTROLS: Controls visibility of scale controls in UI
+- ENABLE_HIGHLIGHT: Controls highlight effect availability
+- ENABLE_RGB: Controls RGB effect availability
+- ENABLE_DONATION_POPUP: Controls donation popup functionality

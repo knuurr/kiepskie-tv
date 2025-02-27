@@ -13,6 +13,8 @@
   import { DatabaseService } from "$lib/services/db";
   import { slide } from "svelte/transition";
   import { quintOut } from "svelte/easing";
+  import { tryShowDonationPopup } from "$lib/utils/donationPopup";
+  import DonationModal from "../../components/DonationModal.svelte";
 
   // Format date helper
   function formatDate(timestamp: number): string {
@@ -71,6 +73,8 @@
 
   let isDescriptionExpanded = false;
   const DESCRIPTION_THRESHOLD = 100;
+
+  let showDonationPopup = false;
 
   // Initialize services
   const episodeService = EpisodeService.getInstance();
@@ -256,6 +260,11 @@
           episodeService.incrementRollCount("/generator"),
         ]);
         totalRolls++; // Update local counter
+
+        // Check if we should show donation popup
+        await tryShowDonationPopup(() => {
+          showDonationPopup = true;
+        });
 
         isLoading = false;
         setTimeout(() => {
@@ -521,29 +530,38 @@
             </div>
 
             <!-- Navigation controls -->
-            {#if generationHistory.length > 1}
-              <!-- Desktop navigation -->
-              <div
-                class="hidden md:flex justify-between items-center mb-6 gap-4"
+            <!-- Desktop navigation -->
+            <div class="hidden md:flex justify-between items-center mb-6 gap-4">
+              <!-- Left arrow -->
+              <button
+                class="btn btn-circle btn-ghost {!generationHistory.length ||
+                currentHistoryIndex === 0
+                  ? 'btn-disabled opacity-50'
+                  : 'hover:bg-base-200'}"
+                on:click={() => navigateHistory("prev")}
+                disabled={!generationHistory.length ||
+                  currentHistoryIndex === 0 ||
+                  isLoading}
+                aria-label="Previous episode"
               >
-                <!-- Left arrow -->
-                <button
-                  class="btn btn-circle btn-ghost {currentHistoryIndex === 0
-                    ? 'btn-disabled opacity-50'
-                    : 'hover:bg-base-200'}"
-                  on:click={() => navigateHistory("prev")}
-                  disabled={currentHistoryIndex === 0 || isLoading}
-                  aria-label="Previous episode"
-                >
-                  <ChevronLeftIcon
-                    class="h-6 w-6 {currentHistoryIndex === 0
-                      ? ''
-                      : 'animate-bounce-x'}"
-                  />
-                </button>
+                <ChevronLeftIcon
+                  class="h-6 w-6 {!generationHistory.length ||
+                  currentHistoryIndex === 0
+                    ? ''
+                    : 'bounce-left'}"
+                />
+              </button>
 
-                <!-- Position indicator -->
-                <div class="flex-1 text-center">
+              <!-- Position indicator -->
+              <div class="flex-1 text-center">
+                {#if generationHistory.length === 0}
+                  <div class="text-sm text-base-content/70">
+                    Historia pojawi się po wylosowaniu
+                  </div>
+                  <div class="flex justify-center gap-1 mt-1">
+                    <div class="w-2 h-2 rounded-full bg-base-300" />
+                  </div>
+                {:else}
                   <div class="text-sm text-base-content/70">
                     {currentHistoryIndex + 1} z {generationHistory.length}
                   </div>
@@ -557,67 +575,72 @@
                       />
                     {/each}
                   </div>
-                </div>
-
-                <!-- Right arrow -->
-                <button
-                  class="btn btn-circle btn-ghost {currentHistoryIndex ===
-                  generationHistory.length - 1
-                    ? 'btn-disabled opacity-50'
-                    : 'hover:bg-base-200'}"
-                  on:click={() => navigateHistory("next")}
-                  disabled={currentHistoryIndex ===
-                    generationHistory.length - 1 || isLoading}
-                  aria-label="Next episode"
-                >
-                  <ChevronRightIcon
-                    class="h-6 w-6 {currentHistoryIndex ===
-                    generationHistory.length - 1
-                      ? ''
-                      : 'animate-bounce-x'}"
-                  />
-                </button>
+                {/if}
               </div>
 
-              <!-- Mobile navigation arrows (centered) -->
-              <div class="md:hidden">
-                <!-- Left arrow -->
-                <button
-                  class="fixed left-2 top-1/2 -translate-y-1/2 btn btn-circle btn-ghost {currentHistoryIndex ===
-                  0
-                    ? 'btn-disabled opacity-50'
-                    : 'hover:bg-base-200'} shadow-lg bg-base-100"
-                  on:click={() => navigateHistory("prev")}
-                  disabled={currentHistoryIndex === 0 || isLoading}
-                  aria-label="Previous episode"
-                >
-                  <ChevronLeftIcon
-                    class="h-6 w-6 {currentHistoryIndex === 0
-                      ? ''
-                      : 'animate-bounce-x'}"
-                  />
-                </button>
+              <!-- Right arrow -->
+              <button
+                class="btn btn-circle btn-ghost {!generationHistory.length ||
+                currentHistoryIndex === generationHistory.length - 1
+                  ? 'btn-disabled opacity-50'
+                  : 'hover:bg-base-200'}"
+                on:click={() => navigateHistory("next")}
+                disabled={!generationHistory.length ||
+                  currentHistoryIndex === generationHistory.length - 1 ||
+                  isLoading}
+                aria-label="Next episode"
+              >
+                <ChevronRightIcon
+                  class="h-6 w-6 {!generationHistory.length ||
+                  currentHistoryIndex === generationHistory.length - 1
+                    ? ''
+                    : 'bounce-right'}"
+                />
+              </button>
+            </div>
 
-                <!-- Right arrow -->
-                <button
-                  class="fixed right-2 top-1/2 -translate-y-1/2 btn btn-circle btn-ghost {currentHistoryIndex ===
-                  generationHistory.length - 1
-                    ? 'btn-disabled opacity-50'
-                    : 'hover:bg-base-200'} shadow-lg bg-base-100"
-                  on:click={() => navigateHistory("next")}
-                  disabled={currentHistoryIndex ===
-                    generationHistory.length - 1 || isLoading}
-                  aria-label="Next episode"
-                >
-                  <ChevronRightIcon
-                    class="h-6 w-6 {currentHistoryIndex ===
-                    generationHistory.length - 1
-                      ? ''
-                      : 'animate-bounce-x'}"
-                  />
-                </button>
-              </div>
-            {/if}
+            <!-- Mobile navigation arrows (centered) -->
+            <div class="md:hidden">
+              <!-- Left arrow -->
+              <button
+                class="fixed left-2 top-1/2 -translate-y-1/2 btn btn-circle btn-ghost {!generationHistory.length ||
+                currentHistoryIndex === 0
+                  ? 'btn-disabled opacity-50'
+                  : 'hover:bg-base-200'} shadow-lg bg-base-100"
+                on:click={() => navigateHistory("prev")}
+                disabled={!generationHistory.length ||
+                  currentHistoryIndex === 0 ||
+                  isLoading}
+                aria-label="Previous episode"
+              >
+                <ChevronLeftIcon
+                  class="h-6 w-6 {!generationHistory.length ||
+                  currentHistoryIndex === 0
+                    ? ''
+                    : 'bounce-left'}"
+                />
+              </button>
+
+              <!-- Right arrow -->
+              <button
+                class="fixed right-2 top-1/2 -translate-y-1/2 btn btn-circle btn-ghost {!generationHistory.length ||
+                currentHistoryIndex === generationHistory.length - 1
+                  ? 'btn-disabled opacity-50'
+                  : 'hover:bg-base-200'} shadow-lg bg-base-100"
+                on:click={() => navigateHistory("next")}
+                disabled={!generationHistory.length ||
+                  currentHistoryIndex === generationHistory.length - 1 ||
+                  isLoading}
+                aria-label="Next episode"
+              >
+                <ChevronRightIcon
+                  class="h-6 w-6 {!generationHistory.length ||
+                  currentHistoryIndex === generationHistory.length - 1
+                    ? ''
+                    : 'bounce-right'}"
+                />
+              </button>
+            </div>
 
             <!-- Episode details section -->
             <div
@@ -977,8 +1000,15 @@
     <div class="container mx-auto px-4 py-2 max-w-5xl">
       <div class="flex flex-col items-center justify-between gap-4">
         <!-- Position indicator -->
-        {#if generationHistory.length > 0}
-          <div class="flex-1">
+        <div class="flex-1">
+          {#if generationHistory.length === 0}
+            <div class="text-sm font-medium text-base-content/70">
+              Historia pojawi się po wylosowaniu
+            </div>
+            <div class="flex gap-1 mt-1">
+              <div class="w-1.5 h-1.5 rounded-full bg-base-300" />
+            </div>
+          {:else}
             <div class="text-sm font-medium text-base-content/70">
               {currentHistoryIndex + 1} z {generationHistory.length}
             </div>
@@ -992,8 +1022,8 @@
                 />
               {/each}
             </div>
-          </div>
-        {/if}
+          {/if}
+        </div>
 
         <!-- Mobile roll button -->
         <div class="flex w-full">
@@ -1026,6 +1056,8 @@
 
   <FeedbackSection />
   <Footer />
+
+  <DonationModal bind:isOpen={showDonationPopup} />
 </div>
 
 <style>
@@ -1040,5 +1072,34 @@
 
   :global(.card-body) {
     overflow-wrap: break-word;
+  }
+
+  /* Arrow bounce animations */
+  @keyframes bounce-x-left {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    50% {
+      transform: translateX(-25%);
+    }
+  }
+
+  @keyframes bounce-x-right {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    50% {
+      transform: translateX(25%);
+    }
+  }
+
+  :global(.bounce-left) {
+    animation: bounce-x-left 1s ease-in-out infinite;
+  }
+
+  :global(.bounce-right) {
+    animation: bounce-x-right 1s ease-in-out infinite;
   }
 </style>

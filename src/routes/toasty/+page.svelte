@@ -30,6 +30,9 @@
   import ChevronLeftIcon from "virtual:icons/heroicons/chevron-left";
   import ChevronRightIcon from "virtual:icons/heroicons/chevron-right";
 
+  import { tryShowDonationPopup } from "$lib/utils/donationPopup";
+  import DonationModal from "../../components/DonationModal.svelte";
+
   // Initialize services
   const toastService = ToastService.getInstance();
   const dbService = DatabaseService.getInstance();
@@ -65,6 +68,7 @@
   let isShareSuccess = false;
   let canShareOnDevice = false;
   let showHistoryDrawer = false;
+  let showDonationPopup = false;
 
   // Compute history count for display
   $: historyCount = toastHistory.length;
@@ -373,7 +377,7 @@
     isActuallyScrolling = false;
   }
 
-  // Modify getRandomToast to handle history navigation
+  // Modify getRandomToast to include donation popup check
   async function getRandomToast() {
     if (isRolling) return;
 
@@ -402,6 +406,11 @@
 
       // Always move to the newest toast (index 0)
       activeHistoryIndex = 0;
+
+      // Check if we should show donation popup
+      await tryShowDonationPopup(() => {
+        showDonationPopup = true;
+      });
 
       // Start typewriter effect
       startTypewriter(newToast.text);
@@ -944,4 +953,6 @@
       }
     }
   </style>
+
+  <DonationModal bind:isOpen={showDonationPopup} />
 </CenteredContainer>
