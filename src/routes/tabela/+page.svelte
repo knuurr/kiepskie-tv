@@ -45,6 +45,7 @@
   import TimelineView from "../../components/TimelineView.svelte";
   import ClockIcon from "virtual:icons/heroicons/clock";
   import ViewsExplanationModal from "../../components/ViewsExplanationModal.svelte";
+  import { Toast } from "$lib/toast";
 
   // Register ChartJS components
   ChartJS.register(
@@ -254,14 +255,27 @@
 
   function handleAddFilter(event: CustomEvent<Filter>) {
     activeFilters = [...activeFilters, event.detail];
+    // Show success toast for adding filter
+    Toast.success(
+      `Dodano filtr: ${event.detail.type} = ${event.detail.value}${event.detail.isNegated ? " (wykluczenie)" : ""}`,
+    );
   }
 
   function handleRemoveFilter(event: CustomEvent<number>) {
+    const removedFilter = activeFilters[event.detail];
     activeFilters = activeFilters.filter((_, i) => i !== event.detail);
+    // Show info toast for removing filter
+    Toast.info(
+      `Usunięto filtr: ${removedFilter.type} = ${removedFilter.value}${removedFilter.isNegated ? " (wykluczenie)" : ""}`,
+    );
   }
 
   function handleRemoveAllFilters() {
-    activeFilters = [];
+    if (activeFilters.length > 0) {
+      activeFilters = [];
+      // Show info toast for removing all filters
+      Toast.info("Usunięto wszystkie filtry");
+    }
   }
 
   function handleEpisodeClick(episode: EpisodeData) {
@@ -318,6 +332,13 @@
 
     if (!filterExists) {
       activeFilters = [...activeFilters, newFilter];
+      // Show success toast for adding filter
+      Toast.success(`Dodano filtr: ${newFilter.type} = ${newFilter.value}`);
+    } else {
+      // Show warning toast for duplicate filter
+      Toast.warning(
+        `Ten filtr jest już aktywny: ${newFilter.type} = ${newFilter.value}`,
+      );
     }
   }
 
