@@ -31,7 +31,7 @@
   <div class="absolute inset-0 flex items-center justify-center p-2">
     <p
       class="text-center font-bold break-words font-kiepscy"
-      style="color: #55A221; font-size: {titleSize}; line-height: 1.2; max-width: 100%; word-wrap: break-word;"
+      style="color: #228410; font-size: {titleSize}; line-height: 1.2; max-width: 100%; word-wrap: break-word;"
     >
       {title}
     </p>
